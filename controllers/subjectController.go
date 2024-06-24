@@ -13,7 +13,19 @@ type SubjectController struct {
 
 func (c *SubjectController) Create() {
 	var subject models.Subject
-	json.Unmarshal(c.Ctx.Input.RequestBody, &subject)
+
+	// Получение тела запроса с помощью CopyBody()
+	requestBody := c.Ctx.Input.CopyBody(1024)
+
+	// Распаковка JSON из тела запроса
+	err := json.Unmarshal(requestBody, &subject)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	// Добавление предмета в базу данных
 	id, err := models.AddSubject(&subject)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}

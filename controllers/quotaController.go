@@ -13,7 +13,19 @@ type QuotaController struct {
 
 func (c *QuotaController) Create() {
 	var quota models.Quota
-	json.Unmarshal(c.Ctx.Input.RequestBody, &quota)
+
+	// Получение тела запроса с помощью CopyBody()
+	requestBody := c.Ctx.Input.CopyBody(1024)
+
+	// Распаковка JSON из тела запроса
+	err := json.Unmarshal(requestBody, &quota)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	// Добавление квоты в базу данных
 	id, err := models.AddQuota(&quota)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}

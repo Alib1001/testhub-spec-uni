@@ -11,9 +11,22 @@ type UniversityController struct {
 	beego.Controller
 }
 
+// Пример добавления университета через POST запрос
 func (c *UniversityController) Create() {
 	var university models.University
-	json.Unmarshal(c.Ctx.Input.RequestBody, &university)
+
+	// Получение тела запроса с помощью CopyBody()
+	requestBody := c.Ctx.Input.CopyBody(1024) // или не указывать максимальную длину, если необходимо
+
+	// Распаковка JSON из тела запроса
+	err := json.Unmarshal(requestBody, &university)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	// Добавление университета в базу данных
 	id, err := models.AddUniversity(&university)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
@@ -23,6 +36,7 @@ func (c *UniversityController) Create() {
 	c.ServeJSON()
 }
 
+// Пример получения университета по ID через GET запрос
 func (c *UniversityController) Get() {
 	id, _ := c.GetInt(":id")
 	university, err := models.GetUniversityById(id)

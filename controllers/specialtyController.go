@@ -13,7 +13,19 @@ type SpecialtyController struct {
 
 func (c *SpecialtyController) Create() {
 	var specialty models.Specialty
-	json.Unmarshal(c.Ctx.Input.RequestBody, &specialty)
+
+	// Получение тела запроса с помощью CopyBody()
+	requestBody := c.Ctx.Input.CopyBody(1024)
+
+	// Распаковка JSON из тела запроса
+	err := json.Unmarshal(requestBody, &specialty)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	// Добавление специальности в базу данных
 	id, err := models.AddSpecialty(&specialty)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
