@@ -5,11 +5,11 @@ import (
 )
 
 type Quota struct {
-	Id          int    `orm:"auto"`
-	QuotaType   string `orm:"size(64)"`
-	SpecialtyId int
-	MinScore    int
-	MaxScore    int
+	Id        int    `orm:"auto"`
+	QuotaType string `orm:"size(64)"`
+	MinScore  int
+	MaxScore  int
+	Specialty *Specialty `orm:"rel(fk)"`
 }
 
 func init() {

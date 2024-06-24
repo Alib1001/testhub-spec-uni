@@ -5,14 +5,17 @@ import (
 )
 
 type Specialty struct {
-	Id           int    `orm:"auto"`
-	Name         string `orm:"size(128)"`
-	Code         string `orm:"size(64)"`
-	AnnualGrants int
-	MinScore     int
-	MaxScore     int
-	VideoLink    string `orm:"size(256)"`
-	Description  string `orm:"type(text)"`
+	Id                    int    `orm:"auto"`
+	Name                  string `orm:"size(128)"`
+	Code                  string `orm:"size(64)"`
+	AnnualGrants          int
+	MinScore              int
+	MaxScore              int
+	VideoLink             string                 `orm:"size(256)"`
+	Description           string                 `orm:"type(text)"`
+	SpecialtyUniversities []*SpecialtyUniversity `orm:"reverse(many)"` // связь с университетами
+	SpecialtySubjects     []*SpecialtySubject    `orm:"reverse(many)"` // связь с specialty_subjects
+	Quotas                []*Quota               `orm:"reverse(many)"` // связь с квотами
 }
 
 func init() {

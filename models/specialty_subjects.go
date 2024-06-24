@@ -5,10 +5,10 @@ import (
 )
 
 type SpecialtySubject struct {
-	Id          int `orm:"auto"`
-	SpecialtyId int
-	Subject1Id  int
-	Subject2Id  int
+	Id         int `orm:"auto"`
+	Subject1Id int
+	Subject2Id int
+	Specialty  *Specialty `orm:"rel(fk)"`
 }
 
 func init() {

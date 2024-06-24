@@ -14,10 +14,8 @@ type CityController struct {
 func (c *CityController) Create() {
 	var city models.City
 
-	// Получение тела запроса с помощью CopyBody()
 	requestBody := c.Ctx.Input.CopyBody(1024)
 
-	// Распаковка JSON из тела запроса
 	err := json.Unmarshal(requestBody, &city)
 	if err != nil {
 		c.Data["json"] = err.Error()

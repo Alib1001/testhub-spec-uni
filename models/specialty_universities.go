@@ -6,8 +6,8 @@ import (
 
 type SpecialtyUniversity struct {
 	Id           int `orm:"auto"`
-	SpecialtyId  int
 	UniversityId int
+	Specialty    *Specialty `orm:"rel(fk)"`
 }
 
 func init() {
