@@ -42,17 +42,4 @@ func init() {
 	beego.Router("/quotas/:id", &controllers.QuotaController{}, "put:Update")
 	beego.Router("/quotas/:id", &controllers.QuotaController{}, "delete:Delete")
 
-	// SpecialtySubjects
-	beego.Router("/specialty_subjects", &controllers.SpecialtySubjectController{}, "post:Create")
-	beego.Router("/specialty_subjects/:id", &controllers.SpecialtySubjectController{}, "get:Get")
-	beego.Router("/specialty_subjects", &controllers.SpecialtySubjectController{}, "get:GetAll")
-	beego.Router("/specialty_subjects/:id", &controllers.SpecialtySubjectController{}, "put:Update")
-	beego.Router("/specialty_subjects/:id", &controllers.SpecialtySubjectController{}, "delete:Delete")
-
-	// SpecialtyUniversities
-	beego.Router("/specialty_universities", &controllers.SpecialtyUniversityController{}, "post:Create")
-	beego.Router("/specialty_universities/:id", &controllers.SpecialtyUniversityController{}, "get:Get")
-	beego.Router("/specialty_universities", &controllers.SpecialtyUniversityController{}, "get:GetAll")
-	beego.Router("/specialty_universities/:id", &controllers.SpecialtyUniversityController{}, "put:Update")
-	beego.Router("/specialty_universities/:id", &controllers.SpecialtyUniversityController{}, "delete:Delete")
 }

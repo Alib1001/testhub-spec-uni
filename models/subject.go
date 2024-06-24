@@ -5,8 +5,9 @@ import (
 )
 
 type Subject struct {
-	Id   int    `orm:"auto"`
-	Name string `orm:"size(128)"`
+	Id          int          `orm:"auto"`
+	Name        string       `orm:"size(128)"`
+	Specialties []*Specialty `orm:"rel(m2m);rel_table(subject_specialty)"`
 }
 
 func init() {

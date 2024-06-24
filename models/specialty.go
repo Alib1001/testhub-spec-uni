@@ -5,17 +5,16 @@ import (
 )
 
 type Specialty struct {
-	Id                    int    `orm:"auto"`
-	Name                  string `orm:"size(128)"`
-	Code                  string `orm:"size(64)"`
-	AnnualGrants          int
-	MinScore              int
-	MaxScore              int
-	VideoLink             string                 `orm:"size(256)"`
-	Description           string                 `orm:"type(text)"`
-	SpecialtyUniversities []*SpecialtyUniversity `orm:"reverse(many)"` // связь с университетами
-	SpecialtySubjects     []*SpecialtySubject    `orm:"reverse(many)"` // связь с specialty_subjects
-	Quotas                []*Quota               `orm:"reverse(many)"` // связь с квотами
+	Id           int    `orm:"auto"`
+	Name         string `orm:"size(128)"`
+	Code         string `orm:"size(64)"`
+	AnnualGrants int
+	MinScore     int
+	MaxScore     int
+	VideoLink    string        `orm:"size(256)"`
+	Description  string        `orm:"type(text)"`
+	Universities []*University `orm:"reverse(many)"`
+	Subjects     []*Subject    `orm:"reverse(many)"`
 }
 
 func init() {
@@ -53,5 +52,15 @@ func UpdateSpecialty(specialty *Specialty) error {
 func DeleteSpecialty(id int) error {
 	o := orm.NewOrm()
 	_, err := o.Delete(&Specialty{Id: id})
+	return err
+}
+func AddSubjectToSpecialty(subjectId, specialtyId int) error {
+	o := orm.NewOrm()
+
+	subject := &Subject{Id: subjectId}
+	specialty := &Specialty{Id: specialtyId}
+
+	m2m := o.QueryM2M(specialty, "Subjects")
+	_, err := m2m.Add(subject)
 	return err
 }

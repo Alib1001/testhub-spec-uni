@@ -49,3 +49,19 @@ func DeleteQuota(id int) error {
 	_, err := o.Delete(&Quota{Id: id})
 	return err
 }
+func AddQuotaToSpecialty(quota *Quota, specialtyId int) (int64, error) {
+	o := orm.NewOrm()
+	specialty := &Specialty{Id: specialtyId}
+	quota.Specialty = specialty
+	id, err := o.Insert(quota)
+	return id, err
+}
+
+func GetQuotasForSpecialty(specialtyId int) ([]*Quota, error) {
+	o := orm.NewOrm()
+	var quotas []*Quota
+	_, err := o.QueryTable("quota").
+		Filter("specialty_id", specialtyId).
+		All(&quotas)
+	return quotas, err
+}

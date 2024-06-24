@@ -20,8 +20,9 @@ type University struct {
 	HasDormitory     bool
 	ProfileImageUrl  string `orm:"size(256)"`
 	MinEntryScore    int
-	PhotosUrlList    []string `orm:"-"`
-	Description      string   `orm:"type(text)"`
+	PhotosUrlList    []string     `orm:"-"`
+	Description      string       `orm:"type(text)"`
+	Specialties      []*Specialty `orm:"rel(m2m);rel_table(specialty_university)"`
 }
 
 func init() {
@@ -60,4 +61,12 @@ func DeleteUniversity(id int) error {
 	o := orm.NewOrm()
 	_, err := o.Delete(&University{Id: id})
 	return err
+}
+func GetUniversitiesInCity(cityId int) ([]*University, error) {
+	o := orm.NewOrm()
+	var universities []*University
+	_, err := o.QueryTable("university").
+		Filter("city_id", cityId).
+		All(&universities)
+	return universities, err
 }
