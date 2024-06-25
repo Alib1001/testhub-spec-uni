@@ -1,0 +1,200 @@
+definitions:
+  models.City:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      universities:
+        items:
+          $ref: '#/definitions/models.University'
+        type: array
+    type: object
+  models.Quota:
+    properties:
+      count:
+        type: integer
+      id:
+        type: integer
+      maxScore:
+        type: integer
+      minScore:
+        type: integer
+      quotaType:
+        type: string
+      specialties:
+        items:
+          $ref: '#/definitions/models.Specialty'
+        type: array
+    type: object
+  models.Specialty:
+    properties:
+      annualGrants:
+        type: integer
+      code:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      maxScore:
+        type: integer
+      minScore:
+        type: integer
+      name:
+        type: string
+      quota:
+        $ref: '#/definitions/models.Quota'
+      subjects:
+        items:
+          $ref: '#/definitions/models.Subject'
+        type: array
+      universities:
+        items:
+          $ref: '#/definitions/models.University'
+        type: array
+      videoLink:
+        type: string
+    type: object
+  models.Subject:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      specialties:
+        items:
+          $ref: '#/definitions/models.Specialty'
+        type: array
+    type: object
+  models.University:
+    properties:
+      abbreviation:
+        type: string
+      address:
+        type: string
+      averageFee:
+        type: integer
+      city:
+        $ref: '#/definitions/models.City'
+      contactList:
+        items:
+          type: string
+        type: array
+      description:
+        type: string
+      hasDormitory:
+        type: boolean
+      hasMilitaryDept:
+        type: boolean
+      id:
+        type: integer
+      minEntryScore:
+        type: integer
+      name:
+        type: string
+      photosUrlList:
+        items:
+          type: string
+        type: array
+      profileImageUrl:
+        type: string
+      socialMediaList:
+        items:
+          type: string
+        type: array
+      specialties:
+        items:
+          $ref: '#/definitions/models.Specialty'
+        type: array
+      universityCode:
+        type: string
+      universityStatus:
+        type: string
+      website:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      description: Получение списка всех университетов.
+      responses: {}
+    post:
+      description: Создание нового университета.
+      parameters:
+      - description: JSON с данными о университете
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.University'
+      responses: {}
+  /:id:
+    delete:
+      description: Удаление университета по ID.
+      parameters:
+      - description: ID университета для удаления
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+    get:
+      description: Получение информации о университете по ID.
+      parameters:
+      - description: ID университета для получения информации
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+    put:
+      description: Обновление информации о университете по ID.
+      parameters:
+      - description: ID университета для обновления информации
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: JSON с обновленными данными о университете
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/models.University'
+      responses: {}
+  /:specialtyId/add-subject/:subjectId:
+    post:
+      description: Добавление предмета к специальности.
+      parameters:
+      - description: ID специальности
+        in: path
+        name: specialtyId
+        required: true
+        type: integer
+      - description: ID предмета
+        in: path
+        name: subjectId
+        required: true
+        type: integer
+      responses: {}
+  /add-specialty:
+    post:
+      description: Добавление специальности к квоте.
+      parameters:
+      - description: ID специальности
+        in: body
+        name: specialty_id
+        required: true
+        schema:
+          type: integer
+      - description: ID квоты
+        in: body
+        name: quota_id
+        required: true
+        schema:
+          type: integer
+      responses: {}
+swagger: "2.0"

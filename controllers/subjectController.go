@@ -7,17 +7,23 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
+// SubjectController обрабатывает запросы для работы с предметами.
 type SubjectController struct {
 	beego.Controller
 }
 
+// Create добавляет новый предмет в базу данных.
+// @Title Create
+// @Description Создание нового предмета.
+// @Param	body	body	models.Subject	true	"JSON с данными о предмете"
+// Success 200 {object} map[string]int64	"ID созданного предмета"
+// Failure 400 ошибка разбора JSON или другая ошибка
+// @router / [post]
 func (c *SubjectController) Create() {
 	var subject models.Subject
 
-	// Получение тела запроса с помощью CopyBody()
 	requestBody := c.Ctx.Input.CopyBody(1024)
 
-	// Распаковка JSON из тела запроса
 	err := json.Unmarshal(requestBody, &subject)
 	if err != nil {
 		c.Data["json"] = err.Error()
@@ -25,7 +31,6 @@ func (c *SubjectController) Create() {
 		return
 	}
 
-	// Добавление предмета в базу данных
 	id, err := models.AddSubject(&subject)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
@@ -35,6 +40,13 @@ func (c *SubjectController) Create() {
 	c.ServeJSON()
 }
 
+// Get возвращает информацию о предмете по его ID.
+// @Title Get
+// @Description Получение информации о предмете по ID.
+// @Param	id		path	int	true	"ID предмета для получения информации"
+// Success 200 {object} models.Subject	"Информация о предмете"
+// Failure 400 некорректный ID или другая ошибка
+// @router /:id [get]
 func (c *SubjectController) Get() {
 	id, _ := c.GetInt(":id")
 	subject, err := models.GetSubjectById(id)
@@ -46,6 +58,12 @@ func (c *SubjectController) Get() {
 	c.ServeJSON()
 }
 
+// GetAll возвращает список всех предметов.
+// @Title GetAll
+// @Description Получение списка всех предметов.
+// Success 200 {array} models.Subject	"Список предметов"
+// Failure 400 ошибка получения списка или другая ошибка
+// @router / [get]
 func (c *SubjectController) GetAll() {
 	subjects, err := models.GetAllSubjects()
 	if err == nil {
@@ -56,6 +74,14 @@ func (c *SubjectController) GetAll() {
 	c.ServeJSON()
 }
 
+// Update обновляет информацию о предмете по его ID.
+// @Title Update
+// @Description Обновление информации о предмете по ID.
+// @Param	id		path	int	true	"ID предмета для обновления информации"
+// @Param	body	body	models.Subject	true	"JSON с обновленными данными о предмете"
+// Success 200 string	"Обновление успешно выполнено"
+// Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
+// @router /:id [put]
 func (c *SubjectController) Update() {
 	id, _ := c.GetInt(":id")
 	var subject models.Subject
@@ -70,6 +96,13 @@ func (c *SubjectController) Update() {
 	c.ServeJSON()
 }
 
+// Delete удаляет предмет по его ID.
+// @Title Delete
+// @Description Удаление предмета по ID.
+// @Param	id		path	int	true	"ID предмета для удаления"
+// Success 200 string	"Удаление успешно выполнено"
+// Failure 400 некорректный ID или другая ошибка
+// @router /:id [delete]
 func (c *SubjectController) Delete() {
 	id, _ := c.GetInt(":id")
 	err := models.DeleteSubject(id)

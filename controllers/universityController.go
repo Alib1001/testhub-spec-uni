@@ -7,18 +7,23 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
+// UniversityController обрабатывает запросы для работы с университетами.
 type UniversityController struct {
 	beego.Controller
 }
 
-// Пример добавления университета через POST запрос
+// Create добавляет новый университет в базу данных.
+// @Title Create
+// @Description Создание нового университета.
+// @Param	body	body	models.University	true	"JSON с данными о университете"
+// Success 200 {object} map[string]int64	"ID созданного университета"
+// Failure 400 ошибка разбора JSON или другая ошибка
+// @router / [post]
 func (c *UniversityController) Create() {
 	var university models.University
 
-	// Получение тела запроса с помощью CopyBody()
-	requestBody := c.Ctx.Input.CopyBody(1024) // или не указывать максимальную длину, если необходимо
+	requestBody := c.Ctx.Input.CopyBody(1024)
 
-	// Распаковка JSON из тела запроса
 	err := json.Unmarshal(requestBody, &university)
 	if err != nil {
 		c.Data["json"] = err.Error()
@@ -26,7 +31,6 @@ func (c *UniversityController) Create() {
 		return
 	}
 
-	// Добавление университета в базу данных
 	id, err := models.AddUniversity(&university)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
@@ -36,7 +40,13 @@ func (c *UniversityController) Create() {
 	c.ServeJSON()
 }
 
-// Пример получения университета по ID через GET запрос
+// Get возвращает информацию о университете по его ID.
+// @Title Get
+// @Description Получение информации о университете по ID.
+// @Param	id		path	int	true	"ID университета для получения информации"
+// Success 200 {object} models.University	"Информация о университете"
+// Failure 400 некорректный ID или другая ошибка
+// @router /:id [get]
 func (c *UniversityController) Get() {
 	id, _ := c.GetInt(":id")
 	university, err := models.GetUniversityById(id)
@@ -48,6 +58,12 @@ func (c *UniversityController) Get() {
 	c.ServeJSON()
 }
 
+// GetAll возвращает список всех университетов.
+// @Title GetAll
+// @Description Получение списка всех университетов.
+// Success 200 {array} models.University	"Список университетов"
+// Failure 400 ошибка получения списка или другая ошибка
+// @router / [get]
 func (c *UniversityController) GetAll() {
 	universities, err := models.GetAllUniversities()
 	if err == nil {
@@ -58,6 +74,14 @@ func (c *UniversityController) GetAll() {
 	c.ServeJSON()
 }
 
+// Update обновляет информацию о университете по его ID.
+// @Title Update
+// @Description Обновление информации о университете по ID.
+// @Param	id		path	int	true	"ID университета для обновления информации"
+// @Param	body	body	models.University	true	"JSON с обновленными данными о университете"
+// Success 200 string	"Обновление успешно выполнено"
+// Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
+// @router /:id [put]
 func (c *UniversityController) Update() {
 	id, _ := c.GetInt(":id")
 	var university models.University
@@ -72,6 +96,13 @@ func (c *UniversityController) Update() {
 	c.ServeJSON()
 }
 
+// Delete удаляет университет по его ID.
+// @Title Delete
+// @Description Удаление университета по ID.
+// @Param	id		path	int	true	"ID университета для удаления"
+// Success 200 string	"Удаление успешно выполнено"
+// Failure 400 некорректный ID или другая ошибка
+// @router /:id [delete]
 func (c *UniversityController) Delete() {
 	id, _ := c.GetInt(":id")
 	err := models.DeleteUniversity(id)

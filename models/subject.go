@@ -14,8 +14,6 @@ func init() {
 	orm.RegisterModel(new(Subject))
 }
 
-// CRUD methods
-
 func AddSubject(subject *Subject) (int64, error) {
 	o := orm.NewOrm()
 	id, err := o.Insert(subject)

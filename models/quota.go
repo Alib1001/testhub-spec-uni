@@ -5,18 +5,17 @@ import (
 )
 
 type Quota struct {
-	Id        int    `orm:"auto"`
-	QuotaType string `orm:"size(64)"`
-	MinScore  int
-	MaxScore  int
-	Specialty *Specialty `orm:"rel(fk)"`
+	Id          int    `orm:"auto"`
+	QuotaType   string `orm:"size(64)"`
+	Count       int
+	MinScore    int
+	MaxScore    int
+	Specialties []*Specialty `orm:"reverse(many)"`
 }
 
 func init() {
 	orm.RegisterModel(new(Quota))
 }
-
-// CRUD methods
 
 func AddQuota(quota *Quota) (int64, error) {
 	o := orm.NewOrm()
@@ -49,19 +48,20 @@ func DeleteQuota(id int) error {
 	_, err := o.Delete(&Quota{Id: id})
 	return err
 }
-func AddQuotaToSpecialty(quota *Quota, specialtyId int) (int64, error) {
+func AddSpecialtyToQuota(specialtyId, quotaId int) error {
 	o := orm.NewOrm()
-	specialty := &Specialty{Id: specialtyId}
-	quota.Specialty = specialty
-	id, err := o.Insert(quota)
-	return id, err
-}
 
-func GetQuotasForSpecialty(specialtyId int) ([]*Quota, error) {
-	o := orm.NewOrm()
-	var quotas []*Quota
-	_, err := o.QueryTable("quota").
-		Filter("specialty_id", specialtyId).
-		All(&quotas)
-	return quotas, err
+	specialty := &Specialty{Id: specialtyId}
+	if err := o.Read(specialty); err != nil {
+		return err
+	}
+
+	quota := &Quota{Id: quotaId}
+	if err := o.Read(quota); err != nil {
+		return err
+	}
+
+	m2m := o.QueryM2M(quota, "Specialties")
+	_, err := m2m.Add(specialty)
+	return err
 }

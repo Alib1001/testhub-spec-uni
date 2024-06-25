@@ -1,0 +1,549 @@
+swagger: "2.0"
+info: {}
+basePath: /v1
+paths:
+  /cities/:
+    get:
+      tags:
+      - cities
+      description: |-
+        Получение списка всех городов.
+        <br>
+      operationId: CityController.GetAll
+      responses:
+        "200":
+          description: '"Список городов"'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.City'
+        "400":
+          description: '{string} string "400 ошибка получения списка или другая ошибка"'
+  /cities/{id}:
+    put:
+      tags:
+      - cities
+  /citiescities/:
+    post:
+      tags:
+      - cities
+  /citiescities/{id}:
+    get:
+      tags:
+      - cities
+      description: |-
+        Получение информации о городе по ID.
+        <br>
+      operationId: CityController.Get
+      parameters:
+      - in: path
+        name: id
+        description: ID города для получения информации
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: '"Информация о городе"'
+          schema:
+            $ref: '#/definitions/models.City'
+        "400":
+          description: '{string} string "400 некорректный ID или другая ошибка"'
+  /quotas/:
+    get:
+      tags:
+      - quotas
+      description: |-
+        Получение списка всех квот.
+        <br>
+      operationId: QuotaController.GetAll
+      responses:
+        "200":
+          description: '"Список квот"'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.Quota'
+        "400":
+          description: '{string} string "400 ошибка получения списка или другая ошибка"'
+    post:
+      tags:
+      - quotas
+      description: |-
+        Создание новой квоты.
+        <br>
+      operationId: QuotaController.Create
+      parameters:
+      - in: body
+        name: body
+        description: JSON с данными о квоте
+        required: true
+        schema:
+          $ref: '#/definitions/models.Quota'
+  /quotas/{id}:
+    get:
+      tags:
+      - quotas
+      description: |-
+        Получение информации о квоте по ID.
+        <br>
+      operationId: QuotaController.Get
+      parameters:
+      - in: path
+        name: id
+        description: ID квоты для получения информации
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: '"Информация о квоте"'
+          schema:
+            $ref: '#/definitions/models.Quota'
+        "400":
+          description: '{string} string "400 некорректный ID или другая ошибка"'
+    put:
+      tags:
+      - quotas
+      description: |-
+        Обновление информации о квоте по ID.
+        <br>
+      operationId: QuotaController.Update
+      parameters:
+      - in: path
+        name: id
+        description: ID квоты для обновления информации
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: body
+        description: JSON с обновленными данными о квоте
+        required: true
+        schema:
+          $ref: '#/definitions/models.Quota'
+    delete:
+      tags:
+      - quotas
+      description: |-
+        Удаление квоты по ID.
+        <br>
+      operationId: QuotaController.Delete
+      parameters:
+      - in: path
+        name: id
+        description: ID квоты для удаления
+        required: true
+        type: integer
+        format: int64
+  /quotas/add-specialty:
+    post:
+      tags:
+      - quotas
+      description: |-
+        Добавление специальности к квоте.
+        <br>
+      operationId: QuotaController.AddSpecialtyToQuota
+      parameters:
+      - in: body
+        name: specialty_id
+        description: ID специальности
+        required: true
+        schema:
+          format: int64
+          type: integer
+        type: integer
+        format: int64
+      - in: body
+        name: quota_id
+        description: ID квоты
+        required: true
+        schema:
+          format: int64
+          type: integer
+        type: integer
+        format: int64
+  /specialties/:
+    get:
+      tags:
+      - specialties
+      description: |-
+        Получение списка всех специальностей.
+        <br>
+      operationId: SpecialtyController.GetAll
+    post:
+      tags:
+      - specialties
+      description: |-
+        Создание новой специальности.
+        <br>
+      operationId: SpecialtyController.Create
+      parameters:
+      - in: body
+        name: body
+        description: JSON с данными о специальности
+        required: true
+        schema:
+          $ref: '#/definitions/models.Specialty'
+  /specialties/{id}:
+    get:
+      tags:
+      - specialties
+      description: |-
+        Получение информации о специальности по ID.
+        <br>
+      operationId: SpecialtyController.Get
+      parameters:
+      - in: path
+        name: id
+        description: ID специальности для получения информации
+        required: true
+        type: integer
+        format: int64
+    put:
+      tags:
+      - specialties
+      description: |-
+        Обновление информации о специальности по ID.
+        <br>
+      operationId: SpecialtyController.Update
+      parameters:
+      - in: path
+        name: id
+        description: ID специальности для обновления информации
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: body
+        description: JSON с обновленными данными о специальности
+        required: true
+        schema:
+          $ref: '#/definitions/models.Specialty'
+    delete:
+      tags:
+      - specialties
+      description: |-
+        Удаление специальности по ID.
+        <br>
+      operationId: SpecialtyController.Delete
+      parameters:
+      - in: path
+        name: id
+        description: ID специальности для удаления
+        required: true
+        type: integer
+        format: int64
+  /specialties/{specialtyId}/add-subject/{subjectId}:
+    post:
+      tags:
+      - specialties
+      description: |-
+        Добавление предмета к специальности.
+        <br>
+      operationId: SpecialtyController.AddSubject
+      parameters:
+      - in: path
+        name: specialtyId
+        description: ID специальности
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: subjectId
+        description: ID предмета
+        required: true
+        type: integer
+        format: int64
+  /subjects/:
+    get:
+      tags:
+      - subjects
+      description: |-
+        Получение списка всех предметов.
+        <br>
+      operationId: SubjectController.GetAll
+    post:
+      tags:
+      - subjects
+      description: |-
+        Создание нового предмета.
+        <br>
+      operationId: SubjectController.Create
+      parameters:
+      - in: body
+        name: body
+        description: JSON с данными о предмете
+        required: true
+        schema:
+          $ref: '#/definitions/models.Subject'
+  /subjects/{id}:
+    get:
+      tags:
+      - subjects
+      description: |-
+        Получение информации о предмете по ID.
+        <br>
+      operationId: SubjectController.Get
+      parameters:
+      - in: path
+        name: id
+        description: ID предмета для получения информации
+        required: true
+        type: integer
+        format: int64
+    put:
+      tags:
+      - subjects
+      description: |-
+        Обновление информации о предмете по ID.
+        <br>
+      operationId: SubjectController.Update
+      parameters:
+      - in: path
+        name: id
+        description: ID предмета для обновления информации
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: body
+        description: JSON с обновленными данными о предмете
+        required: true
+        schema:
+          $ref: '#/definitions/models.Subject'
+    delete:
+      tags:
+      - subjects
+      description: |-
+        Удаление предмета по ID.
+        <br>
+      operationId: SubjectController.Delete
+      parameters:
+      - in: path
+        name: id
+        description: ID предмета для удаления
+        required: true
+        type: integer
+        format: int64
+  /universities/:
+    get:
+      tags:
+      - universities
+      description: |-
+        Получение списка всех университетов.
+        <br>
+      operationId: UniversityController.GetAll
+    post:
+      tags:
+      - universities
+      description: |-
+        Создание нового университета.
+        <br>
+      operationId: UniversityController.Create
+      parameters:
+      - in: body
+        name: body
+        description: JSON с данными о университете
+        required: true
+        schema:
+          $ref: '#/definitions/models.University'
+  /universities/{id}:
+    get:
+      tags:
+      - universities
+      description: |-
+        Получение информации о университете по ID.
+        <br>
+      operationId: UniversityController.Get
+      parameters:
+      - in: path
+        name: id
+        description: ID университета для получения информации
+        required: true
+        type: integer
+        format: int64
+    put:
+      tags:
+      - universities
+      description: |-
+        Обновление информации о университете по ID.
+        <br>
+      operationId: UniversityController.Update
+      parameters:
+      - in: path
+        name: id
+        description: ID университета для обновления информации
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: body
+        description: JSON с обновленными данными о университете
+        required: true
+        schema:
+          $ref: '#/definitions/models.University'
+    delete:
+      tags:
+      - universities
+      description: |-
+        Удаление университета по ID.
+        <br>
+      operationId: UniversityController.Delete
+      parameters:
+      - in: path
+        name: id
+        description: ID университета для удаления
+        required: true
+        type: integer
+        format: int64
+definitions:
+  models.City:
+    title: City
+    type: object
+    properties:
+      Id:
+        type: integer
+        format: int64
+      Name:
+        type: string
+      Universities:
+        type: array
+        items:
+          $ref: '#/definitions/models.University'
+  models.Quota:
+    title: Quota
+    type: object
+    properties:
+      Count:
+        type: integer
+        format: int64
+      Id:
+        type: integer
+        format: int64
+      MaxScore:
+        type: integer
+        format: int64
+      MinScore:
+        type: integer
+        format: int64
+      QuotaType:
+        type: string
+      Specialties:
+        type: array
+        items:
+          $ref: '#/definitions/models.Specialty'
+  models.Specialty:
+    title: Specialty
+    type: object
+    properties:
+      AnnualGrants:
+        type: integer
+        format: int64
+      Code:
+        type: string
+      Description:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      MaxScore:
+        type: integer
+        format: int64
+      MinScore:
+        type: integer
+        format: int64
+      Name:
+        type: string
+      Quota:
+        $ref: '#/definitions/models.Quota'
+      Subjects:
+        type: array
+        items:
+          $ref: '#/definitions/models.Subject'
+      Universities:
+        type: array
+        items:
+          $ref: '#/definitions/models.University'
+      VideoLink:
+        type: string
+  models.Subject:
+    title: Subject
+    type: object
+    properties:
+      Id:
+        type: integer
+        format: int64
+      Name:
+        type: string
+      Specialties:
+        type: array
+        items:
+          $ref: '#/definitions/models.Specialty'
+  models.University:
+    title: University
+    type: object
+    properties:
+      Abbreviation:
+        type: string
+      Address:
+        type: string
+      AverageFee:
+        type: integer
+        format: int64
+      City:
+        $ref: '#/definitions/models.City'
+      ContactList:
+        type: array
+        items:
+          type: string
+      Description:
+        type: string
+      HasDormitory:
+        type: boolean
+      HasMilitaryDept:
+        type: boolean
+      Id:
+        type: integer
+        format: int64
+      MinEntryScore:
+        type: integer
+        format: int64
+      Name:
+        type: string
+      PhotosUrlList:
+        type: array
+        items:
+          type: string
+      ProfileImageUrl:
+        type: string
+      SocialMediaList:
+        type: array
+        items:
+          type: string
+      Specialties:
+        type: array
+        items:
+          $ref: '#/definitions/models.Specialty'
+      UniversityCode:
+        type: string
+      UniversityStatus:
+        type: string
+      Website:
+        type: string
+tags:
+- name: subjects
+  description: |
+    SubjectController обрабатывает запросы для работы с предметами.
+- name: specialties
+  description: |
+    SpecialtyController обрабатывает запросы для работы со специальностями.
+- name: universities
+  description: |
+    UniversityController обрабатывает запросы для работы с университетами.
+- name: cities
+  description: |
+    CityController обрабатывает запросы для работы с городами.
+- name: quotas
+  description: |
+    QuotaController обрабатывает запросы для работы с квотами.

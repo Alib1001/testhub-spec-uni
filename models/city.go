@@ -5,15 +5,14 @@ import (
 )
 
 type City struct {
-	Id   int    `orm:"auto"`
-	Name string `orm:"size(128)"`
+	Id           int           `orm:"auto"`
+	Name         string        `orm:"size(128)"`
+	Universities []*University `orm:"reverse(many)"`
 }
 
 func init() {
 	orm.RegisterModel(new(City))
 }
-
-// CRUD methods
 
 func AddCity(city *City) (int64, error) {
 	o := orm.NewOrm()

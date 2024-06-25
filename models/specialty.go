@@ -15,13 +15,12 @@ type Specialty struct {
 	Description  string        `orm:"type(text)"`
 	Universities []*University `orm:"reverse(many)"`
 	Subjects     []*Subject    `orm:"reverse(many)"`
+	Quota        *Quota        `orm:"rel(fk)"`
 }
 
 func init() {
 	orm.RegisterModel(new(Specialty))
 }
-
-// CRUD methods
 
 func AddSpecialty(specialty *Specialty) (int64, error) {
 	o := orm.NewOrm()
@@ -54,6 +53,7 @@ func DeleteSpecialty(id int) error {
 	_, err := o.Delete(&Specialty{Id: id})
 	return err
 }
+
 func AddSubjectToSpecialty(subjectId, specialtyId int) error {
 	o := orm.NewOrm()
 
