@@ -16,8 +16,8 @@ type SubjectController struct {
 // @Title Create
 // @Description Создание нового предмета.
 // @Param	body	body	models.Subject	true	"JSON с данными о предмете"
-// Success 200 {object} map[string]int64	"ID созданного предмета"
-// Failure 400 ошибка разбора JSON или другая ошибка
+// @Success 200 {object} map[string]int64	"ID созданного предмета"
+// @Failure 400 ошибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *SubjectController) Create() {
 	var subject models.Subject
@@ -44,8 +44,8 @@ func (c *SubjectController) Create() {
 // @Title Get
 // @Description Получение информации о предмете по ID.
 // @Param	id		path	int	true	"ID предмета для получения информации"
-// Success 200 {object} models.Subject	"Информация о предмете"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 {object} models.Subject	"Информация о предмете"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:id [get]
 func (c *SubjectController) Get() {
 	id, _ := c.GetInt(":id")
@@ -61,8 +61,8 @@ func (c *SubjectController) Get() {
 // GetAll возвращает список всех предметов.
 // @Title GetAll
 // @Description Получение списка всех предметов.
-// Success 200 {array} models.Subject	"Список предметов"
-// Failure 400 ошибка получения списка или другая ошибка
+// @Success 200 {array} models.Subject	"Список предметов"
+// @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *SubjectController) GetAll() {
 	subjects, err := models.GetAllSubjects()
@@ -79,8 +79,8 @@ func (c *SubjectController) GetAll() {
 // @Description Обновление информации о предмете по ID.
 // @Param	id		path	int	true	"ID предмета для обновления информации"
 // @Param	body	body	models.Subject	true	"JSON с обновленными данными о предмете"
-// Success 200 string	"Обновление успешно выполнено"
-// Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
+// @Success 200 string	"Обновление успешно выполнено"
+// @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
 func (c *SubjectController) Update() {
 	id, _ := c.GetInt(":id")
@@ -100,8 +100,8 @@ func (c *SubjectController) Update() {
 // @Title Delete
 // @Description Удаление предмета по ID.
 // @Param	id		path	int	true	"ID предмета для удаления"
-// Success 200 string	"Удаление успешно выполнено"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 string	"Удаление успешно выполнено"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:id [delete]
 func (c *SubjectController) Delete() {
 	id, _ := c.GetInt(":id")

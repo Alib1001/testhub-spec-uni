@@ -80,6 +80,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.Quota'
+      responses:
+        "200":
+          description: '"ID созданной квоты"'
+          schema:
+            $ref: '#/definitions/map[string]int64'
+        "400":
+          description: '{string} string "400 ошибка разбора JSON или другая ошибка"'
   /quotas/{id}:
     get:
       tags:
@@ -122,6 +129,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.Quota'
+      responses:
+        "200":
+          description: string "Обновление успешно выполнено"
+        "400":
+          description: '{string} string "400 некорректный ID, ошибка разбора JSON
+            или другая ошибка"'
     delete:
       tags:
       - quotas
@@ -136,6 +149,11 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: string "Удаление успешно выполнено"
+        "400":
+          description: '{string} string "400 некорректный ID или другая ошибка"'
   /quotas/add-specialty:
     post:
       tags:
@@ -163,6 +181,11 @@ paths:
           type: integer
         type: integer
         format: int64
+      responses:
+        "200":
+          description: "string\t\"Специальность успешно добавлена к квоте\""
+        "400":
+          description: '{string} string "400 ошибка разбора JSON или другая ошибка"'
   /specialties/:
     get:
       tags:
@@ -171,6 +194,15 @@ paths:
         Получение списка всех специальностей.
         <br>
       operationId: SpecialtyController.GetAll
+      responses:
+        "200":
+          description: '"Список специальностей"'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.Specialty'
+        "400":
+          description: ошибка получения списка или другая ошибка
     post:
       tags:
       - specialties
@@ -185,6 +217,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.Specialty'
+      responses:
+        "200":
+          description: '"ID созданной специальности"'
+          schema:
+            $ref: '#/definitions/map[string]int64'
+        "400":
+          description: ошибка разбора JSON или другая ошибка
   /specialties/{id}:
     get:
       tags:
@@ -200,6 +239,13 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: '"Информация о специальности"'
+          schema:
+            $ref: '#/definitions/models.Specialty'
+        "400":
+          description: некорректный ID или другая ошибка
     put:
       tags:
       - specialties
@@ -220,6 +266,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.Specialty'
+      responses:
+        "200":
+          description: "string\t\"Обновление успешно выполнено\""
+        "400":
+          description: некорректный ID, ошибка разбора JSON или другая ошибка
     delete:
       tags:
       - specialties
@@ -234,6 +285,11 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: "string\t\"Удаление успешно выполнено\""
+        "400":
+          description: некорректный ID или другая ошибка
   /specialties/{specialtyId}/add-subject/{subjectId}:
     post:
       tags:
@@ -255,6 +311,11 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: "string\t\"Предмет успешно добавлен к специальности\""
+        "400":
+          description: некорректный ID или другая ошибка
   /subjects/:
     get:
       tags:
@@ -263,6 +324,15 @@ paths:
         Получение списка всех предметов.
         <br>
       operationId: SubjectController.GetAll
+      responses:
+        "200":
+          description: '"Список предметов"'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.Subject'
+        "400":
+          description: ошибка получения списка или другая ошибка
     post:
       tags:
       - subjects
@@ -277,6 +347,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.Subject'
+      responses:
+        "200":
+          description: '"ID созданного предмета"'
+          schema:
+            $ref: '#/definitions/map[string]int64'
+        "400":
+          description: ошибка разбора JSON или другая ошибка
   /subjects/{id}:
     get:
       tags:
@@ -292,6 +369,13 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: '"Информация о предмете"'
+          schema:
+            $ref: '#/definitions/models.Subject'
+        "400":
+          description: некорректный ID или другая ошибка
     put:
       tags:
       - subjects
@@ -312,6 +396,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.Subject'
+      responses:
+        "200":
+          description: "string\t\"Обновление успешно выполнено\""
+        "400":
+          description: некорректный ID, ошибка разбора JSON или другая ошибка
     delete:
       tags:
       - subjects
@@ -326,6 +415,11 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: "string\t\"Удаление успешно выполнено\""
+        "400":
+          description: некорректный ID или другая ошибка
   /universities/:
     get:
       tags:
@@ -334,6 +428,15 @@ paths:
         Получение списка всех университетов.
         <br>
       operationId: UniversityController.GetAll
+      responses:
+        "200":
+          description: '"Список университетов"'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.University'
+        "400":
+          description: ошибка получения списка или другая ошибка
     post:
       tags:
       - universities
@@ -348,6 +451,13 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.University'
+      responses:
+        "200":
+          description: '"ID созданного университета"'
+          schema:
+            $ref: '#/definitions/map[string]int64'
+        "400":
+          description: ошибка разбора JSON или другая ошибка
   /universities/{id}:
     get:
       tags:
@@ -363,6 +473,13 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: '"Информация о университете"'
+          schema:
+            $ref: '#/definitions/models.University'
+        "400":
+          description: некорректный ID или другая ошибка
     put:
       tags:
       - universities
@@ -383,6 +500,11 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/models.University'
+      responses:
+        "200":
+          description: "string\t\"Обновление успешно выполнено\""
+        "400":
+          description: некорректный ID, ошибка разбора JSON или другая ошибка
     delete:
       tags:
       - universities
@@ -397,7 +519,15 @@ paths:
         required: true
         type: integer
         format: int64
+      responses:
+        "200":
+          description: "string\t\"Удаление успешно выполнено\""
+        "400":
+          description: некорректный ID или другая ошибка
 definitions:
+  map[string]int64:
+    title: map[string]int64
+    type: object
   models.City:
     title: City
     type: object

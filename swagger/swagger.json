@@ -110,7 +110,18 @@
                             "$ref": "#/definitions/models.Quota"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданной квоты\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка разбора JSON или другая ошибка\""
+                    }
+                }
             }
         },
         "/quotas/add-specialty": {
@@ -145,7 +156,15 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Специальность успешно добавлена к квоте\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка разбора JSON или другая ошибка\""
+                    }
+                }
             }
         },
         "/quotas/{id}": {
@@ -201,7 +220,15 @@
                             "$ref": "#/definitions/models.Quota"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string \"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID, ошибка разбора JSON или другая ошибка\""
+                    }
+                }
             },
             "delete": {
                 "tags": [
@@ -218,7 +245,15 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string \"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID или другая ошибка\""
+                    }
+                }
             }
         },
         "/specialties/": {
@@ -227,7 +262,21 @@
                     "specialties"
                 ],
                 "description": "Получение списка всех специальностей.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.GetAll"
+                "operationId": "SpecialtyController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список специальностей\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Specialty"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка получения списка или другая ошибка"
+                    }
+                }
             },
             "post": {
                 "tags": [
@@ -245,7 +294,18 @@
                             "$ref": "#/definitions/models.Specialty"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданной специальности\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка разбора JSON или другая ошибка"
+                    }
+                }
             }
         },
         "/specialties/{id}": {
@@ -264,7 +324,18 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о специальности\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.Specialty"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             },
             "put": {
                 "tags": [
@@ -290,7 +361,15 @@
                             "$ref": "#/definitions/models.Specialty"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
+                    }
+                }
             },
             "delete": {
                 "tags": [
@@ -307,7 +386,15 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             }
         },
         "/specialties/{specialtyId}/add-subject/{subjectId}": {
@@ -334,7 +421,15 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Предмет успешно добавлен к специальности\""
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             }
         },
         "/subjects/": {
@@ -343,7 +438,21 @@
                     "subjects"
                 ],
                 "description": "Получение списка всех предметов.\n\u003cbr\u003e",
-                "operationId": "SubjectController.GetAll"
+                "operationId": "SubjectController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список предметов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Subject"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка получения списка или другая ошибка"
+                    }
+                }
             },
             "post": {
                 "tags": [
@@ -361,7 +470,18 @@
                             "$ref": "#/definitions/models.Subject"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданного предмета\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка разбора JSON или другая ошибка"
+                    }
+                }
             }
         },
         "/subjects/{id}": {
@@ -380,7 +500,18 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о предмете\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.Subject"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             },
             "put": {
                 "tags": [
@@ -406,7 +537,15 @@
                             "$ref": "#/definitions/models.Subject"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
+                    }
+                }
             },
             "delete": {
                 "tags": [
@@ -423,7 +562,15 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             }
         },
         "/universities/": {
@@ -432,7 +579,21 @@
                     "universities"
                 ],
                 "description": "Получение списка всех университетов.\n\u003cbr\u003e",
-                "operationId": "UniversityController.GetAll"
+                "operationId": "UniversityController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список университетов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.University"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка получения списка или другая ошибка"
+                    }
+                }
             },
             "post": {
                 "tags": [
@@ -450,7 +611,18 @@
                             "$ref": "#/definitions/models.University"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданного университета\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка разбора JSON или другая ошибка"
+                    }
+                }
             }
         },
         "/universities/{id}": {
@@ -469,7 +641,18 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о университете\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.University"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             },
             "put": {
                 "tags": [
@@ -495,7 +678,15 @@
                             "$ref": "#/definitions/models.University"
                         }
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
+                    }
+                }
             },
             "delete": {
                 "tags": [
@@ -512,11 +703,23 @@
                         "type": "integer",
                         "format": "int64"
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
             }
         }
     },
     "definitions": {
+        "map[string]int64": {
+            "title": "map[string]int64",
+            "type": "object"
+        },
         "models.City": {
             "title": "City",
             "type": "object",

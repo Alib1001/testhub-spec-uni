@@ -16,8 +16,8 @@ type SpecialtyController struct {
 // @Title Create
 // @Description Создание новой специальности.
 // @Param	body	body	models.Specialty	true	"JSON с данными о специальности"
-// Success 200 {object} map[string]int64	"ID созданной специальности"
-// Failure 400 ошибка разбора JSON или другая ошибка
+// @Success 200 {object} map[string]int64	"ID созданной специальности"
+// @Failure 400 ошибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *SpecialtyController) Create() {
 	var specialty models.Specialty
@@ -44,8 +44,8 @@ func (c *SpecialtyController) Create() {
 // @Title Get
 // @Description Получение информации о специальности по ID.
 // @Param	id		path	int	true	"ID специальности для получения информации"
-// Success 200 {object} models.Specialty	"Информация о специальности"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 {object} models.Specialty	"Информация о специальности"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:id [get]
 func (c *SpecialtyController) Get() {
 	id, _ := c.GetInt(":id")
@@ -61,8 +61,8 @@ func (c *SpecialtyController) Get() {
 // GetAll возвращает список всех специальностей.
 // @Title GetAll
 // @Description Получение списка всех специальностей.
-// Success 200 {array} models.Specialty	"Список специальностей"
-// Failure 400 ошибка получения списка или другая ошибка
+// @Success 200 {array} models.Specialty	"Список специальностей"
+// @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *SpecialtyController) GetAll() {
 	specialties, err := models.GetAllSpecialties()
@@ -79,8 +79,8 @@ func (c *SpecialtyController) GetAll() {
 // @Description Обновление информации о специальности по ID.
 // @Param	id		path	int	true	"ID специальности для обновления информации"
 // @Param	body	body	models.Specialty	true	"JSON с обновленными данными о специальности"
-// Success 200 string	"Обновление успешно выполнено"
-// Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
+// @Success 200 string	"Обновление успешно выполнено"
+// @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
 func (c *SpecialtyController) Update() {
 	id, _ := c.GetInt(":id")
@@ -100,8 +100,8 @@ func (c *SpecialtyController) Update() {
 // @Title Delete
 // @Description Удаление специальности по ID.
 // @Param	id		path	int	true	"ID специальности для удаления"
-// Success 200 string	"Удаление успешно выполнено"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 string	"Удаление успешно выполнено"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:id [delete]
 func (c *SpecialtyController) Delete() {
 	id, _ := c.GetInt(":id")
@@ -119,8 +119,8 @@ func (c *SpecialtyController) Delete() {
 // @Description Добавление предмета к специальности.
 // @Param	specialtyId		path	int	true	"ID специальности"
 // @Param	subjectId		path	int	true	"ID предмета"
-// Success 200 string	"Предмет успешно добавлен к специальности"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 string	"Предмет успешно добавлен к специальности"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:specialtyId/add-subject/:subjectId [post]
 func (c *SpecialtyController) AddSubject() {
 	specialtyId, _ := c.GetInt(":specialtyId")

@@ -16,8 +16,8 @@ type UniversityController struct {
 // @Title Create
 // @Description Создание нового университета.
 // @Param	body	body	models.University	true	"JSON с данными о университете"
-// Success 200 {object} map[string]int64	"ID созданного университета"
-// Failure 400 ошибка разбора JSON или другая ошибка
+// @Success 200 {object} map[string]int64	"ID созданного университета"
+// @Failure 400 ошибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *UniversityController) Create() {
 	var university models.University
@@ -44,8 +44,8 @@ func (c *UniversityController) Create() {
 // @Title Get
 // @Description Получение информации о университете по ID.
 // @Param	id		path	int	true	"ID университета для получения информации"
-// Success 200 {object} models.University	"Информация о университете"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 {object} models.University	"Информация о университете"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:id [get]
 func (c *UniversityController) Get() {
 	id, _ := c.GetInt(":id")
@@ -61,8 +61,8 @@ func (c *UniversityController) Get() {
 // GetAll возвращает список всех университетов.
 // @Title GetAll
 // @Description Получение списка всех университетов.
-// Success 200 {array} models.University	"Список университетов"
-// Failure 400 ошибка получения списка или другая ошибка
+// @Success 200 {array} models.University	"Список университетов"
+// @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *UniversityController) GetAll() {
 	universities, err := models.GetAllUniversities()
@@ -79,8 +79,8 @@ func (c *UniversityController) GetAll() {
 // @Description Обновление информации о университете по ID.
 // @Param	id		path	int	true	"ID университета для обновления информации"
 // @Param	body	body	models.University	true	"JSON с обновленными данными о университете"
-// Success 200 string	"Обновление успешно выполнено"
-// Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
+// @Success 200 string	"Обновление успешно выполнено"
+// @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
 func (c *UniversityController) Update() {
 	id, _ := c.GetInt(":id")
@@ -100,8 +100,8 @@ func (c *UniversityController) Update() {
 // @Title Delete
 // @Description Удаление университета по ID.
 // @Param	id		path	int	true	"ID университета для удаления"
-// Success 200 string	"Удаление успешно выполнено"
-// Failure 400 некорректный ID или другая ошибка
+// @Success 200 string	"Удаление успешно выполнено"
+// @Failure 400 некорректный ID или другая ошибка
 // @router /:id [delete]
 func (c *UniversityController) Delete() {
 	id, _ := c.GetInt(":id")

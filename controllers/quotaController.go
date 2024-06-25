@@ -16,8 +16,8 @@ type QuotaController struct {
 // @Title Create
 // @Description Создание новой квоты.
 // @Param	body	body	models.Quota	true	"JSON с данными о квоте"
-// Success 200 {object} map[string]int64	"ID созданной квоты"
-// Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
+// @Success 200 {object} map[string]int64	"ID созданной квоты"
+// @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
 // @router / [post]
 func (c *QuotaController) Create() {
 	var quota models.Quota
@@ -82,8 +82,8 @@ func (c *QuotaController) GetAll() {
 // @Description Обновление информации о квоте по ID.
 // @Param	id		path	int	true	"ID квоты для обновления информации"
 // @Param	body	body	models.Quota	true	"JSON с обновленными данными о квоте"
-// Success 200 string "Обновление успешно выполнено"
-// Failure 400 {string} string "400 некорректный ID, ошибка разбора JSON или другая ошибка"
+// @Success 200 string "Обновление успешно выполнено"
+// @Failure 400 {string} string "400 некорректный ID, ошибка разбора JSON или другая ошибка"
 // @router /:id [put]
 func (c *QuotaController) Update() {
 	id, _ := c.GetInt(":id")
@@ -103,8 +103,8 @@ func (c *QuotaController) Update() {
 // @Title Delete
 // @Description Удаление квоты по ID.
 // @Param	id		path	int	true	"ID квоты для удаления"
-// Success 200 string "Удаление успешно выполнено"
-// Failure 400 {string} string "400 некорректный ID или другая ошибка"
+// @Success 200 string "Удаление успешно выполнено"
+// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
 // @router /:id [delete]
 func (c *QuotaController) Delete() {
 	id, _ := c.GetInt(":id")
@@ -122,8 +122,8 @@ func (c *QuotaController) Delete() {
 // @Description Добавление специальности к квоте.
 // @Param	specialty_id	body	int	true	"ID специальности"
 // @Param	quota_id	body	int	true	"ID квоты"
-// Success 200 string	"Специальность успешно добавлена к квоте"
-// Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
+// @Success 200 string	"Специальность успешно добавлена к квоте"
+// @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
 // @router /add-specialty [post]
 func (c *QuotaController) AddSpecialtyToQuota() {
 	var input struct {
