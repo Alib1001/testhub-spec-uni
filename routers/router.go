@@ -18,14 +18,14 @@ func init() {
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "delete:Delete"),
 		),
 
-		beego.NSNamespace("/specialties",
-			beego.NSInclude(&controllers.SpecialtyController{}),
-			beego.NSRouter("/", &controllers.SpecialtyController{}, "post:Create"),
-			beego.NSRouter("/:id", &controllers.SpecialtyController{}, "get:Get"),
-			beego.NSRouter("/", &controllers.SpecialtyController{}, "get:GetAll"),
-			beego.NSRouter("/:id", &controllers.SpecialtyController{}, "put:Update"),
-			beego.NSRouter("/:id", &controllers.SpecialtyController{}, "delete:Delete"),
-			beego.NSRouter("/:specialtyId/subjects/:subjectId", &controllers.SpecialtyController{}, "post:AddSubject"),
+		beego.NSNamespace("/specialities",
+			beego.NSInclude(&controllers.SpecialityController{}),
+			beego.NSRouter("/", &controllers.SpecialityController{}, "post:Create"),
+			beego.NSRouter("/:id", &controllers.SpecialityController{}, "get:Get"),
+			beego.NSRouter("/", &controllers.SpecialityController{}, "get:GetAll"),
+			beego.NSRouter("/:id", &controllers.SpecialityController{}, "put:Update"),
+			beego.NSRouter("/:id", &controllers.SpecialityController{}, "delete:Delete"),
+			beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),
 		),
 
 		beego.NSNamespace("/universities",
@@ -53,7 +53,7 @@ func init() {
 			beego.NSRouter("/", &controllers.QuotaController{}, "get:GetAll"),
 			beego.NSRouter("/:id", &controllers.QuotaController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.QuotaController{}, "delete:Delete"),
-			beego.NSRouter("/:quotaId/specialties/:specialtyId", &controllers.QuotaController{}, "post:AddSpecialtyToQuota"),
+			beego.NSRouter("/:quotaId/specialities/:specialityId", &controllers.QuotaController{}, "post:AddSpecialityToQuota"),
 		),
 	)
 

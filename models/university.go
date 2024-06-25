@@ -19,10 +19,10 @@ type University struct {
 	HasDormitory     bool
 	ProfileImageUrl  string `orm:"size(256)"`
 	MinEntryScore    int
-	PhotosUrlList    []string     `orm:"-"`
-	Description      string       `orm:"type(text)"`
-	Specialties      []*Specialty `orm:"rel(m2m);rel_table(specialty_university)"`
-	City             *City        `orm:"rel(fk)"`
+	PhotosUrlList    []string      `orm:"-"`
+	Description      string        `orm:"type(text)"`
+	Specialities     []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
+	City             *City         `orm:"rel(fk)"`
 }
 
 func init() {

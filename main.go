@@ -64,7 +64,7 @@ func main() {
 
 	// Include controllers for Swagger docs generation
 	beego.Include(&controllers.SubjectController{})
-	beego.Include(&controllers.SpecialtyController{})
+	beego.Include(&controllers.SpecialityController{})
 	beego.Include(&controllers.UniversityController{})
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})

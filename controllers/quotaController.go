@@ -117,18 +117,18 @@ func (c *QuotaController) Delete() {
 	c.ServeJSON()
 }
 
-// AddSpecialtyToQuota adds a specialty to a quota.
-// @Title AddSpecialtyToQuota
+// AddSpecialityToQuota adds a speciality to a quota.
+// @Title AddSpecialityToQuota
 // @Description Добавление специальности к квоте.
-// @Param	specialty_id	body	int	true	"ID специальности"
+// @Param	speciality_id	body	int	true	"ID специальности"
 // @Param	quota_id	body	int	true	"ID квоты"
 // @Success 200 string	"Специальность успешно добавлена к квоте"
 // @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
-// @router /add-specialty [post]
-func (c *QuotaController) AddSpecialtyToQuota() {
+// @router /add-speciality [post]
+func (c *QuotaController) AddSpecialityToQuota() {
 	var input struct {
-		SpecialtyId int `json:"specialty_id"`
-		QuotaId     int `json:"quota_id"`
+		SpecialityId int `json:"speciality_id"`
+		QuotaId      int `json:"quota_id"`
 	}
 
 	// Получение тела запроса с помощью CopyBody()
@@ -143,9 +143,9 @@ func (c *QuotaController) AddSpecialtyToQuota() {
 	}
 
 	// Вызов метода добавления специальности к квоте
-	err = models.AddSpecialtyToQuota(input.SpecialtyId, input.QuotaId)
+	err = models.AddSpecialityToQuota(input.SpecialityId, input.QuotaId)
 	if err == nil {
-		c.Data["json"] = "Specialty added to quota successfully"
+		c.Data["json"] = "Speciality added to quota successfully"
 	} else {
 		c.Data["json"] = err.Error()
 	}

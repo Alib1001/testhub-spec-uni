@@ -124,17 +124,17 @@
                 }
             }
         },
-        "/quotas/add-specialty": {
+        "/quotas/add-speciality": {
             "post": {
                 "tags": [
                     "quotas"
                 ],
                 "description": "Добавление специальности к квоте.\n\u003cbr\u003e",
-                "operationId": "QuotaController.AddSpecialtyToQuota",
+                "operationId": "QuotaController.AddSpecialityToQuota",
                 "parameters": [
                     {
                         "in": "body",
-                        "name": "specialty_id",
+                        "name": "speciality_id",
                         "description": "ID специальности",
                         "required": true,
                         "schema": {
@@ -256,20 +256,20 @@
                 }
             }
         },
-        "/specialties/": {
+        "/specialities/": {
             "get": {
                 "tags": [
-                    "specialties"
+                    "specialities"
                 ],
                 "description": "Получение списка всех специальностей.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.GetAll",
+                "operationId": "SpecialityController.GetAll",
                 "responses": {
                     "200": {
                         "description": "\"Список специальностей\"",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Specialty"
+                                "$ref": "#/definitions/models.Speciality"
                             }
                         }
                     },
@@ -280,10 +280,10 @@
             },
             "post": {
                 "tags": [
-                    "specialties"
+                    "specialities"
                 ],
                 "description": "Создание новой специальности.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.Create",
+                "operationId": "SpecialityController.Create",
                 "parameters": [
                     {
                         "in": "body",
@@ -291,7 +291,7 @@
                         "description": "JSON с данными о специальности",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Specialty"
+                            "$ref": "#/definitions/models.Speciality"
                         }
                     }
                 ],
@@ -308,13 +308,13 @@
                 }
             }
         },
-        "/specialties/{id}": {
+        "/specialities/{id}": {
             "get": {
                 "tags": [
-                    "specialties"
+                    "specialities"
                 ],
                 "description": "Получение информации о специальности по ID.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.Get",
+                "operationId": "SpecialityController.Get",
                 "parameters": [
                     {
                         "in": "path",
@@ -329,7 +329,7 @@
                     "200": {
                         "description": "\"Информация о специальности\"",
                         "schema": {
-                            "$ref": "#/definitions/models.Specialty"
+                            "$ref": "#/definitions/models.Speciality"
                         }
                     },
                     "400": {
@@ -339,10 +339,10 @@
             },
             "put": {
                 "tags": [
-                    "specialties"
+                    "specialities"
                 ],
                 "description": "Обновление информации о специальности по ID.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.Update",
+                "operationId": "SpecialityController.Update",
                 "parameters": [
                     {
                         "in": "path",
@@ -358,7 +358,7 @@
                         "description": "JSON с обновленными данными о специальности",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Specialty"
+                            "$ref": "#/definitions/models.Speciality"
                         }
                     }
                 ],
@@ -373,10 +373,10 @@
             },
             "delete": {
                 "tags": [
-                    "specialties"
+                    "specialities"
                 ],
                 "description": "Удаление специальности по ID.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.Delete",
+                "operationId": "SpecialityController.Delete",
                 "parameters": [
                     {
                         "in": "path",
@@ -397,17 +397,17 @@
                 }
             }
         },
-        "/specialties/{specialtyId}/add-subject/{subjectId}": {
+        "/specialities/{specialityId}/add-subject/{subjectId}": {
             "post": {
                 "tags": [
-                    "specialties"
+                    "specialities"
                 ],
                 "description": "Добавление предмета к специальности.\n\u003cbr\u003e",
-                "operationId": "SpecialtyController.AddSubject",
+                "operationId": "SpecialityController.AddSubject",
                 "parameters": [
                     {
                         "in": "path",
-                        "name": "specialtyId",
+                        "name": "specialityId",
                         "description": "ID специальности",
                         "required": true,
                         "type": "integer",
@@ -762,16 +762,16 @@
                 "QuotaType": {
                     "type": "string"
                 },
-                "Specialties": {
+                "Specialities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Specialty"
+                        "$ref": "#/definitions/models.Speciality"
                     }
                 }
             }
         },
-        "models.Specialty": {
-            "title": "Specialty",
+        "models.Speciality": {
+            "title": "Speciality",
             "type": "object",
             "properties": {
                 "AnnualGrants": {
@@ -830,10 +830,10 @@
                 "Name": {
                     "type": "string"
                 },
-                "Specialties": {
+                "Specialities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Specialty"
+                        "$ref": "#/definitions/models.Speciality"
                     }
                 }
             }
@@ -896,10 +896,10 @@
                         "type": "string"
                     }
                 },
-                "Specialties": {
+                "Specialities": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/models.Specialty"
+                        "$ref": "#/definitions/models.Speciality"
                     }
                 },
                 "UniversityCode": {
@@ -920,8 +920,8 @@
             "description": "SubjectController обрабатывает запросы для работы с предметами.\n"
         },
         {
-            "name": "specialties",
-            "description": "SpecialtyController обрабатывает запросы для работы со специальностями.\n"
+            "name": "specialities",
+            "description": "SpecialityController обрабатывает запросы для работы со специальностями.\n"
         },
         {
             "name": "universities",

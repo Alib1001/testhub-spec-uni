@@ -5,12 +5,12 @@ import (
 )
 
 type Quota struct {
-	Id          int    `orm:"auto"`
-	QuotaType   string `orm:"size(64)"`
-	Count       int
-	MinScore    int
-	MaxScore    int
-	Specialties []*Specialty `orm:"reverse(many)"`
+	Id           int    `orm:"auto"`
+	QuotaType    string `orm:"size(64)"`
+	Count        int
+	MinScore     int
+	MaxScore     int
+	Specialities []*Speciality `orm:"rel(m2m)"`
 }
 
 func init() {
@@ -48,11 +48,11 @@ func DeleteQuota(id int) error {
 	_, err := o.Delete(&Quota{Id: id})
 	return err
 }
-func AddSpecialtyToQuota(specialtyId, quotaId int) error {
+func AddSpecialityToQuota(specialityId, quotaId int) error {
 	o := orm.NewOrm()
 
-	specialty := &Specialty{Id: specialtyId}
-	if err := o.Read(specialty); err != nil {
+	speciality := &Speciality{Id: specialityId}
+	if err := o.Read(speciality); err != nil {
 		return err
 	}
 
@@ -61,7 +61,7 @@ func AddSpecialtyToQuota(specialtyId, quotaId int) error {
 		return err
 	}
 
-	m2m := o.QueryM2M(quota, "Specialties")
-	_, err := m2m.Add(specialty)
+	m2m := o.QueryM2M(quota, "Specialities")
+	_, err := m2m.Add(speciality)
 	return err
 }

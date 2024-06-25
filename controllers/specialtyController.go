@@ -7,31 +7,31 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// SpecialtyController обрабатывает запросы для работы со специальностями.
-type SpecialtyController struct {
+// SpecialityController обрабатывает запросы для работы со специальностями.
+type SpecialityController struct {
 	beego.Controller
 }
 
 // Create добавляет новую специальность в базу данных.
 // @Title Create
 // @Description Создание новой специальности.
-// @Param	body	body	models.Specialty	true	"JSON с данными о специальности"
+// @Param	body	body	models.Speciality	true	"JSON с данными о специальности"
 // @Success 200 {object} map[string]int64	"ID созданной специальности"
 // @Failure 400 ошибка разбора JSON или другая ошибка
 // @router / [post]
-func (c *SpecialtyController) Create() {
-	var specialty models.Specialty
+func (c *SpecialityController) Create() {
+	var speciality models.Speciality
 
 	requestBody := c.Ctx.Input.CopyBody(1024)
 
-	err := json.Unmarshal(requestBody, &specialty)
+	err := json.Unmarshal(requestBody, &speciality)
 	if err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
 		return
 	}
 
-	id, err := models.AddSpecialty(&specialty)
+	id, err := models.AddSpeciality(&speciality)
 	if err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
 	} else {
@@ -44,14 +44,14 @@ func (c *SpecialtyController) Create() {
 // @Title Get
 // @Description Получение информации о специальности по ID.
 // @Param	id		path	int	true	"ID специальности для получения информации"
-// @Success 200 {object} models.Specialty	"Информация о специальности"
+// @Success 200 {object} models.Speciality	"Информация о специальности"
 // @Failure 400 некорректный ID или другая ошибка
 // @router /:id [get]
-func (c *SpecialtyController) Get() {
+func (c *SpecialityController) Get() {
 	id, _ := c.GetInt(":id")
-	specialty, err := models.GetSpecialtyById(id)
+	speciality, err := models.GetSpecialityById(id)
 	if err == nil {
-		c.Data["json"] = specialty
+		c.Data["json"] = speciality
 	} else {
 		c.Data["json"] = err.Error()
 	}
@@ -61,11 +61,11 @@ func (c *SpecialtyController) Get() {
 // GetAll возвращает список всех специальностей.
 // @Title GetAll
 // @Description Получение списка всех специальностей.
-// @Success 200 {array} models.Specialty	"Список специальностей"
+// @Success 200 {array} models.Speciality	"Список специальностей"
 // @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
-func (c *SpecialtyController) GetAll() {
-	specialties, err := models.GetAllSpecialties()
+func (c *SpecialityController) GetAll() {
+	specialties, err := models.GetAllSpecialities()
 	if err == nil {
 		c.Data["json"] = specialties
 	} else {
@@ -78,16 +78,16 @@ func (c *SpecialtyController) GetAll() {
 // @Title Update
 // @Description Обновление информации о специальности по ID.
 // @Param	id		path	int	true	"ID специальности для обновления информации"
-// @Param	body	body	models.Specialty	true	"JSON с обновленными данными о специальности"
+// @Param	body	body	models.Speciality	true	"JSON с обновленными данными о специальности"
 // @Success 200 string	"Обновление успешно выполнено"
 // @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
-func (c *SpecialtyController) Update() {
+func (c *SpecialityController) Update() {
 	id, _ := c.GetInt(":id")
-	var specialty models.Specialty
-	json.Unmarshal(c.Ctx.Input.RequestBody, &specialty)
-	specialty.Id = id
-	err := models.UpdateSpecialty(&specialty)
+	var speciality models.Speciality
+	json.Unmarshal(c.Ctx.Input.RequestBody, &speciality)
+	speciality.Id = id
+	err := models.UpdateSpeciality(&speciality)
 	if err == nil {
 		c.Data["json"] = "Update successful"
 	} else {
@@ -103,9 +103,9 @@ func (c *SpecialtyController) Update() {
 // @Success 200 string	"Удаление успешно выполнено"
 // @Failure 400 некорректный ID или другая ошибка
 // @router /:id [delete]
-func (c *SpecialtyController) Delete() {
+func (c *SpecialityController) Delete() {
 	id, _ := c.GetInt(":id")
-	err := models.DeleteSpecialty(id)
+	err := models.DeleteSpeciality(id)
 	if err == nil {
 		c.Data["json"] = "Delete successful"
 	} else {
@@ -117,18 +117,18 @@ func (c *SpecialtyController) Delete() {
 // AddSubject добавляет предмет к специальности.
 // @Title AddSubject
 // @Description Добавление предмета к специальности.
-// @Param	specialtyId		path	int	true	"ID специальности"
+// @Param	specialityId		path	int	true	"ID специальности"
 // @Param	subjectId		path	int	true	"ID предмета"
 // @Success 200 string	"Предмет успешно добавлен к специальности"
 // @Failure 400 некорректный ID или другая ошибка
-// @router /:specialtyId/add-subject/:subjectId [post]
-func (c *SpecialtyController) AddSubject() {
-	specialtyId, _ := c.GetInt(":specialtyId")
+// @router /:specialityId/add-subject/:subjectId [post]
+func (c *SpecialityController) AddSubject() {
+	specialityId, _ := c.GetInt(":specialityId")
 	subjectId, _ := c.GetInt(":subjectId")
 
-	err := models.AddSubjectToSpecialty(subjectId, specialtyId)
+	err := models.AddSubjectToSpeciality(subjectId, specialityId)
 	if err == nil {
-		c.Data["json"] = "Subject added to specialty successfully"
+		c.Data["json"] = "Subject added to speciality successfully"
 	} else {
 		c.Data["json"] = err.Error()
 	}

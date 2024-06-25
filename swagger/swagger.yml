@@ -154,17 +154,17 @@ paths:
           description: string "Удаление успешно выполнено"
         "400":
           description: '{string} string "400 некорректный ID или другая ошибка"'
-  /quotas/add-specialty:
+  /quotas/add-speciality:
     post:
       tags:
       - quotas
       description: |-
         Добавление специальности к квоте.
         <br>
-      operationId: QuotaController.AddSpecialtyToQuota
+      operationId: QuotaController.AddSpecialityToQuota
       parameters:
       - in: body
-        name: specialty_id
+        name: speciality_id
         description: ID специальности
         required: true
         schema:
@@ -186,37 +186,37 @@ paths:
           description: "string\t\"Специальность успешно добавлена к квоте\""
         "400":
           description: '{string} string "400 ошибка разбора JSON или другая ошибка"'
-  /specialties/:
+  /specialities/:
     get:
       tags:
-      - specialties
+      - specialities
       description: |-
         Получение списка всех специальностей.
         <br>
-      operationId: SpecialtyController.GetAll
+      operationId: SpecialityController.GetAll
       responses:
         "200":
           description: '"Список специальностей"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Specialty'
+              $ref: '#/definitions/models.Speciality'
         "400":
           description: ошибка получения списка или другая ошибка
     post:
       tags:
-      - specialties
+      - specialities
       description: |-
         Создание новой специальности.
         <br>
-      operationId: SpecialtyController.Create
+      operationId: SpecialityController.Create
       parameters:
       - in: body
         name: body
         description: JSON с данными о специальности
         required: true
         schema:
-          $ref: '#/definitions/models.Specialty'
+          $ref: '#/definitions/models.Speciality'
       responses:
         "200":
           description: '"ID созданной специальности"'
@@ -224,14 +224,14 @@ paths:
             $ref: '#/definitions/map[string]int64'
         "400":
           description: ошибка разбора JSON или другая ошибка
-  /specialties/{id}:
+  /specialities/{id}:
     get:
       tags:
-      - specialties
+      - specialities
       description: |-
         Получение информации о специальности по ID.
         <br>
-      operationId: SpecialtyController.Get
+      operationId: SpecialityController.Get
       parameters:
       - in: path
         name: id
@@ -243,16 +243,16 @@ paths:
         "200":
           description: '"Информация о специальности"'
           schema:
-            $ref: '#/definitions/models.Specialty'
+            $ref: '#/definitions/models.Speciality'
         "400":
           description: некорректный ID или другая ошибка
     put:
       tags:
-      - specialties
+      - specialities
       description: |-
         Обновление информации о специальности по ID.
         <br>
-      operationId: SpecialtyController.Update
+      operationId: SpecialityController.Update
       parameters:
       - in: path
         name: id
@@ -265,7 +265,7 @@ paths:
         description: JSON с обновленными данными о специальности
         required: true
         schema:
-          $ref: '#/definitions/models.Specialty'
+          $ref: '#/definitions/models.Speciality'
       responses:
         "200":
           description: "string\t\"Обновление успешно выполнено\""
@@ -273,11 +273,11 @@ paths:
           description: некорректный ID, ошибка разбора JSON или другая ошибка
     delete:
       tags:
-      - specialties
+      - specialities
       description: |-
         Удаление специальности по ID.
         <br>
-      operationId: SpecialtyController.Delete
+      operationId: SpecialityController.Delete
       parameters:
       - in: path
         name: id
@@ -290,17 +290,17 @@ paths:
           description: "string\t\"Удаление успешно выполнено\""
         "400":
           description: некорректный ID или другая ошибка
-  /specialties/{specialtyId}/add-subject/{subjectId}:
+  /specialities/{specialityId}/add-subject/{subjectId}:
     post:
       tags:
-      - specialties
+      - specialities
       description: |-
         Добавление предмета к специальности.
         <br>
-      operationId: SpecialtyController.AddSubject
+      operationId: SpecialityController.AddSubject
       parameters:
       - in: path
-        name: specialtyId
+        name: specialityId
         description: ID специальности
         required: true
         type: integer
@@ -559,12 +559,12 @@ definitions:
         format: int64
       QuotaType:
         type: string
-      Specialties:
+      Specialities:
         type: array
         items:
-          $ref: '#/definitions/models.Specialty'
-  models.Specialty:
-    title: Specialty
+          $ref: '#/definitions/models.Speciality'
+  models.Speciality:
+    title: Speciality
     type: object
     properties:
       AnnualGrants:
@@ -606,10 +606,10 @@ definitions:
         format: int64
       Name:
         type: string
-      Specialties:
+      Specialities:
         type: array
         items:
-          $ref: '#/definitions/models.Specialty'
+          $ref: '#/definitions/models.Speciality'
   models.University:
     title: University
     type: object
@@ -651,10 +651,10 @@ definitions:
         type: array
         items:
           type: string
-      Specialties:
+      Specialities:
         type: array
         items:
-          $ref: '#/definitions/models.Specialty'
+          $ref: '#/definitions/models.Speciality'
       UniversityCode:
         type: string
       UniversityStatus:
@@ -665,9 +665,9 @@ tags:
 - name: subjects
   description: |
     SubjectController обрабатывает запросы для работы с предметами.
-- name: specialties
+- name: specialities
   description: |
-    SpecialtyController обрабатывает запросы для работы со специальностями.
+    SpecialityController обрабатывает запросы для работы со специальностями.
 - name: universities
   description: |
     UniversityController обрабатывает запросы для работы с университетами.
