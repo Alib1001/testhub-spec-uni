@@ -585,8 +585,6 @@ definitions:
         format: int64
       Name:
         type: string
-      Quota:
-        $ref: '#/definitions/models.Quota'
       Subjects:
         type: array
         items:

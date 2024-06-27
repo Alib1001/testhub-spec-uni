@@ -125,29 +125,49 @@ func (c *QuotaController) Delete() {
 // @Success 200 string	"Специальность успешно добавлена к квоте"
 // @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
 // @router /add-speciality [post]
+// AddSpecialityToQuota добавляет специальность к квоте.
+// @Title AddSpecialityToQuota
+// @Description Добавление специальности к квоте.
+// @Param	speciality_id	body	int	true	"ID специальности"
+// @Param	quota_id	body	int	true	"ID квоты"
+// @Success 200 string	"Специальность успешно добавлена к квоте"
+// @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
+// @router /add-speciality [post]
 func (c *QuotaController) AddSpecialityToQuota() {
-	var input struct {
-		SpecialityId int `json:"speciality_id"`
-		QuotaId      int `json:"quota_id"`
-	}
+	// Извлечение параметров quota_id и speciality_id из URL
+	quotaId, err1 := c.GetInt(":quota_id")
+	specialityId, err2 := c.GetInt(":speciality_id")
 
-	// Получение тела запроса с помощью CopyBody()
-	requestBody := c.Ctx.Input.CopyBody(1024)
-
-	// Распаковка JSON из тела запроса
-	err := json.Unmarshal(requestBody, &input)
-	if err != nil {
-		c.Data["json"] = err.Error()
+	// Проверка наличия ошибок при извлечении параметров из URL
+	if err1 != nil || err2 != nil {
+		c.Data["json"] = "quota_id and speciality_id must be integers"
 		c.ServeJSON()
 		return
 	}
 
 	// Вызов метода добавления специальности к квоте
-	err = models.AddSpecialityToQuota(input.SpecialityId, input.QuotaId)
+	err := models.AddSpecialityToQuota(specialityId, quotaId)
 	if err == nil {
 		c.Data["json"] = "Speciality added to quota successfully"
 	} else {
 		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+func (c *QuotaController) GetQuotaWithSpecialities() {
+	id, err := c.GetInt(":id")
+	if err != nil {
+		c.Data["json"] = "Invalid ID"
+		c.ServeJSON()
+		return
+	}
+
+	quota, err := models.GetQuotaWithSpecialitiesById(id)
+	if err != nil {
+		c.Data["json"] = err.Error()
+	} else {
+		c.Data["json"] = quota
 	}
 	c.ServeJSON()
 }

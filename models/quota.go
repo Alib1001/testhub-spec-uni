@@ -1,6 +1,9 @@
 package models
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/astaxie/beego/orm"
 )
 
@@ -10,7 +13,9 @@ type Quota struct {
 	Count        int
 	MinScore     int
 	MaxScore     int
-	Specialities []*Speciality `orm:"rel(m2m)"`
+	Specialities []*Speciality `orm:"rel(m2m);rel_table(quota_specialitys)"`
+	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
 
 func init() {
@@ -62,6 +67,35 @@ func AddSpecialityToQuota(specialityId, quotaId int) error {
 	}
 
 	m2m := o.QueryM2M(quota, "Specialities")
+	exists := m2m.Exist(speciality)
+	if exists {
+		return fmt.Errorf("Speciality with ID %d already exists in quota with ID %d", specialityId, quotaId)
+	}
+
 	_, err := m2m.Add(speciality)
 	return err
+}
+func GetAllQuotasWithSpecialities() ([]*Quota, error) {
+	o := orm.NewOrm()
+	var quotas []*Quota
+	_, err := o.QueryTable("quota").RelatedSel("Specialities").All(&quotas)
+	return quotas, err
+}
+func GetQuotaWithSpecialitiesById(id int) (*Quota, error) {
+	o := orm.NewOrm()
+	quota := &Quota{Id: id}
+
+	// Загрузка квоты по ID
+	err := o.Read(quota)
+	if err != nil {
+		return nil, err
+	}
+
+	// Предзагрузка списка специальностей для данной квоты
+	_, err = o.LoadRelated(quota, "Specialities")
+	if err != nil {
+		return nil, err
+	}
+
+	return quota, nil
 }

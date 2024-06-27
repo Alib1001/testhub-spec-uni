@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/astaxie/beego/orm"
 )
 
@@ -8,6 +10,8 @@ type Subject struct {
 	Id           int           `orm:"auto"`
 	Name         string        `orm:"size(128)"`
 	Specialities []*Speciality `orm:"rel(m2m);rel_table(subject_speciality)"`
+	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
 
 func init() {

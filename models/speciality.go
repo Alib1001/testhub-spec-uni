@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/astaxie/beego/orm"
 )
 
@@ -15,7 +17,8 @@ type Speciality struct {
 	Description  string        `orm:"type(text)"`
 	Universities []*University `orm:"reverse(many)"`
 	Subjects     []*Subject    `orm:"reverse(many)"`
-	Quota        *Quota        `orm:"rel(fk);null;on_delete(set_null)"`
+	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
 
 func init() {

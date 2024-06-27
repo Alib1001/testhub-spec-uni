@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"testhub-spec-uni/controllers"
+	"testhub-spec-uni/middleware"
 	_ "testhub-spec-uni/routers"
 
 	_ "testhub-spec-uni/routers"
@@ -55,21 +55,13 @@ func init() {
 
 func main() {
 
-	// Configure directory where Swagger UI files are located
 	web.BConfig.WebConfig.DirectoryIndex = true
 	web.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
 
-	// Include controllers for Swagger docs generation
-	beego.Include(&controllers.SubjectController{})
-	beego.Include(&controllers.SpecialityController{})
-	beego.Include(&controllers.UniversityController{})
-	beego.Include(&controllers.CityController{})
-	beego.Include(&controllers.QuotaController{})
-
-	// Start the application
+	web.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
 	beego.Run()
 }
 
