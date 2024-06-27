@@ -113,3 +113,44 @@ func (c *UniversityController) Delete() {
 	}
 	c.ServeJSON()
 }
+
+// AssignCityToUniversity назначает город университету по их ID.
+// @Title AssignCityToUniversity
+// @Description Назначение города университету.
+// @Param	universityId		path	int	true	"ID университета"
+// @Param	cityId		        path	int	true	"ID города"
+// @Success 200 string	"Город успешно назначен"
+// @Failure 400 некорректные ID или другая ошибка
+// @router /assign_city/:universityId/:cityId [put]
+func (c *UniversityController) AssignCityToUniversity() {
+	universityId, _ := c.GetInt(":universityId")
+	cityId, _ := c.GetInt(":cityId")
+	err := models.AssignCityToUniversity(universityId, cityId)
+	if err == nil {
+		c.Data["json"] = "City successfully assigned"
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// AddSpecialityToUniversity adds a speciality to a university by their IDs.
+// @Title AddSpecialityToUniversity
+// @Description Добавление специальности к университету.
+// @Param	universityId		path	int	true	"ID университета"
+// @Param	specialityId		path	int	true	"ID специальности"
+// @Success 200 string	"Специальность успешно добавлена к университету"
+// @Failure 400 некорректные ID или другая ошибка
+// @router /assign_speciality/:universityId/:specialityId [post]
+func (c *UniversityController) AddSpecialityToUniversity() {
+	universityId, _ := c.GetInt(":universityId")
+	specialityId, _ := c.GetInt(":specialityId")
+
+	err := models.AddSpecialityToUniversity(specialityId, universityId)
+	if err == nil {
+		c.Data["json"] = "Speciality added to university successfully"
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}

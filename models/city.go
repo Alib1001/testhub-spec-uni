@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/astaxie/beego/orm"
 )
 
@@ -8,6 +10,8 @@ type City struct {
 	Id           int           `orm:"auto"`
 	Name         string        `orm:"size(128)"`
 	Universities []*University `orm:"reverse(many)"`
+	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
 
 func init() {
@@ -44,4 +48,16 @@ func DeleteCity(id int) error {
 	o := orm.NewOrm()
 	_, err := o.Delete(&City{Id: id})
 	return err
+}
+
+func GetCityWithUniversities(id int) (*City, error) {
+	o := orm.NewOrm()
+	city := &City{Id: id}
+	if err := o.Read(city); err != nil {
+		return nil, err
+	}
+	if _, err := o.LoadRelated(city, "Universities"); err != nil {
+		return nil, err
+	}
+	return city, nil
 }

@@ -23,6 +23,7 @@ func init() {
 			beego.NSRouter("/", &controllers.SpecialityController{}, "get:GetAll"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "delete:Delete"),
+			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetSpecialitiesInUni"),
 			beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),
 		),
 
@@ -32,6 +33,8 @@ func init() {
 			beego.NSRouter("/", &controllers.UniversityController{}, "get:GetAll"),
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "delete:Delete"),
+			beego.NSRouter("/assign_city/:universityId/:cityId", &controllers.UniversityController{}, "post:AssignCityToUniversity"),
+			beego.NSRouter("/assignspec/:universityId/:specialityId", &controllers.UniversityController{}, "post:AddSpecialityToUniversity"),
 		),
 
 		beego.NSNamespace("/cities",
@@ -40,6 +43,7 @@ func init() {
 			beego.NSRouter("/", &controllers.CityController{}, "get:GetAll"),
 			beego.NSRouter("/:id", &controllers.CityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.CityController{}, "delete:Delete"),
+			beego.NSRouter("/info/:id", &controllers.CityController{}, "get:GetWithUniversities"),
 		),
 
 		beego.NSNamespace("/quotas",

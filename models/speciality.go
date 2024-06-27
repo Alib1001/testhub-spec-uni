@@ -15,7 +15,7 @@ type Speciality struct {
 	MaxScore     int
 	VideoLink    string        `orm:"size(256)"`
 	Description  string        `orm:"type(text)"`
-	Universities []*University `orm:"reverse(many)"`
+	Universities []*University `orm:"rel(m2m);rel_table(speciality_university)"`
 	Subjects     []*Subject    `orm:"reverse(many)"`
 	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
@@ -66,4 +66,12 @@ func AddSubjectToSpeciality(subjectId, specialityId int) error {
 	m2m := o.QueryM2M(speciality, "Subjects")
 	_, err := m2m.Add(subject)
 	return err
+}
+func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
+	o := orm.NewOrm()
+	var specialities []*Speciality
+	_, err := o.QueryTable("speciality").
+		Filter("Universities__University__Id", universityId).
+		All(&specialities)
+	return specialities, err
 }

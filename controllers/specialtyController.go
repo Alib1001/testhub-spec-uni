@@ -134,3 +134,22 @@ func (c *SpecialityController) AddSubject() {
 	}
 	c.ServeJSON()
 }
+
+// GetSpecialitiesInUni retrieves all specialities associated with a university by its ID.
+// @Title GetSpecialitiesInUni
+// @Description Получение списка специальностей, связанных с университетом.
+// @Param	universityId		path	int	true	"ID университета"
+// @Success 200 {array} models.Speciality	"Список специальностей университета"
+// @Failure 400 некорректный ID или другая ошибка
+// @router /specialities/:universityId [get]
+func (c *SpecialityController) GetSpecialitiesInUni() {
+	universityId, _ := c.GetInt(":universityId")
+
+	specialities, err := models.GetSpecialitiesInUniversity(universityId)
+	if err == nil {
+		c.Data["json"] = specialities
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}

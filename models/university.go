@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/astaxie/beego/orm"
 )
 
@@ -21,8 +23,10 @@ type University struct {
 	MinEntryScore    int
 	PhotosUrlList    []string      `orm:"-"`
 	Description      string        `orm:"type(text)"`
-	Specialities     []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
+	Specialities     []*Speciality `orm:"rel(m2m)"`
 	City             *City         `orm:"rel(fk)"`
+	CreatedAt        time.Time     `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt        time.Time     `orm:"auto_now;type(datetime)"`
 }
 
 func init() {
@@ -89,4 +93,20 @@ func AssignCityToUniversity(universityId int, cityId int) error {
 	}
 
 	return nil
+}
+func AddSpecialityToUniversity(specialityId, universityId int) error {
+	o := orm.NewOrm()
+
+	speciality := &Speciality{Id: specialityId}
+	if err := o.Read(speciality); err != nil {
+		return err
+	}
+	university := &University{Id: universityId}
+	if err := o.Read(university); err != nil {
+		return err
+	}
+
+	// Add speciality to university
+	_, err := o.QueryM2M(university, "Specialities").Add(speciality)
+	return err
 }

@@ -18,7 +18,6 @@ type CityController struct {
 // @Param	body	body	models.City	true	"JSON с данными о городе"
 // @Success 200 {object} map[string]int64 {"id": 1} "ID созданного города"
 // @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
-
 // @router cities/ [post]
 func (c *CityController) Create() {
 	var city models.City
@@ -83,7 +82,6 @@ func (c *CityController) GetAll() {
 // @Param	body	body	models.City	true	"JSON с обновленными данными о городе"
 // @Success 200 string "Обновление успешно выполнено"
 // @Failure 400 {string} string "400 некорректный ID, ошибка разбора JSON или другая ошибка"
-
 // @router /:id [put]
 func (c *CityController) Update() {
 	id, _ := c.GetInt(":id")
@@ -112,6 +110,24 @@ func (c *CityController) Delete() {
 	err := models.DeleteCity(id)
 	if err == nil {
 		c.Data["json"] = "Delete successful"
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// GetWithUniversities возвращает информацию о городе вместе с университетами по его ID.
+// @Title GetWithUniversities
+// @Description Получение информации о городе с университетами по ID.
+// @Param	id		path	int	true	"ID города для получения информации"
+// @Success 200 {object} models.City "Информация о городе с университетами"
+// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
+// @router /:id/universities [get]
+func (c *CityController) GetWithUniversities() {
+	id, _ := c.GetInt(":id")
+	city, err := models.GetCityWithUniversities(id)
+	if err == nil {
+		c.Data["json"] = city
 	} else {
 		c.Data["json"] = err.Error()
 	}
