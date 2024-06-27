@@ -153,3 +153,22 @@ func (c *SpecialityController) GetSpecialitiesInUni() {
 	}
 	c.ServeJSON()
 }
+
+// GetSubjectsBySpecialityID retrieves all subjects associated with a speciality by its ID.
+// @Title GetSubjectsBySpecialityID
+// @Description Retrieve subjects associated with a speciality by ID.
+// @Param   specialityId    path    int     true        "ID of the speciality to fetch subjects for"
+// @Success 200 {array} models.Subject    "List of subjects associated with the speciality"
+// @Failure 400 Invalid ID or other error
+// @router /:specialityId/subjects [get]
+func (c *SpecialityController) GetSubjectsBySpecialityID() {
+	specialityId, _ := c.GetInt(":specialityId")
+
+	subjects, err := models.GetSubjectsBySpecialityID(specialityId)
+	if err == nil {
+		c.Data["json"] = subjects
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}

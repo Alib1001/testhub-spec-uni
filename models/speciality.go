@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/astaxie/beego/orm"
@@ -60,13 +61,48 @@ func DeleteSpeciality(id int) error {
 func AddSubjectToSpeciality(subjectId, specialityId int) error {
 	o := orm.NewOrm()
 
-	subject := &Subject{Id: subjectId}
-	speciality := &Speciality{Id: specialityId}
+	// Check if the subject with given ID is already associated with the speciality
+	existingSubjects, err := GetSubjectsBySpecialityID(specialityId)
+	if err != nil {
+		return err
+	}
+	for _, subj := range existingSubjects {
+		if subj.Id == subjectId {
+			return errors.New("subject with this ID is already associated with the speciality")
+		}
+	}
 
+	// Check if the speciality already has two subjects associated
+	speciality := &Speciality{Id: specialityId}
+	err = o.Read(speciality)
+	if err != nil {
+		return err
+	}
+
+	// Load related subjects to ensure we have the latest data
+	o.LoadRelated(speciality, "Subjects")
+
+	if len(speciality.Subjects) >= 2 {
+		return errors.New("cannot add more than two subjects to the speciality")
+	}
+
+	// Proceed to add the subject to the speciality
+	subject := &Subject{Id: subjectId}
 	m2m := o.QueryM2M(speciality, "Subjects")
-	_, err := m2m.Add(subject)
-	return err
+	_, err = m2m.Add(subject)
+	if err != nil {
+		return err
+	}
+
+	// Reload speciality to reflect changes
+	err = o.Read(speciality)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
+
 func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
 	o := orm.NewOrm()
 	var specialities []*Speciality
@@ -74,4 +110,14 @@ func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
 		Filter("Universities__University__Id", universityId).
 		All(&specialities)
 	return specialities, err
+}
+func GetSubjectsBySpecialityID(specialityId int) ([]*Subject, error) {
+	o := orm.NewOrm()
+
+	var subjects []*Subject
+	_, err := o.QueryTable("subject").
+		Filter("Specialities__Speciality__Id", specialityId).
+		All(&subjects)
+
+	return subjects, err
 }

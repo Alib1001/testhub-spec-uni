@@ -23,6 +23,7 @@ func init() {
 			beego.NSRouter("/", &controllers.SpecialityController{}, "get:GetAll"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "delete:Delete"),
+			beego.NSRouter("/subjects/:specialityId", &controllers.SpecialityController{}, "get:GetSubjectsBySpecialityID"),
 			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetSpecialitiesInUni"),
 			beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),
 		),
