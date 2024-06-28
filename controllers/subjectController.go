@@ -113,3 +113,14 @@ func (c *SubjectController) Delete() {
 	}
 	c.ServeJSON()
 }
+
+func (c *SubjectController) SearchSubjectsByName() {
+	name := c.GetString("name")
+	subjects, err := models.SearchSubjectsByName(name)
+	if err == nil {
+		c.Data["json"] = subjects
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}

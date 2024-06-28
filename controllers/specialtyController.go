@@ -172,3 +172,13 @@ func (c *SpecialityController) GetSubjectsBySpecialityID() {
 	}
 	c.ServeJSON()
 }
+func (c *SpecialityController) SearchSpecialities() {
+	name := c.GetString("name")
+	specialities, err := models.SearchSpecialitiesByName(name)
+	if err == nil {
+		c.Data["json"] = specialities
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}

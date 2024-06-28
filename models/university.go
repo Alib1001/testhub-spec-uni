@@ -1,9 +1,15 @@
 package models
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"testhub-spec-uni/conf"
 	"time"
 
 	"github.com/astaxie/beego/orm"
+	"github.com/elastic/go-elasticsearch/esapi"
 )
 
 type University struct {
@@ -29,6 +35,14 @@ type University struct {
 	UpdatedAt        time.Time     `orm:"auto_now;type(datetime)"`
 }
 
+type UniversitySearchResponse struct {
+	Hits struct {
+		Hits []struct {
+			Source University `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
 func init() {
 	orm.RegisterModel(new(University))
 }
@@ -36,7 +50,17 @@ func init() {
 func AddUniversity(university *University) (int64, error) {
 	o := orm.NewOrm()
 	id, err := o.Insert(university)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+	university.Id = int(id)
+
+	err = IndexUniversity(university)
+	if err != nil {
+		return id, fmt.Errorf("university added but failed to index in Elasticsearch: %v", err)
+	}
+
+	return id, nil
 }
 
 func GetUniversityById(id int) (*University, error) {
@@ -106,7 +130,88 @@ func AddSpecialityToUniversity(specialityId, universityId int) error {
 		return err
 	}
 
-	// Add speciality to university
 	_, err := o.QueryM2M(university, "Specialities").Add(speciality)
 	return err
+}
+func IndexUniversity(university *University) error {
+	data, err := json.Marshal(university)
+	if err != nil {
+		return err
+	}
+
+	req := esapi.IndexRequest{
+		Index:      "universities",
+		DocumentID: fmt.Sprintf("%d", university.Id),
+		Body:       strings.NewReader(string(data)),
+		Refresh:    "true",
+	}
+
+	res, err := req.Do(context.Background(), conf.EsClient)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return fmt.Errorf("error parsing the response body: %s", err)
+		} else {
+			return fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+
+	return nil
+}
+
+func SearchUniversitiesByName(prefix string) ([]University, error) {
+	var results []University
+
+	// Подготовка запроса для Elasticsearch
+	query := fmt.Sprintf(`{
+        "query": {
+            "wildcard": {
+                "Name": "%s*"
+            }
+        }
+    }`, prefix)
+
+	res, err := conf.EsClient.Search(
+		conf.EsClient.Search.WithContext(context.Background()),
+		conf.EsClient.Search.WithIndex("universities"),
+		conf.EsClient.Search.WithBody(strings.NewReader(query)),
+		conf.EsClient.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return results, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return results, err
+		} else {
+			return results, fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+
+	var sr UniversitySearchResponse
+	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
+		return results, err
+	}
+
+	for _, hit := range sr.Hits.Hits {
+		results = append(results, hit.Source)
+	}
+
+	return results, nil
 }

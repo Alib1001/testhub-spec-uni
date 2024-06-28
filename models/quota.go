@@ -13,7 +13,7 @@ type Quota struct {
 	Count        int
 	MinScore     int
 	MaxScore     int
-	Specialities []*Speciality `orm:"rel(m2m);rel_table(quota_specialitys)"`
+	Specialities []*Speciality `orm:"rel(m2m);rel_table(quota_specialities)"`
 	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }

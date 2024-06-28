@@ -125,16 +125,17 @@ func IndexCity(city *City) error {
 	return nil
 }
 
-func SearchCitiesByName(name string) ([]City, error) {
+func SearchCitiesByName(prefix string) ([]City, error) {
 	var results []City
 
+	// Подготовка запроса для Elasticsearch
 	query := fmt.Sprintf(`{
 		"query": {
-			"match": {
-				"Name": "%s"
+			"wildcard": {
+				"Name": "%s*"
 			}
 		}
-	}`, name)
+	}`, prefix)
 
 	res, err := conf.EsClient.Search(
 		conf.EsClient.Search.WithContext(context.Background()),

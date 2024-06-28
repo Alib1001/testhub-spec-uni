@@ -17,7 +17,7 @@ type UniversityController struct {
 // @Description Создание нового университета.
 // @Param	body	body	models.University	true	"JSON с данными о университете"
 // @Success 200 {object} map[string]int64	"ID созданного университета"
-// @Failure 400 ошибка разбора JSON или другая ошибка
+// @Failure 400 оsaшибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *UniversityController) Create() {
 	var university models.University
@@ -149,6 +149,24 @@ func (c *UniversityController) AddSpecialityToUniversity() {
 	err := models.AddSpecialityToUniversity(specialityId, universityId)
 	if err == nil {
 		c.Data["json"] = "Speciality added to university successfully"
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// SearchUniversities ищет университеты по имени.
+// @Title SearchUniversities
+// @Description Поиск университетов по имени.
+// @Param	name		query	string	true	"Имя университета для поиска"
+// @Success 200 {array} models.University "Список найденных университетов"
+// @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
+// @router /search [get]
+func (c *UniversityController) SearchUniversities() {
+	name := c.GetString("name")
+	universities, err := models.SearchUniversitiesByName(name)
+	if err == nil {
+		c.Data["json"] = universities
 	} else {
 		c.Data["json"] = err.Error()
 	}
