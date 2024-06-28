@@ -1,9 +1,16 @@
 package models
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"testhub-spec-uni/conf"
 	"time"
 
 	"github.com/astaxie/beego/orm"
+	"github.com/elastic/go-elasticsearch/esapi"
 )
 
 type City struct {
@@ -14,6 +21,14 @@ type City struct {
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
 
+type CitySearchResponse struct {
+	Hits struct {
+		Hits []struct {
+			Source City `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
 func init() {
 	orm.RegisterModel(new(City))
 }
@@ -21,7 +36,18 @@ func init() {
 func AddCity(city *City) (int64, error) {
 	o := orm.NewOrm()
 	id, err := o.Insert(city)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+	city.Id = int(id)
+
+	// Индексация города в Elasticsearch
+	err = IndexCity(city)
+	if err != nil {
+		return id, fmt.Errorf("city added but failed to index in Elasticsearch: %v", err)
+	}
+
+	return id, nil
 }
 
 func GetCityById(id int) (*City, error) {
@@ -60,4 +86,88 @@ func GetCityWithUniversities(id int) (*City, error) {
 		return nil, err
 	}
 	return city, nil
+}
+func IndexCity(city *City) error {
+	// Преобразование города в JSON
+	data, err := json.Marshal(city)
+	if err != nil {
+		return err
+	}
+
+	// Создание запроса на индексирование
+	req := esapi.IndexRequest{
+		Index:      "cities",
+		DocumentID: fmt.Sprintf("%d", city.Id),
+		Body:       bytes.NewReader(data),
+		Refresh:    "true",
+	}
+
+	// Выполнение запроса
+	res, err := req.Do(context.Background(), conf.EsClient)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return fmt.Errorf("error parsing the response body: %s", err)
+		} else {
+			return fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+
+	return nil
+}
+
+func SearchCitiesByName(name string) ([]City, error) {
+	var results []City
+
+	query := fmt.Sprintf(`{
+		"query": {
+			"match": {
+				"Name": "%s"
+			}
+		}
+	}`, name)
+
+	res, err := conf.EsClient.Search(
+		conf.EsClient.Search.WithContext(context.Background()),
+		conf.EsClient.Search.WithIndex("cities"),
+		conf.EsClient.Search.WithBody(strings.NewReader(query)),
+		conf.EsClient.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return results, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return results, err
+		} else {
+			return results, fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+
+	var sr CitySearchResponse
+	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
+		return results, err
+	}
+
+	for _, hit := range sr.Hits.Hits {
+		results = append(results, hit.Source)
+	}
+
+	return results, nil
 }

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -34,6 +35,12 @@ func (c *CityController) Create() {
 	// Добавление города в базу данных
 	id, err := models.AddCity(&city)
 	if err == nil {
+		// Индексация города в Elasticsearch
+		city.Id = int(id)
+		if err := models.IndexCity(&city); err != nil {
+			log.Printf("Failed to index city: %v", err)
+		}
+
 		c.Data["json"] = map[string]int64{"id": id}
 	} else {
 		c.Data["json"] = err.Error()
@@ -128,6 +135,24 @@ func (c *CityController) GetWithUniversities() {
 	city, err := models.GetCityWithUniversities(id)
 	if err == nil {
 		c.Data["json"] = city
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// SearchCities ищет города по имени.
+// @Title SearchCities
+// @Description Поиск городов по имени.
+// @Param	name		query	string	true	"Имя города для поиска"
+// @Success 200 {array} models.City "Список найденных городов"
+// @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
+// @router /search [get]
+func (c *CityController) SearchCities() {
+	name := c.GetString("name")
+	cities, err := models.SearchCitiesByName(name)
+	if err == nil {
+		c.Data["json"] = cities
 	} else {
 		c.Data["json"] = err.Error()
 	}

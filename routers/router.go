@@ -7,8 +7,7 @@ import (
 )
 
 func init() {
-	ns := beego.NewNamespace("/v1",
-
+	ns := beego.NewNamespace("/api",
 		beego.NSNamespace("/subjects",
 			beego.NSRouter("/", &controllers.SubjectController{}, "post:Create"),
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "get:Get"),
@@ -45,6 +44,7 @@ func init() {
 			beego.NSRouter("/:id", &controllers.CityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.CityController{}, "delete:Delete"),
 			beego.NSRouter("/info/:id", &controllers.CityController{}, "get:GetWithUniversities"),
+			beego.NSRouter("/search", &controllers.CityController{}, "get:SearchCities"),
 		),
 
 		beego.NSNamespace("/quotas",

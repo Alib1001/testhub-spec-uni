@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"testhub-spec-uni/middleware"
+	"testhub-spec-uni/conf"
 	_ "testhub-spec-uni/routers"
 
 	_ "testhub-spec-uni/routers"
@@ -51,6 +51,9 @@ func init() {
 	orm.RegisterDataBase("default", driverName, dataSource)
 	orm.RunSyncdb("default", false, true)
 	fmt.Println(driverName)
+
+	conf.InitElasticsearch()
+
 }
 
 func main() {
@@ -61,7 +64,7 @@ func main() {
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
 
-	web.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
+	//beego.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
 	beego.Run()
 }
 
