@@ -69,4 +69,4 @@ func main() {
 	beego.Run()
 }
 
-//run bee run -gendoc=true -downdoc=true
+//run: bee run -gendoc=true -downdoc=true

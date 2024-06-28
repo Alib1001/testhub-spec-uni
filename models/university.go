@@ -13,11 +13,12 @@ import (
 )
 
 type University struct {
-	Id               int      `orm:"auto"`
-	UniversityCode   string   `orm:"size(64)"`
-	Name             string   `orm:"size(128)"`
-	Abbreviation     string   `orm:"size(64)"`
-	UniversityStatus string   `orm:"size(64)"`
+	Id               int    `orm:"auto"`
+	UniversityCode   string `orm:"size(64)"`
+	Name             string `orm:"size(128)"`
+	Abbreviation     string `orm:"size(64)"`
+	UniversityStatus string `orm:"size(64)"`
+	MinScore         int
 	Address          string   `orm:"size(256)"`
 	Website          string   `orm:"size(128)"`
 	SocialMediaList  []string `orm:"-"`
@@ -29,7 +30,7 @@ type University struct {
 	MinEntryScore    int
 	PhotosUrlList    []string      `orm:"-"`
 	Description      string        `orm:"type(text)"`
-	Specialities     []*Speciality `orm:"rel(m2m)"`
+	Specialities     []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
 	City             *City         `orm:"rel(fk)"`
 	CreatedAt        time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt        time.Time     `orm:"auto_now;type(datetime)"`
@@ -125,14 +126,28 @@ func AddSpecialityToUniversity(specialityId, universityId int) error {
 	if err := o.Read(speciality); err != nil {
 		return err
 	}
+
 	university := &University{Id: universityId}
 	if err := o.Read(university); err != nil {
 		return err
 	}
 
+	exist := o.QueryM2M(university, "Specialities").Exist(speciality)
+	if exist {
+		return fmt.Errorf("speciality with ID %d is already assigned to university with ID %d", specialityId, universityId)
+	}
+
 	_, err := o.QueryM2M(university, "Specialities").Add(speciality)
-	return err
+	if err != nil {
+		return err
+	}
+
+	o.LoadRelated(university, "Specialities")
+	fmt.Printf("Specialities for university %d: %v\n", universityId, university.Specialities)
+
+	return nil
 }
+
 func IndexUniversity(university *University) error {
 	data, err := json.Marshal(university)
 	if err != nil {

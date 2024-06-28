@@ -141,15 +141,24 @@ func (c *SpecialityController) AddSubject() {
 // @Param	universityId		path	int	true	"ID университета"
 // @Success 200 {array} models.Speciality	"Список специальностей университета"
 // @Failure 400 некорректный ID или другая ошибка
-// @router /specialities/:universityId [get]
-func (c *SpecialityController) GetSpecialitiesInUni() {
-	universityId, _ := c.GetInt(":universityId")
+// @router /byuni/:universityId [get]
+func (c *SpecialityController) GetByUniversity() {
+	universityId, err := c.GetInt(":universityId")
+	if err != nil {
+		c.CustomAbort(400, "Invalid university ID")
+		return
+	}
 
 	specialities, err := models.GetSpecialitiesInUniversity(universityId)
-	if err == nil {
-		c.Data["json"] = specialities
+	if err != nil {
+		c.CustomAbort(500, err.Error())
+		return
+	}
+
+	if len(specialities) == 0 {
+		c.Data["json"] = []models.Speciality{} // Возвращаем пустой массив вместо nil
 	} else {
-		c.Data["json"] = err.Error()
+		c.Data["json"] = specialities
 	}
 	c.ServeJSON()
 }

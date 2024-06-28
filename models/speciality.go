@@ -23,7 +23,7 @@ type Speciality struct {
 	MaxScore     int
 	VideoLink    string        `orm:"size(256)"`
 	Description  string        `orm:"type(text)"`
-	Universities []*University `orm:"rel(m2m);rel_table(speciality_university)"`
+	Universities []*University `orm:"reverse(many)"`
 	Subjects     []*Subject    `orm:"reverse(many)"`
 	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
@@ -214,11 +214,19 @@ func AddSubjectToSpeciality(subjectId, specialityId int) error {
 func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
 	o := orm.NewOrm()
 	var specialities []*Speciality
-	_, err := o.QueryTable("speciality").
+	num, err := o.QueryTable("speciality").
 		Filter("Universities__University__Id", universityId).
 		All(&specialities)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Number of specialities found: %d\n", num) // Добавьте отладочное сообщение
+	for _, speciality := range specialities {
+		fmt.Printf("Speciality: %+v\n", speciality) // Выводите каждую специальность для отладки
+	}
 	return specialities, err
 }
+
 func GetSubjectsBySpecialityID(specialityId int) ([]*Subject, error) {
 	o := orm.NewOrm()
 
