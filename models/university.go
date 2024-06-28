@@ -171,7 +171,6 @@ func IndexUniversity(university *University) error {
 func SearchUniversitiesByName(prefix string) ([]University, error) {
 	var results []University
 
-	// Подготовка запроса для Elasticsearch
 	query := fmt.Sprintf(`{
         "query": {
             "wildcard": {

@@ -131,18 +131,15 @@ func (c *QuotaController) Delete() {
 // @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
 // @router /add-speciality [post]
 func (c *QuotaController) AddSpecialityToQuota() {
-	// Извлечение параметров quota_id и speciality_id из URL
 	quotaId, err1 := c.GetInt(":quota_id")
 	specialityId, err2 := c.GetInt(":speciality_id")
 
-	// Проверка наличия ошибок при извлечении параметров из URL
 	if err1 != nil || err2 != nil {
 		c.Data["json"] = "quota_id and speciality_id must be integers"
 		c.ServeJSON()
 		return
 	}
 
-	// Вызов метода добавления специальности к квоте
 	err := models.AddSpecialityToQuota(specialityId, quotaId)
 	if err == nil {
 		c.Data["json"] = "Speciality added to quota successfully"

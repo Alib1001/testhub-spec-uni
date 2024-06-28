@@ -8,7 +8,6 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// CityController обрабатывает запросы для работы с городами.
 type CityController struct {
 	beego.Controller
 }
@@ -32,10 +31,8 @@ func (c *CityController) Create() {
 		return
 	}
 
-	// Добавление города в базу данных
 	id, err := models.AddCity(&city)
 	if err == nil {
-		// Индексация города в Elasticsearch
 		city.Id = int(id)
 		if err := models.IndexCity(&city); err != nil {
 			log.Printf("Failed to index city: %v", err)

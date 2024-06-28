@@ -41,7 +41,6 @@ func AddCity(city *City) (int64, error) {
 	}
 	city.Id = int(id)
 
-	// Индексация города в Elasticsearch
 	err = IndexCity(city)
 	if err != nil {
 		return id, fmt.Errorf("city added but failed to index in Elasticsearch: %v", err)
@@ -88,13 +87,11 @@ func GetCityWithUniversities(id int) (*City, error) {
 	return city, nil
 }
 func IndexCity(city *City) error {
-	// Преобразование города в JSON
 	data, err := json.Marshal(city)
 	if err != nil {
 		return err
 	}
 
-	// Создание запроса на индексирование
 	req := esapi.IndexRequest{
 		Index:      "cities",
 		DocumentID: fmt.Sprintf("%d", city.Id),
@@ -102,7 +99,6 @@ func IndexCity(city *City) error {
 		Refresh:    "true",
 	}
 
-	// Выполнение запроса
 	res, err := req.Do(context.Background(), conf.EsClient)
 	if err != nil {
 		return err
@@ -128,7 +124,6 @@ func IndexCity(city *City) error {
 func SearchCitiesByName(prefix string) ([]City, error) {
 	var results []City
 
-	// Подготовка запроса для Elasticsearch
 	query := fmt.Sprintf(`{
 		"query": {
 			"wildcard": {

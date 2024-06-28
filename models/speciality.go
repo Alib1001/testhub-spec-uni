@@ -173,7 +173,6 @@ func DeleteSpeciality(id int) error {
 func AddSubjectToSpeciality(subjectId, specialityId int) error {
 	o := orm.NewOrm()
 
-	// Check if the subject with given ID is already associated with the speciality
 	existingSubjects, err := GetSubjectsBySpecialityID(specialityId)
 	if err != nil {
 		return err
@@ -184,14 +183,12 @@ func AddSubjectToSpeciality(subjectId, specialityId int) error {
 		}
 	}
 
-	// Check if the speciality already has two subjects associated
 	speciality := &Speciality{Id: specialityId}
 	err = o.Read(speciality)
 	if err != nil {
 		return err
 	}
 
-	// Load related subjects to ensure we have the latest data
 	o.LoadRelated(speciality, "Subjects")
 
 	if len(speciality.Subjects) >= 2 {
@@ -206,7 +203,6 @@ func AddSubjectToSpeciality(subjectId, specialityId int) error {
 		return err
 	}
 
-	// Reload speciality to reflect changes
 	err = o.Read(speciality)
 	if err != nil {
 		return err

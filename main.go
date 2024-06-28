@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testhub-spec-uni/conf"
+	"testhub-spec-uni/middleware"
 	_ "testhub-spec-uni/routers"
 
 	_ "testhub-spec-uni/routers"
@@ -64,7 +65,7 @@ func main() {
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
 
-	//beego.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
+	beego.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
 	beego.Run()
 }
 

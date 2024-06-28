@@ -61,13 +61,15 @@ func init() {
 		),
 
 		beego.NSNamespace("/users",
-			beego.NSRouter("/login", &controllers.AuthController{}, "get:GetLogin;post:PostLogin"),
 			beego.NSRouter("/", &controllers.UserController{}),
 			beego.NSRouter("/:id", &controllers.UserController{}, "get:GetUserByID"),
 			beego.NSRouter("/:id", &controllers.UserController{}, "put:UpdateUserByID"),
 			beego.NSRouter("/:id", &controllers.UserController{}, "delete:DeleteUser"),
 		),
+
+		//beego.NSRouter("/login", &controllers.AuthController{}, "get:GetLogin;post:PostLogin"),
 	)
 
+	beego.Router("/login", &controllers.AuthController{}, "get:GetLogin;post:PostLogin")
 	beego.AddNamespace(ns)
 }
