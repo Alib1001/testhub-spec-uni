@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"testhub-spec-uni/conf"
 	"time"
 
@@ -189,7 +190,7 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
         "query": {
             "query_string": {
                 "query": "%s*",
-                "fields": ["Name"]
+                "fields": ["Name", "Abbreviation", "UniversityCode"]
             }
         }
     }`, prefix)
@@ -228,9 +229,12 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
 
 	return results, nil
 }
+
 func SearchUniversities(params map[string]interface{}) ([]University, error) {
 	var results []University
+	var mu sync.Mutex // Mutex to protect shared resource (results)
 
+	// Формируем основной запрос Elasticsearch
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -239,6 +243,7 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		},
 	}
 
+	// Добавляем условия поиска в основной запрос Elasticsearch
 	if minScore, ok := params["min_score"].(int); ok {
 		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
 			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
@@ -246,6 +251,18 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 				"range": map[string]interface{}{
 					"MinEntryScore": map[string]interface{}{
 						"gte": minScore,
+					},
+				},
+			},
+		)
+	}
+	if avgFee, ok := params["avg_fee"].(int); ok {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
+			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
+			map[string]interface{}{
+				"range": map[string]interface{}{
+					"AverageFee": map[string]interface{}{
+						"gte": avgFee,
 					},
 				},
 			},
@@ -285,18 +302,35 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		)
 	}
 
-	if speciality, ok := params["speciality"].(string); ok {
+	if specialityID, ok := params["speciality_id"].(int); ok {
 		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
 			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
 			map[string]interface{}{
 				"term": map[string]interface{}{
-					"Specialities.Name": speciality,
+					"Specialities.Id": specialityID,
 				},
 			},
 		)
 	}
 
-	// Добавьте другие фильтры (если есть) подобным образом
+	// Добавляем сортировку по avg_fee, если указано в параметрах
+	if sortAsc, ok := params["sort_avg_fee_asc"].(bool); ok && sortAsc {
+		query["sort"] = []map[string]interface{}{
+			{
+				"AverageFee": map[string]interface{}{
+					"order": "asc",
+				},
+			},
+		}
+	} else if sortDesc, ok := params["sort_avg_fee_desc"].(bool); ok && sortDesc {
+		query["sort"] = []map[string]interface{}{
+			{
+				"AverageFee": map[string]interface{}{
+					"order": "desc",
+				},
+			},
+		}
+	}
 
 	queryBody, err := json.Marshal(query)
 	if err != nil {
@@ -314,27 +348,63 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 	}
 	defer res.Body.Close()
 
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return results, err
-		} else {
-			return results, fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
 	var sr UniversitySearchResponse
 	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
 		return results, err
 	}
 
+	// Channel to collect unmarshaled Universities
+	universityCh := make(chan University)
+	// Error channel to collect errors
+	errCh := make(chan error)
+
+	// Goroutine to read from channel and append to results
+	go func() {
+		for u := range universityCh {
+			mu.Lock()
+			results = append(results, u)
+			mu.Unlock()
+		}
+	}()
+
+	// Goroutine to read errors
+	go func() {
+		for err := range errCh {
+			fmt.Println("Error:", err)
+		}
+	}()
+
+	// Launch goroutines for unmarshaling
+	var wg sync.WaitGroup
 	for _, hit := range sr.Hits.Hits {
-		results = append(results, hit.Source)
+		wg.Add(1)
+		go func(hit struct {
+			Source University `json:"_source"`
+		}) {
+			defer wg.Done()
+			sourceBytes, err := json.Marshal(hit.Source)
+			if err != nil {
+				errCh <- err
+				return
+			}
+
+			var u University
+			err = json.Unmarshal(sourceBytes, &u)
+			if err != nil {
+				errCh <- err
+				return
+			}
+
+			o := orm.NewOrm()
+			o.LoadRelated(&u, "Specialities")
+			universityCh <- u
+		}(hit)
 	}
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+	close(universityCh)
+	close(errCh)
 
 	return results, nil
 }

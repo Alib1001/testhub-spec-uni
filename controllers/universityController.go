@@ -155,7 +155,7 @@ func (c *UniversityController) AddSpecialityToUniversity() {
 	c.ServeJSON()
 }
 
-// SearchUniversities ищет университеты по имени.
+// SearchUniversities ищет университеты по имени, абревиатуре или коду.
 // @Title SearchUniversities
 // @Description Поиск университетов по имени.
 // @Param	name		query	string	true	"Имя университета для поиска"
@@ -176,19 +176,26 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // SearchUniversities ищет университеты по различным параметрам.
 // @Title SearchUniversities
 // @Description Поиск университетов по параметрам.
-// @Param	min_score		query	int		false	"Минимальный балл"
+// @Param	min_score			query	int		false	"Минимальный балл"
+// @Param	avg_fee				query	int		false	"Средняя цена"
 // @Param	has_military_dept	query	bool	false	"Наличие военной кафедры"
 // @Param	has_dormitory		query	bool	false	"Наличие общежития"
-// @Param	city_id			query	int		false	"ID города"
-// @Param	speciality		query	string	false	"Специальность"
+// @Param	city_id				query	int		false	"ID города"
+// @Param	speciality_id		query	int	false	"Специальность"
+// @Param	sort_avg_fee_asc	query	bool	false	"Сортировать по возрастанию цены"
+// @Param	sort_avg_fee_desc	query	bool	false	"Сортировать по убыванию цены"
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]
 func (c *UniversityController) SearchUniversities() {
 	params := make(map[string]interface{})
 
+	// Получаем параметры из запроса
 	if minScore, err := c.GetInt("min_score"); err == nil {
 		params["min_score"] = minScore
+	}
+	if avgFee, err := c.GetInt("avg_fee"); err == nil {
+		params["avg_fee"] = avgFee
 	}
 	if hasMilitaryDept, err := c.GetBool("has_military_dept"); err == nil {
 		params["has_military_dept"] = hasMilitaryDept
@@ -199,8 +206,14 @@ func (c *UniversityController) SearchUniversities() {
 	if cityID, err := c.GetInt("city_id"); err == nil {
 		params["city_id"] = cityID
 	}
-	if speciality := c.GetString("speciality"); speciality != "" {
-		params["speciality"] = speciality
+	if specialityID, err := c.GetInt("speciality_id"); err == nil {
+		params["speciality_id"] = specialityID
+	}
+
+	if sortAsc, err := c.GetBool("sort_avg_fee_asc"); err == nil && sortAsc {
+		params["sort_avg_fee_asc"] = true
+	} else if sortDesc, err := c.GetBool("sort_avg_fee_desc"); err == nil && sortDesc {
+		params["sort_avg_fee_desc"] = true
 	}
 
 	universities, err := models.SearchUniversities(params)

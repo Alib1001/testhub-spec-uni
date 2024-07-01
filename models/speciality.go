@@ -101,12 +101,14 @@ func SearchSpecialitiesByName(prefix string) ([]Speciality, error) {
 
 	query := fmt.Sprintf(`{
         "query": {
-            "query_string": {
-                "query": "%s*",
-                "fields": ["Name"]
+            "bool": {
+                "should": [
+                    {"wildcard": {"Name": "%s*"}},
+                    {"wildcard": {"Code": "%s*"}}
+                ]
             }
         }
-    }`, prefix)
+    }`, prefix, prefix)
 
 	res, err := conf.EsClient.Search(
 		conf.EsClient.Search.WithContext(context.Background()),
