@@ -13,12 +13,11 @@ import (
 )
 
 type University struct {
-	Id               int    `orm:"auto"`
-	UniversityCode   string `orm:"size(64)"`
-	Name             string `orm:"size(128)"`
-	Abbreviation     string `orm:"size(64)"`
-	UniversityStatus string `orm:"size(64)"`
-	MinScore         int
+	Id               int      `orm:"auto"`
+	UniversityCode   string   `orm:"size(64)"`
+	Name             string   `orm:"size(128)"`
+	Abbreviation     string   `orm:"size(64)"`
+	UniversityStatus string   `orm:"size(64)"`
 	Address          string   `orm:"size(256)"`
 	Website          string   `orm:"size(128)"`
 	SocialMediaList  []string `orm:"-"`
@@ -188,16 +187,126 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
 
 	query := fmt.Sprintf(`{
         "query": {
-            "wildcard": {
-                "Name": "%s*"
+            "query_string": {
+                "query": "%s*",
+                "fields": ["Name"]
             }
         }
     }`, prefix)
-
 	res, err := conf.EsClient.Search(
 		conf.EsClient.Search.WithContext(context.Background()),
 		conf.EsClient.Search.WithIndex("universities"),
 		conf.EsClient.Search.WithBody(strings.NewReader(query)),
+		conf.EsClient.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return results, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return results, err
+		} else {
+			return results, fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+
+	var sr UniversitySearchResponse
+	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
+		return results, err
+	}
+
+	for _, hit := range sr.Hits.Hits {
+		results = append(results, hit.Source)
+	}
+
+	return results, nil
+}
+func SearchUniversities(params map[string]interface{}) ([]University, error) {
+	var results []University
+
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must": []map[string]interface{}{},
+			},
+		},
+	}
+
+	if minScore, ok := params["min_score"].(int); ok {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
+			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
+			map[string]interface{}{
+				"range": map[string]interface{}{
+					"MinEntryScore": map[string]interface{}{
+						"gte": minScore,
+					},
+				},
+			},
+		)
+	}
+
+	if hasMilitaryDept, ok := params["has_military_dept"].(bool); ok {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
+			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"HasMilitaryDept": hasMilitaryDept,
+				},
+			},
+		)
+	}
+
+	if hasDormitory, ok := params["has_dormitory"].(bool); ok {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
+			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"HasDormitory": hasDormitory,
+				},
+			},
+		)
+	}
+
+	if cityID, ok := params["city_id"].(int); ok {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
+			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"City.Id": cityID,
+				},
+			},
+		)
+	}
+
+	if speciality, ok := params["speciality"].(string); ok {
+		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
+			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
+			map[string]interface{}{
+				"term": map[string]interface{}{
+					"Specialities.Name": speciality,
+				},
+			},
+		)
+	}
+
+	// Добавьте другие фильтры (если есть) подобным образом
+
+	queryBody, err := json.Marshal(query)
+	if err != nil {
+		return results, err
+	}
+
+	res, err := conf.EsClient.Search(
+		conf.EsClient.Search.WithContext(context.Background()),
+		conf.EsClient.Search.WithIndex("universities"),
+		conf.EsClient.Search.WithBody(strings.NewReader(string(queryBody))),
 		conf.EsClient.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {

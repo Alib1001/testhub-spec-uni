@@ -37,7 +37,8 @@ func init() {
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "delete:Delete"),
 			beego.NSRouter("/assign_city/:universityId/:cityId", &controllers.UniversityController{}, "post:AssignCityToUniversity"),
 			beego.NSRouter("/assignspec/:universityId/:specialityId", &controllers.UniversityController{}, "post:AddSpecialityToUniversity"),
-			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
+			beego.NSRouter("/searchname", &controllers.UniversityController{}, "get:SearchUniversitiesByName"),
+			beego.NSRouter("/searchfilter", &controllers.UniversityController{}, "get:SearchUniversities"),
 		),
 
 		beego.NSNamespace("/cities",

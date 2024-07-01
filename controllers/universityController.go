@@ -162,9 +162,48 @@ func (c *UniversityController) AddSpecialityToUniversity() {
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]
-func (c *UniversityController) SearchUniversities() {
+func (c *UniversityController) SearchUniversitiesByName() {
 	name := c.GetString("name")
 	universities, err := models.SearchUniversitiesByName(name)
+	if err == nil {
+		c.Data["json"] = universities
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// SearchUniversities ищет университеты по различным параметрам.
+// @Title SearchUniversities
+// @Description Поиск университетов по параметрам.
+// @Param	min_score		query	int		false	"Минимальный балл"
+// @Param	has_military_dept	query	bool	false	"Наличие военной кафедры"
+// @Param	has_dormitory		query	bool	false	"Наличие общежития"
+// @Param	city_id			query	int		false	"ID города"
+// @Param	speciality		query	string	false	"Специальность"
+// @Success 200 {array} models.University "Список найденных университетов"
+// @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
+// @router /search [get]
+func (c *UniversityController) SearchUniversities() {
+	params := make(map[string]interface{})
+
+	if minScore, err := c.GetInt("min_score"); err == nil {
+		params["min_score"] = minScore
+	}
+	if hasMilitaryDept, err := c.GetBool("has_military_dept"); err == nil {
+		params["has_military_dept"] = hasMilitaryDept
+	}
+	if hasDormitory, err := c.GetBool("has_dormitory"); err == nil {
+		params["has_dormitory"] = hasDormitory
+	}
+	if cityID, err := c.GetInt("city_id"); err == nil {
+		params["city_id"] = cityID
+	}
+	if speciality := c.GetString("speciality"); speciality != "" {
+		params["speciality"] = speciality
+	}
+
+	universities, err := models.SearchUniversities(params)
 	if err == nil {
 		c.Data["json"] = universities
 	} else {
