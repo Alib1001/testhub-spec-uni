@@ -232,9 +232,8 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
 
 func SearchUniversities(params map[string]interface{}) ([]University, error) {
 	var results []University
-	var mu sync.Mutex // Mutex to protect shared resource (results)
+	var mu sync.Mutex
 
-	// Формируем основной запрос Elasticsearch
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -243,7 +242,6 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		},
 	}
 
-	// Добавляем условия поиска в основной запрос Elasticsearch
 	if minScore, ok := params["min_score"].(int); ok {
 		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
 			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
@@ -313,7 +311,6 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		)
 	}
 
-	// Добавляем сортировку по avg_fee, если указано в параметрах
 	if sortAsc, ok := params["sort_avg_fee_asc"].(bool); ok && sortAsc {
 		query["sort"] = []map[string]interface{}{
 			{
@@ -353,12 +350,10 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		return results, err
 	}
 
-	// Channel to collect unmarshaled Universities
 	universityCh := make(chan University)
-	// Error channel to collect errors
+
 	errCh := make(chan error)
 
-	// Goroutine to read from channel and append to results
 	go func() {
 		for u := range universityCh {
 			mu.Lock()
@@ -367,14 +362,12 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		}
 	}()
 
-	// Goroutine to read errors
 	go func() {
 		for err := range errCh {
 			fmt.Println("Error:", err)
 		}
 	}()
 
-	// Launch goroutines for unmarshaling
 	var wg sync.WaitGroup
 	for _, hit := range sr.Hits.Hits {
 		wg.Add(1)
@@ -401,7 +394,6 @@ func SearchUniversities(params map[string]interface{}) ([]University, error) {
 		}(hit)
 	}
 
-	// Wait for all goroutines to finish
 	wg.Wait()
 	close(universityCh)
 	close(errCh)

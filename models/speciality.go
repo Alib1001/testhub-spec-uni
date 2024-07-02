@@ -239,3 +239,85 @@ func GetSubjectsBySpecialityID(specialityId int) ([]*Subject, error) {
 
 	return subjects, err
 }
+func GetSpecialitiesBySubjects(subject1Id, subject2Id int) ([]*Speciality, error) {
+	o := orm.NewOrm()
+
+	// Получение специальностей, связанных с первым предметом
+	var specialities1 []*Speciality
+	_, err := o.QueryTable("speciality").
+		Filter("Subjects__Subject__Id", subject1Id).
+		All(&specialities1)
+	if err != nil {
+		return nil, err
+	}
+
+	// Получение специальностей, связанных со вторым предметом
+	var specialities2 []*Speciality
+	_, err = o.QueryTable("speciality").
+		Filter("Subjects__Subject__Id", subject2Id).
+		All(&specialities2)
+	if err != nil {
+		return nil, err
+	}
+
+	// Создание мапы для хранения уникальных специальностей
+	specialityMap := make(map[int]*Speciality)
+
+	// Добавление специальностей первого предмета в мапу
+	for _, spec := range specialities1 {
+		specialityMap[spec.Id] = spec
+	}
+
+	// Добавление специальностей второго предмета в мапу (если они уже не добавлены)
+	for _, spec := range specialities2 {
+		if _, ok := specialityMap[spec.Id]; !ok {
+			specialityMap[spec.Id] = spec
+		}
+	}
+
+	// Преобразование мапы в список специальностей для возврата
+	var result []*Speciality
+	for _, spec := range specialityMap {
+		result = append(result, spec)
+	}
+
+	return result, nil
+}
+func (s *Speciality) GetSubjectsCombinationForSpeciality() (map[string]string, error) {
+	o := orm.NewOrm()
+
+	// Ensure speciality ID is set
+	if s.Id == 0 {
+		return nil, fmt.Errorf("speciality ID cannot be zero")
+	}
+
+	// Read speciality from database
+	err := o.Read(s)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load related subjects
+	o.LoadRelated(s, "Subjects")
+
+	// Create map to store subject combinations
+	subjectCombinations := make(map[string]string)
+
+	// Iterate over all subjects of the speciality
+	for _, subject1 := range s.Subjects {
+		// Get allowed second subjects for the current subject
+		allowedSubjects, err := GetAllowedSecondSubjects(subject1.Id)
+		if err != nil {
+			return nil, err
+		}
+
+		// Formulate subject combinations
+		for _, subject2 := range allowedSubjects {
+			combinationKey := fmt.Sprintf("%s - %s", subject1.Name, subject2.Name)
+			combinationValue := fmt.Sprintf("%d - %d", subject1.Id, subject2.Id)
+			subjectCombinations[combinationKey] = combinationValue
+		}
+	}
+
+	return subjectCombinations, nil
+}

@@ -192,3 +192,44 @@ func (c *SpecialityController) SearchSpecialities() {
 	}
 	c.ServeJSON()
 }
+
+// GetSpecialitiesBySubjects retrieves specialities associated with two subjects by their IDs.
+// @Title GetSpecialitiesBySubjects
+// @Description Retrieve specialities associated with two subjects by their IDs.
+// @Param   subject1Id    path    int     true        "ID of the first subject"
+// @Param   subject2Id    path    int     true        "ID of the second subject"
+// @Success 200 {array} models.Speciality    "List of specialities associated with the subjects"
+// @Failure 400 Invalid IDs or other error
+// @router /bysubjects/:subject1Id/:subject2Id [get]
+func (c *SpecialityController) GetSpecialitiesBySubjects() {
+	subject1Id, _ := c.GetInt(":subject1Id")
+	subject2Id, _ := c.GetInt(":subject2Id")
+
+	specialities, err := models.GetSpecialitiesBySubjects(subject1Id, subject2Id)
+	if err == nil {
+		c.Data["json"] = specialities
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// GetSubjectsCombinationForSpeciality возвращает комбинации предметов для специальности по её ID.
+// @Title GetSubjectsCombinationForSpeciality
+// @Description Получение комбинаций предметов для специальности по её ID.
+// @Param	id		path	int	true	"ID специальности для получения комбинаций предметов"
+// @Success 200 {object} map[string]string	"Комбинации предметов для специальности"
+// @Failure 400 некорректный ID или другая ошибка
+// @router /subject-combinations/:id [get]
+func (c *SpecialityController) GetSubjectsCombinationForSpeciality() {
+	id, _ := c.GetInt(":id")
+
+	speciality := &models.Speciality{Id: id}
+	combinations, err := speciality.GetSubjectsCombinationForSpeciality()
+	if err == nil {
+		c.Data["json"] = combinations
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}

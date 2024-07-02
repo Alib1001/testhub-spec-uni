@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"strconv"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -117,6 +118,37 @@ func (c *SubjectController) Delete() {
 func (c *SubjectController) SearchSubjectsByName() {
 	name := c.GetString("name")
 	subjects, err := models.SearchSubjectsByName(name)
+	if err == nil {
+		c.Data["json"] = subjects
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// GetAllowedSecondSubjects возвращает список допустимых вторых предметов.
+// @Title GetAllowedSecondSubjects
+// @Description Получение списка допустимых вторых предметов по ID первого предмета.
+// @Param	firstSubjectId	query	int	true	"ID первого предмета"
+// @Success 200 {array} models.Subject	"Список допустимых вторых предметов"
+// @Failure 400 ошибка получения списка или другая ошибка
+// @router /second_subjects [get]
+func (c *SubjectController) GetAllowedSecondSubjects() {
+	firstSubjectIdStr := c.GetString(":firstSubjectId")
+	if firstSubjectIdStr == "" {
+		c.Data["json"] = "firstSubjectId parameter is required"
+		c.ServeJSON()
+		return
+	}
+
+	firstSubjectId, err := strconv.Atoi(firstSubjectIdStr)
+	if err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	subjects, err := models.GetAllowedSecondSubjects(firstSubjectId)
 	if err == nil {
 		c.Data["json"] = subjects
 	} else {

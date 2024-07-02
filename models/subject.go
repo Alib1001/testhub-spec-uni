@@ -158,3 +158,31 @@ func SearchSubjectsByName(prefix string) ([]Subject, error) {
 
 	return results, nil
 }
+func GetAllowedSecondSubjects(firstSubjectId int) ([]*Subject, error) {
+	o := orm.NewOrm()
+
+	var specialities []*Speciality
+	_, err := o.QueryTable("speciality").
+		Filter("Subjects__Subject__Id", firstSubjectId).
+		All(&specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	var allowedSubjects []*Subject
+	subjectMap := make(map[int]*Subject)
+
+	for _, speciality := range specialities {
+		o.LoadRelated(speciality, "Subjects")
+		for _, subj := range speciality.Subjects {
+			if subj.Id != firstSubjectId {
+				if _, exists := subjectMap[subj.Id]; !exists {
+					subjectMap[subj.Id] = subj
+					allowedSubjects = append(allowedSubjects, subj)
+				}
+			}
+		}
+	}
+
+	return allowedSubjects, nil
+}

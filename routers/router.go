@@ -15,6 +15,7 @@ func init() {
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "delete:Delete"),
 			beego.NSRouter("/search", &controllers.SubjectController{}, "get:SearchSubjectsByName"),
+			beego.NSRouter("/second_subjects/:firstSubjectId", &controllers.SubjectController{}, "get:GetAllowedSecondSubjects"),
 		),
 
 		beego.NSNamespace("/specialities",
@@ -26,9 +27,10 @@ func init() {
 			beego.NSRouter("/search", &controllers.SpecialityController{}, "get:SearchSpecialities"),
 			beego.NSRouter("/subjects/:specialityId", &controllers.SpecialityController{}, "get:GetSubjectsBySpecialityID"),
 			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetByUniversity"),
+			beego.NSRouter("/bysubjects/:subject1Id/:subject2Id", &controllers.SpecialityController{}, "get:GetSpecialitiesBySubjects"),
+			beego.NSRouter("/subject_combinations/:id", &controllers.SpecialityController{}, "get:GetSubjectsCombinationForSpeciality"),
 			beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),
 		),
-
 		beego.NSNamespace("/universities",
 			beego.NSRouter("/", &controllers.UniversityController{}, "post:Create"),
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "get:Get"),

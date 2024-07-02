@@ -7,8 +7,6 @@ import (
 	"testhub-spec-uni/middleware"
 	_ "testhub-spec-uni/routers"
 
-	_ "testhub-spec-uni/routers"
-
 	"github.com/astaxie/beego/orm"
 	"github.com/beego/beego/v2/server/web"
 	beego "github.com/beego/beego/v2/server/web"
@@ -67,6 +65,7 @@ func main() {
 
 	beego.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
 	beego.Run()
+
 }
 
 //run: bee run -gendoc=true -downdoc=true
