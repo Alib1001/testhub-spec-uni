@@ -7,6 +7,8 @@ import (
 	"testhub-spec-uni/middleware"
 	_ "testhub-spec-uni/routers"
 
+	_ "testhub-spec-uni/routers"
+
 	"github.com/astaxie/beego/orm"
 	"github.com/beego/beego/v2/server/web"
 	beego "github.com/beego/beego/v2/server/web"

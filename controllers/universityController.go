@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"log"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -181,7 +182,7 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Param	has_military_dept	query	bool	false	"Наличие военной кафедры"
 // @Param	has_dormitory		query	bool	false	"Наличие общежития"
 // @Param	city_id				query	int		false	"ID города"
-// @Param	speciality_id		query	int	false	"Специальность"
+// @Param	speciality_id		query	int		false	"Специальность"
 // @Param	sort_avg_fee_asc	query	bool	false	"Сортировать по возрастанию цены"
 // @Param	sort_avg_fee_desc	query	bool	false	"Сортировать по убыванию цены"
 // @Success 200 {array} models.University "Список найденных университетов"
@@ -210,11 +211,16 @@ func (c *UniversityController) SearchUniversities() {
 		params["speciality_id"] = specialityID
 	}
 
+	// Получаем параметр speciality_ids как массив целых чисел
+
 	if sortAsc, err := c.GetBool("sort_avg_fee_asc"); err == nil && sortAsc {
 		params["sort_avg_fee_asc"] = true
 	} else if sortDesc, err := c.GetBool("sort_avg_fee_desc"); err == nil && sortDesc {
 		params["sort_avg_fee_desc"] = true
 	}
+
+	// Debugging: Print received params map
+	log.Printf("Received parameters map: %+v", params)
 
 	universities, err := models.SearchUniversities(params)
 	if err == nil {

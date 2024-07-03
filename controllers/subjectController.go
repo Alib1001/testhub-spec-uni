@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"strconv"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -21,19 +20,15 @@ type SubjectController struct {
 // @Failure 400 ошибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *SubjectController) Create() {
+	_ = c.Ctx.Input.CopyBody(1024)
 	var subject models.Subject
-
-	requestBody := c.Ctx.Input.CopyBody(1024)
-
-	err := json.Unmarshal(requestBody, &subject)
-	if err != nil {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &subject); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
 		return
 	}
 
-	id, err := models.AddSubject(&subject)
-	if err == nil {
+	if id, err := models.AddSubject(&subject); err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
 	} else {
 		c.Data["json"] = err.Error()
@@ -50,8 +45,7 @@ func (c *SubjectController) Create() {
 // @router /:id [get]
 func (c *SubjectController) Get() {
 	id, _ := c.GetInt(":id")
-	subject, err := models.GetSubjectById(id)
-	if err == nil {
+	if subject, err := models.GetSubjectById(id); err == nil {
 		c.Data["json"] = subject
 	} else {
 		c.Data["json"] = err.Error()
@@ -66,8 +60,7 @@ func (c *SubjectController) Get() {
 // @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *SubjectController) GetAll() {
-	subjects, err := models.GetAllSubjects()
-	if err == nil {
+	if subjects, err := models.GetAllSubjects(); err == nil {
 		c.Data["json"] = subjects
 	} else {
 		c.Data["json"] = err.Error()
@@ -86,10 +79,13 @@ func (c *SubjectController) GetAll() {
 func (c *SubjectController) Update() {
 	id, _ := c.GetInt(":id")
 	var subject models.Subject
-	json.Unmarshal(c.Ctx.Input.RequestBody, &subject)
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &subject); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
 	subject.Id = id
-	err := models.UpdateSubject(&subject)
-	if err == nil {
+	if err := models.UpdateSubject(&subject); err == nil {
 		c.Data["json"] = "Update successful"
 	} else {
 		c.Data["json"] = err.Error()
@@ -106,8 +102,7 @@ func (c *SubjectController) Update() {
 // @router /:id [delete]
 func (c *SubjectController) Delete() {
 	id, _ := c.GetInt(":id")
-	err := models.DeleteSubject(id)
-	if err == nil {
+	if err := models.DeleteSubject(id); err == nil {
 		c.Data["json"] = "Delete successful"
 	} else {
 		c.Data["json"] = err.Error()
@@ -115,10 +110,16 @@ func (c *SubjectController) Delete() {
 	c.ServeJSON()
 }
 
+// SearchSubjectsByName ищет предметы по имени.
+// @Title SearchSubjectsByName
+// @Description Поиск предметов по имени.
+// @Param	name	query	string	true	"Имя предмета для поиска"
+// @Success 200 {array} models.Subject	"Список найденных предметов"
+// @Failure 400 ошибка выполнения поиска
+// @router /search [get]
 func (c *SubjectController) SearchSubjectsByName() {
 	name := c.GetString("name")
-	subjects, err := models.SearchSubjectsByName(name)
-	if err == nil {
+	if subjects, err := models.SearchSubjectsByName(name); err == nil {
 		c.Data["json"] = subjects
 	} else {
 		c.Data["json"] = err.Error()
@@ -126,30 +127,22 @@ func (c *SubjectController) SearchSubjectsByName() {
 	c.ServeJSON()
 }
 
-// GetAllowedSecondSubjects возвращает список допустимых вторых предметов.
+// GetAllowedSecondSubjects возвращает список предметов, соответствующих первому предмету.
 // @Title GetAllowedSecondSubjects
-// @Description Получение списка допустимых вторых предметов по ID первого предмета.
-// @Param	firstSubjectId	query	int	true	"ID первого предмета"
-// @Success 200 {array} models.Subject	"Список допустимых вторых предметов"
+// @Description Получение списка предметов, соответствующих первому предмету.
+// @Param	subject1Id	query	int	true	"ID первого предмета"
+// @Success 200 {array} models.Subject	"Список предметов"
 // @Failure 400 ошибка получения списка или другая ошибка
-// @router /second_subjects [get]
+// @router /allowed_second_subjects [get]
 func (c *SubjectController) GetAllowedSecondSubjects() {
-	firstSubjectIdStr := c.GetString(":firstSubjectId")
-	if firstSubjectIdStr == "" {
-		c.Data["json"] = "firstSubjectId parameter is required"
-		c.ServeJSON()
-		return
-	}
-
-	firstSubjectId, err := strconv.Atoi(firstSubjectIdStr)
+	subject1Id, err := c.GetInt(":firstSubjectId")
 	if err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
 		return
 	}
 
-	subjects, err := models.GetAllowedSecondSubjects(firstSubjectId)
-	if err == nil {
+	if subjects, err := models.GetAllowedSecondSubjects(subject1Id); err == nil {
 		c.Data["json"] = subjects
 	} else {
 		c.Data["json"] = err.Error()

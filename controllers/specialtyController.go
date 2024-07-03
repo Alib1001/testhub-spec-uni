@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"encoding/json"
+	"net/http"
+	"strconv"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -10,6 +12,23 @@ import (
 // SpecialityController обрабатывает запросы для работы со специальностями.
 type SpecialityController struct {
 	beego.Controller
+}
+
+// SearchSpecialitiesByName searches for specialities by name prefix using Elasticsearch.
+// @Title SearchSpecialitiesByName
+// @Description Search for specialities by name prefix.
+// @Param	prefix	query	string	true	"Prefix of the speciality name to search for"
+// @Success 200 {array} models.Speciality	"List of specialities"
+// @Failure 400 error searching or other error
+// @router /search_by_name [get]
+func (c *SpecialityController) SearchSpecialitiesByName() {
+	prefix := c.GetString("prefix")
+	if specialities, err := models.SearchSpecialitiesByName(prefix); err == nil {
+		c.Data["json"] = specialities
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
 }
 
 // Create добавляет новую специальность в базу данных.
@@ -21,18 +40,13 @@ type SpecialityController struct {
 // @router / [post]
 func (c *SpecialityController) Create() {
 	var speciality models.Speciality
-
-	requestBody := c.Ctx.Input.CopyBody(1024)
-
-	err := json.Unmarshal(requestBody, &speciality)
-	if err != nil {
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
 		return
 	}
 
-	id, err := models.AddSpeciality(&speciality)
-	if err == nil {
+	if id, err := models.AddSpeciality(&speciality); err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
 	} else {
 		c.Data["json"] = err.Error()
@@ -49,8 +63,7 @@ func (c *SpecialityController) Create() {
 // @router /:id [get]
 func (c *SpecialityController) Get() {
 	id, _ := c.GetInt(":id")
-	speciality, err := models.GetSpecialityById(id)
-	if err == nil {
+	if speciality, err := models.GetSpecialityById(id); err == nil {
 		c.Data["json"] = speciality
 	} else {
 		c.Data["json"] = err.Error()
@@ -65,9 +78,8 @@ func (c *SpecialityController) Get() {
 // @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *SpecialityController) GetAll() {
-	specialties, err := models.GetAllSpecialities()
-	if err == nil {
-		c.Data["json"] = specialties
+	if specialities, err := models.GetAllSpecialities(); err == nil {
+		c.Data["json"] = specialities
 	} else {
 		c.Data["json"] = err.Error()
 	}
@@ -85,10 +97,13 @@ func (c *SpecialityController) GetAll() {
 func (c *SpecialityController) Update() {
 	id, _ := c.GetInt(":id")
 	var speciality models.Speciality
-	json.Unmarshal(c.Ctx.Input.RequestBody, &speciality)
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
 	speciality.Id = id
-	err := models.UpdateSpeciality(&speciality)
-	if err == nil {
+	if err := models.UpdateSpeciality(&speciality); err == nil {
 		c.Data["json"] = "Update successful"
 	} else {
 		c.Data["json"] = err.Error()
@@ -105,30 +120,8 @@ func (c *SpecialityController) Update() {
 // @router /:id [delete]
 func (c *SpecialityController) Delete() {
 	id, _ := c.GetInt(":id")
-	err := models.DeleteSpeciality(id)
-	if err == nil {
+	if err := models.DeleteSpeciality(id); err == nil {
 		c.Data["json"] = "Delete successful"
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
-// AddSubject добавляет предмет к специальности.
-// @Title AddSubject
-// @Description Добавление предмета к специальности.
-// @Param	specialityId		path	int	true	"ID специальности"
-// @Param	subjectId		path	int	true	"ID предмета"
-// @Success 200 string	"Предмет успешно добавлен к специальности"
-// @Failure 400 некорректный ID или другая ошибка
-// @router /:specialityId/add-subject/:subjectId [post]
-func (c *SpecialityController) AddSubject() {
-	specialityId, _ := c.GetInt(":specialityId")
-	subjectId, _ := c.GetInt(":subjectId")
-
-	err := models.AddSubjectToSpeciality(subjectId, specialityId)
-	if err == nil {
-		c.Data["json"] = "Subject added to speciality successfully"
 	} else {
 		c.Data["json"] = err.Error()
 	}
@@ -163,73 +156,91 @@ func (c *SpecialityController) GetByUniversity() {
 	c.ServeJSON()
 }
 
-// GetSubjectsBySpecialityID retrieves all subjects associated with a speciality by its ID.
-// @Title GetSubjectsBySpecialityID
-// @Description Retrieve subjects associated with a speciality by ID.
-// @Param   specialityId    path    int     true        "ID of the speciality to fetch subjects for"
-// @Success 200 {array} models.Subject    "List of subjects associated with the speciality"
-// @Failure 400 Invalid ID or other error
-// @router /:specialityId/subjects [get]
-func (c *SpecialityController) GetSubjectsBySpecialityID() {
-	specialityId, _ := c.GetInt(":specialityId")
+// @Title AssociateSpecialityWithSubjectPair
+// @Description связывает специальность с парой предметов
+// @Param	speciality_id		path 	int	true		"ID специальности"
+// @Param	subject_pair_id		path 	int	true		"ID пары предметов"
+// @Success 200 {object} models.SubjectPair
+// @Failure 400 "Invalid input"
+// @Failure 404 "SubjectPair not found"
+// @router /associatePair/:speciality_id/:subject_pair_id [put]
+func (c *SpecialityController) AssociateSpecialityWithSubjectPair() {
+	specialityIdStr := c.Ctx.Input.Param(":speciality_id")
+	subjectPairIdStr := c.Ctx.Input.Param(":subject_pair_id")
 
-	subjects, err := models.GetSubjectsBySpecialityID(specialityId)
-	if err == nil {
-		c.Data["json"] = subjects
-	} else {
-		c.Data["json"] = err.Error()
+	specialityId, err := strconv.Atoi(specialityIdStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid speciality_id")
 	}
+
+	subjectPairId, err := strconv.Atoi(subjectPairIdStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid subject_pair_id")
+	}
+
+	err = models.AssociateSpecialityWithSubjectPair(specialityId, subjectPairId)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+	}
+
+	c.Ctx.Output.SetStatus(http.StatusOK)
+	c.Data["json"] = map[string]interface{}{"message": "Speciality associated with SubjectPair successfully"}
 	c.ServeJSON()
 }
 
-func (c *SpecialityController) SearchSpecialities() {
-	name := c.GetString("name")
-	specialities, err := models.SearchSpecialitiesByName(name)
-	if err == nil {
-		c.Data["json"] = specialities
-	} else {
-		c.Data["json"] = err.Error()
+// @Title GetSubjectPairsBySpecialityId
+// @Description получает все пары предметов для заданной специальности
+// @Param	speciality_id		path 	int	true		"ID специальности"
+// @Success 200 {array} models.SubjectPair
+// @Failure 400 "Invalid input"
+// @Failure 404 "SubjectPairs not found"
+// @router /byspec/:speciality_id [get]
+func (c *SpecialityController) GetSubjectPairsBySpecialityId() {
+	specialityIdStr := c.Ctx.Input.Param(":speciality_id")
+	specialityId, err := strconv.Atoi(specialityIdStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid speciality_id")
 	}
+
+	subjectPairs, err := models.GetSubjectPairsBySpecialityId(specialityId)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+	}
+
+	c.Data["json"] = subjectPairs
 	c.ServeJSON()
 }
 
-// GetSpecialitiesBySubjects retrieves specialities associated with two subjects by their IDs.
-// @Title GetSpecialitiesBySubjects
-// @Description Retrieve specialities associated with two subjects by their IDs.
-// @Param   subject1Id    path    int     true        "ID of the first subject"
-// @Param   subject2Id    path    int     true        "ID of the second subject"
-// @Success 200 {array} models.Speciality    "List of specialities associated with the subjects"
-// @Failure 400 Invalid IDs or other error
-// @router /bysubjects/:subject1Id/:subject2Id [get]
-func (c *SpecialityController) GetSpecialitiesBySubjects() {
-	subject1Id, _ := c.GetInt(":subject1Id")
-	subject2Id, _ := c.GetInt(":subject2Id")
+// @Title GetSpecialityBySubjectPair
+// @Description получает специальность по ID первого и второго предметов
+// @Param	subject1_id		path 	int	true		"ID первого предмета"
+// @Param	subject2_id		path 	int	true		"ID второго предмета"
+// @Success 200 {object} models.Speciality
+// @Failure 400 "Invalid input"
+// @Failure 404 "Speciality not found"
+// @router /bysubjects/:subject1_id/:subject2_id [get]
+func (c *SpecialityController) GetSpecialitiesBySubjectPair() {
+	subject1IdStr := c.Ctx.Input.Param(":subject1_id")
+	subject2IdStr := c.Ctx.Input.Param(":subject2_id")
 
-	specialities, err := models.GetSpecialitiesBySubjects(subject1Id, subject2Id)
-	if err == nil {
-		c.Data["json"] = specialities
-	} else {
-		c.Data["json"] = err.Error()
+	subject1Id, err := strconv.Atoi(subject1IdStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid subject1_id")
 	}
-	c.ServeJSON()
-}
-
-// GetSubjectsCombinationForSpeciality возвращает комбинации предметов для специальности по её ID.
-// @Title GetSubjectsCombinationForSpeciality
-// @Description Получение комбинаций предметов для специальности по её ID.
-// @Param	id		path	int	true	"ID специальности для получения комбинаций предметов"
-// @Success 200 {object} map[string]string	"Комбинации предметов для специальности"
-// @Failure 400 некорректный ID или другая ошибка
-// @router /subject-combinations/:id [get]
-func (c *SpecialityController) GetSubjectsCombinationForSpeciality() {
-	id, _ := c.GetInt(":id")
-
-	speciality := &models.Speciality{Id: id}
-	combinations, err := speciality.GetSubjectsCombinationForSpeciality()
-	if err == nil {
-		c.Data["json"] = combinations
-	} else {
-		c.Data["json"] = err.Error()
+	subject2Id, err := strconv.Atoi(subject2IdStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid subject2_id")
 	}
+
+	speciality, err := models.GetSpecialitiesBySubjectPair(subject1Id, subject2Id)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+	}
+
+	if speciality == nil {
+		c.CustomAbort(http.StatusNotFound, "Speciality not found")
+	}
+
+	c.Data["json"] = speciality
 	c.ServeJSON()
 }

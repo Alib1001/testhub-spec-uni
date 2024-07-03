@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"testhub-spec-uni/conf"
 	"time"
 
@@ -149,38 +148,62 @@ func AddSpecialityToUniversity(specialityId, universityId int) error {
 }
 
 func IndexUniversity(university *University) error {
+	// Convert university to JSON
 	data, err := json.Marshal(university)
 	if err != nil {
 		return err
 	}
 
+	// Include speciality IDs in the indexed data
+	dataMap := make(map[string]interface{})
+	if err := json.Unmarshal(data, &dataMap); err != nil {
+		return err
+	}
+	dataMap["speciality_ids"] = getSpecialityIDs(university)
+
+	// Convert back to JSON after updating
+	updatedData, err := json.Marshal(dataMap)
+	if err != nil {
+		return err
+	}
+
+	// Create Elasticsearch index request
 	req := esapi.IndexRequest{
 		Index:      "universities",
 		DocumentID: fmt.Sprintf("%d", university.Id),
-		Body:       strings.NewReader(string(data)),
+		Body:       strings.NewReader(string(updatedData)),
 		Refresh:    "true",
 	}
 
+	// Execute the request
 	res, err := req.Do(context.Background(), conf.EsClient)
 	if err != nil {
 		return err
 	}
 	defer res.Body.Close()
 
+	// Handle response
 	if res.IsError() {
 		var e map[string]interface{}
 		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
 			return fmt.Errorf("error parsing the response body: %s", err)
-		} else {
-			return fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
 		}
+		return fmt.Errorf("[%s] %s: %s",
+			res.Status(),
+			e["error"].(map[string]interface{})["type"],
+			e["error"].(map[string]interface{})["reason"],
+		)
 	}
 
 	return nil
+}
+
+func getSpecialityIDs(university *University) []int {
+	var specialityIDs []int
+	for _, speciality := range university.Specialities {
+		specialityIDs = append(specialityIDs, speciality.Id)
+	}
+	return specialityIDs
 }
 
 func SearchUniversitiesByName(prefix string) ([]University, error) {
@@ -230,173 +253,133 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
 	return results, nil
 }
 
-func SearchUniversities(params map[string]interface{}) ([]University, error) {
-	var results []University
-	var mu sync.Mutex
-
-	query := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{},
-			},
-		},
+func SearchUniversities(params map[string]interface{}) ([]*University, error) {
+	// Start with all universities
+	o := orm.NewOrm()
+	var universities []*University
+	_, err := o.QueryTable("university").All(&universities)
+	if err != nil {
+		return nil, err
 	}
 
+	// Load related specialities for each university
+	for _, uni := range universities {
+		if _, err := o.LoadRelated(uni, "Specialities"); err != nil {
+			return nil, err
+		}
+	}
+
+	// Apply filters sequentially
+	universities, err = filterByMinScore(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterByAvgFee(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterByHasMilitaryDept(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterByHasDormitory(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterByCityID(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterBySpecialityID(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	return universities, nil
+}
+
+func filterByMinScore(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if minScore, ok := params["min_score"].(int); ok {
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
-			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
-			map[string]interface{}{
-				"range": map[string]interface{}{
-					"MinEntryScore": map[string]interface{}{
-						"gte": minScore,
-					},
-				},
-			},
-		)
+		var filtered []*University
+		for _, uni := range universities {
+			if uni.MinEntryScore >= minScore {
+				filtered = append(filtered, uni)
+			}
+		}
+		return filtered, nil
 	}
+	return universities, nil
+}
+func filterByAvgFee(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if avgFee, ok := params["avg_fee"].(int); ok {
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
-			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
-			map[string]interface{}{
-				"range": map[string]interface{}{
-					"AverageFee": map[string]interface{}{
-						"gte": avgFee,
-					},
-				},
-			},
-		)
+		var filtered []*University
+		for _, uni := range universities {
+			if uni.AverageFee >= avgFee {
+				filtered = append(filtered, uni)
+			}
+		}
+		return filtered, nil
 	}
+	return universities, nil
+}
 
+func filterByHasMilitaryDept(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if hasMilitaryDept, ok := params["has_military_dept"].(bool); ok {
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
-			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
-			map[string]interface{}{
-				"term": map[string]interface{}{
-					"HasMilitaryDept": hasMilitaryDept,
-				},
-			},
-		)
+		var filtered []*University
+		for _, uni := range universities {
+			if uni.HasMilitaryDept == hasMilitaryDept {
+				filtered = append(filtered, uni)
+			}
+		}
+		return filtered, nil
 	}
+	return universities, nil
+}
 
+func filterByHasDormitory(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if hasDormitory, ok := params["has_dormitory"].(bool); ok {
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
-			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
-			map[string]interface{}{
-				"term": map[string]interface{}{
-					"HasDormitory": hasDormitory,
-				},
-			},
-		)
+		var filtered []*University
+		for _, uni := range universities {
+			if uni.HasDormitory == hasDormitory {
+				filtered = append(filtered, uni)
+			}
+		}
+		return filtered, nil
 	}
+	return universities, nil
+}
 
+func filterByCityID(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if cityID, ok := params["city_id"].(int); ok {
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
-			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
-			map[string]interface{}{
-				"term": map[string]interface{}{
-					"City.Id": cityID,
-				},
-			},
-		)
+		var filtered []*University
+		for _, uni := range universities {
+			if uni.City != nil && uni.City.Id == cityID {
+				filtered = append(filtered, uni)
+			}
+		}
+		return filtered, nil
 	}
+	return universities, nil
+}
 
+func filterBySpecialityID(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if specialityID, ok := params["speciality_id"].(int); ok {
-		query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"] = append(
-			query["query"].(map[string]interface{})["bool"].(map[string]interface{})["must"].([]map[string]interface{}),
-			map[string]interface{}{
-				"term": map[string]interface{}{
-					"Specialities.Id": specialityID,
-				},
-			},
-		)
-	}
-
-	if sortAsc, ok := params["sort_avg_fee_asc"].(bool); ok && sortAsc {
-		query["sort"] = []map[string]interface{}{
-			{
-				"AverageFee": map[string]interface{}{
-					"order": "asc",
-				},
-			},
-		}
-	} else if sortDesc, ok := params["sort_avg_fee_desc"].(bool); ok && sortDesc {
-		query["sort"] = []map[string]interface{}{
-			{
-				"AverageFee": map[string]interface{}{
-					"order": "desc",
-				},
-			},
-		}
-	}
-
-	queryBody, err := json.Marshal(query)
-	if err != nil {
-		return results, err
-	}
-
-	res, err := conf.EsClient.Search(
-		conf.EsClient.Search.WithContext(context.Background()),
-		conf.EsClient.Search.WithIndex("universities"),
-		conf.EsClient.Search.WithBody(strings.NewReader(string(queryBody))),
-		conf.EsClient.Search.WithTrackTotalHits(true),
-	)
-	if err != nil {
-		return results, err
-	}
-	defer res.Body.Close()
-
-	var sr UniversitySearchResponse
-	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
-		return results, err
-	}
-
-	universityCh := make(chan University)
-
-	errCh := make(chan error)
-
-	go func() {
-		for u := range universityCh {
-			mu.Lock()
-			results = append(results, u)
-			mu.Unlock()
-		}
-	}()
-
-	go func() {
-		for err := range errCh {
-			fmt.Println("Error:", err)
-		}
-	}()
-
-	var wg sync.WaitGroup
-	for _, hit := range sr.Hits.Hits {
-		wg.Add(1)
-		go func(hit struct {
-			Source University `json:"_source"`
-		}) {
-			defer wg.Done()
-			sourceBytes, err := json.Marshal(hit.Source)
-			if err != nil {
-				errCh <- err
-				return
+		var filtered []*University
+		for _, uni := range universities {
+			for _, spec := range uni.Specialities {
+				fmt.Printf("University: %d, Speciality: %d\n", uni.Id, spec.Id) // Debugging line
+				if spec.Id == specialityID {
+					filtered = append(filtered, uni)
+					break
+				}
 			}
-
-			var u University
-			err = json.Unmarshal(sourceBytes, &u)
-			if err != nil {
-				errCh <- err
-				return
-			}
-
-			o := orm.NewOrm()
-			o.LoadRelated(&u, "Specialities")
-			universityCh <- u
-		}(hit)
+		}
+		return filtered, nil
 	}
-
-	wg.Wait()
-	close(universityCh)
-	close(errCh)
-
-	return results, nil
+	return universities, nil
 }

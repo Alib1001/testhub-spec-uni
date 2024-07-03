@@ -14,11 +14,10 @@ import (
 )
 
 type Subject struct {
-	Id           int           `orm:"auto"`
-	Name         string        `orm:"size(128)"`
-	Specialities []*Speciality `orm:"rel(m2m);rel_table(subject_speciality)"`
-	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
-	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
+	Id        int       `orm:"auto"`
+	Name      string    `orm:"size(128)"`
+	CreatedAt time.Time `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt time.Time `orm:"auto_now;type(datetime)"`
 }
 
 type SubjectSearchResponse struct {
@@ -44,7 +43,7 @@ func AddSubject(subject *Subject) (int64, error) {
 	subject.Id = int(id)
 	err = IndexSubject(subject)
 	if err != nil {
-		return id, fmt.Errorf("Subject added, but failed index in ElasticSearh")
+		return id, fmt.Errorf("Subject added, but failed index in ElasticSearch")
 	}
 
 	return id, err
@@ -158,31 +157,21 @@ func SearchSubjectsByName(prefix string) ([]Subject, error) {
 
 	return results, nil
 }
-func GetAllowedSecondSubjects(firstSubjectId int) ([]*Subject, error) {
-	o := orm.NewOrm()
 
-	var specialities []*Speciality
-	_, err := o.QueryTable("speciality").
-		Filter("Subjects__Subject__Id", firstSubjectId).
-		All(&specialities)
+func GetAllowedSecondSubjects(subject1Id int) ([]*Subject, error) {
+	o := orm.NewOrm()
+	var subjects []*Subject
+
+	_, err := o.Raw(`
+		SELECT DISTINCT s2.*
+		FROM subject_pair sp
+		JOIN subject s2 ON sp.subject2_id = s2.id
+		WHERE sp.subject1_id = ?
+	`, subject1Id).QueryRows(&subjects)
+
 	if err != nil {
 		return nil, err
 	}
 
-	var allowedSubjects []*Subject
-	subjectMap := make(map[int]*Subject)
-
-	for _, speciality := range specialities {
-		o.LoadRelated(speciality, "Subjects")
-		for _, subj := range speciality.Subjects {
-			if subj.Id != firstSubjectId {
-				if _, exists := subjectMap[subj.Id]; !exists {
-					subjectMap[subj.Id] = subj
-					allowedSubjects = append(allowedSubjects, subj)
-				}
-			}
-		}
-	}
-
-	return allowedSubjects, nil
+	return subjects, nil
 }

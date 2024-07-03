@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"testhub-spec-uni/conf"
@@ -24,7 +23,7 @@ type Speciality struct {
 	VideoLink    string        `orm:"size(256)"`
 	Description  string        `orm:"type(text)"`
 	Universities []*University `orm:"reverse(many)"`
-	Subjects     []*Subject    `orm:"reverse(many)"`
+	SubjectPair  *SubjectPair  `orm:"rel(fk);on_delete(set_null);null"`
 	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
@@ -52,20 +51,18 @@ func AddSpeciality(speciality *Speciality) (int64, error) {
 	speciality.Id = int(id)
 	err = IndexSpeciality(speciality)
 	if err != nil {
-		return id, fmt.Errorf("Speciality added, but failed index in ElasticSearh")
+		return id, fmt.Errorf("Speciality added, but failed index in ElasticSearch")
 	}
 
 	return id, err
 }
 
 func IndexSpeciality(speciality *Speciality) error {
-	// Преобразование специальности в JSON
 	data, err := json.Marshal(speciality)
 	if err != nil {
 		return err
 	}
 
-	// Создание запроса на индексирование
 	req := esapi.IndexRequest{
 		Index:      "specialities",
 		DocumentID: fmt.Sprintf("%d", speciality.Id),
@@ -73,7 +70,6 @@ func IndexSpeciality(speciality *Speciality) error {
 		Refresh:    "true",
 	}
 
-	// Выполнение запроса
 	res, err := req.Do(context.Background(), conf.EsClient)
 	if err != nil {
 		return err
@@ -96,19 +92,67 @@ func IndexSpeciality(speciality *Speciality) error {
 	return nil
 }
 
+func GetSpecialityById(id int) (*Speciality, error) {
+	o := orm.NewOrm()
+	speciality := &Speciality{Id: id}
+	err := o.Read(speciality)
+	if err != nil {
+		return nil, err
+	}
+
+	// Загрузка связанных SubjectPair
+	err = o.Read(speciality.SubjectPair)
+	if err != nil && err != orm.ErrNoRows {
+		return nil, err
+	}
+
+	return speciality, nil
+}
+
+func GetAllSpecialities() ([]*Speciality, error) {
+	o := orm.NewOrm()
+	var specialities []*Speciality
+	_, err := o.QueryTable("speciality").All(&specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	// Загрузка связанных SubjectPair для каждой специальности
+	for _, speciality := range specialities {
+		if speciality.SubjectPair != nil {
+			err := o.Read(speciality.SubjectPair)
+			if err != nil && err != orm.ErrNoRows {
+				return nil, err
+			}
+		}
+	}
+
+	return specialities, nil
+}
+
+func UpdateSpeciality(speciality *Speciality) error {
+	o := orm.NewOrm()
+	_, err := o.Update(speciality)
+	return err
+}
+
+func DeleteSpeciality(id int) error {
+	o := orm.NewOrm()
+	_, err := o.Delete(&Speciality{Id: id})
+	return err
+}
+
 func SearchSpecialitiesByName(prefix string) ([]Speciality, error) {
 	var results []Speciality
 
 	query := fmt.Sprintf(`{
         "query": {
-            "bool": {
-                "should": [
-                    {"wildcard": {"Name": "%s*"}},
-                    {"wildcard": {"Code": "%s*"}}
-                ]
+            "query_string": {
+                "query": "%s*",
+                "fields": ["Name"]
             }
         }
-    }`, prefix, prefix)
+    }`, prefix)
 
 	res, err := conf.EsClient.Search(
 		conf.EsClient.Search.WithContext(context.Background()),
@@ -146,73 +190,6 @@ func SearchSpecialitiesByName(prefix string) ([]Speciality, error) {
 	return results, nil
 }
 
-func GetSpecialityById(id int) (*Speciality, error) {
-	o := orm.NewOrm()
-	speciality := &Speciality{Id: id}
-	err := o.Read(speciality)
-	return speciality, err
-}
-
-func GetAllSpecialities() ([]*Speciality, error) {
-	o := orm.NewOrm()
-	var specialities []*Speciality
-	_, err := o.QueryTable("speciality").All(&specialities)
-	return specialities, err
-}
-
-func UpdateSpeciality(speciality *Speciality) error {
-	o := orm.NewOrm()
-	_, err := o.Update(speciality)
-	return err
-}
-
-func DeleteSpeciality(id int) error {
-	o := orm.NewOrm()
-	_, err := o.Delete(&Speciality{Id: id})
-	return err
-}
-
-func AddSubjectToSpeciality(subjectId, specialityId int) error {
-	o := orm.NewOrm()
-
-	existingSubjects, err := GetSubjectsBySpecialityID(specialityId)
-	if err != nil {
-		return err
-	}
-	for _, subj := range existingSubjects {
-		if subj.Id == subjectId {
-			return errors.New("subject with this ID is already associated with the speciality")
-		}
-	}
-
-	speciality := &Speciality{Id: specialityId}
-	err = o.Read(speciality)
-	if err != nil {
-		return err
-	}
-
-	o.LoadRelated(speciality, "Subjects")
-
-	if len(speciality.Subjects) >= 2 {
-		return errors.New("cannot add more than two subjects to the speciality")
-	}
-
-	// Proceed to add the subject to the speciality
-	subject := &Subject{Id: subjectId}
-	m2m := o.QueryM2M(speciality, "Subjects")
-	_, err = m2m.Add(subject)
-	if err != nil {
-		return err
-	}
-
-	err = o.Read(speciality)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
 	o := orm.NewOrm()
 	var specialities []*Speciality
@@ -229,95 +206,76 @@ func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
 	return specialities, err
 }
 
-func GetSubjectsBySpecialityID(specialityId int) ([]*Subject, error) {
+func AssociateSpecialityWithSubjectPair(specialityId int, subjectPairId int) error {
 	o := orm.NewOrm()
-
-	var subjects []*Subject
-	_, err := o.QueryTable("subject").
-		Filter("Specialities__Speciality__Id", specialityId).
-		All(&subjects)
-
-	return subjects, err
+	_, err := o.QueryTable("speciality").Filter("id", specialityId).Update(orm.Params{
+		"subject_pair_id": subjectPairId,
+	})
+	return err
 }
-func GetSpecialitiesBySubjects(subject1Id, subject2Id int) ([]*Speciality, error) {
+
+func GetAllSpecialitiesWithSubjectPairs() ([]*Speciality, error) {
 	o := orm.NewOrm()
-
-	// Получение специальностей, связанных с первым предметом
-	var specialities1 []*Speciality
-	_, err := o.QueryTable("speciality").
-		Filter("Subjects__Subject__Id", subject1Id).
-		All(&specialities1)
+	var specialities []*Speciality
+	_, err := o.QueryTable("speciality").All(&specialities)
 	if err != nil {
 		return nil, err
 	}
 
-	// Получение специальностей, связанных со вторым предметом
-	var specialities2 []*Speciality
-	_, err = o.QueryTable("speciality").
-		Filter("Subjects__Subject__Id", subject2Id).
-		All(&specialities2)
-	if err != nil {
-		return nil, err
-	}
-
-	// Создание мапы для хранения уникальных специальностей
-	specialityMap := make(map[int]*Speciality)
-
-	// Добавление специальностей первого предмета в мапу
-	for _, spec := range specialities1 {
-		specialityMap[spec.Id] = spec
-	}
-
-	// Добавление специальностей второго предмета в мапу (если они уже не добавлены)
-	for _, spec := range specialities2 {
-		if _, ok := specialityMap[spec.Id]; !ok {
-			specialityMap[spec.Id] = spec
+	// Загрузка связанных SubjectPairs для каждой специальности
+	for _, speciality := range specialities {
+		if speciality.SubjectPair != nil {
+			err := o.Read(speciality.SubjectPair)
+			if err != nil && err != orm.ErrNoRows {
+				return nil, err
+			}
 		}
 	}
 
-	// Преобразование мапы в список специальностей для возврата
-	var result []*Speciality
-	for _, spec := range specialityMap {
-		result = append(result, spec)
-	}
-
-	return result, nil
+	return specialities, nil
 }
-func (s *Speciality) GetSubjectsCombinationForSpeciality() (map[string]string, error) {
+
+func GetSubjectPairsBySpecialityId(specialityId int) ([]*SubjectPair, error) {
 	o := orm.NewOrm()
-
-	// Ensure speciality ID is set
-	if s.Id == 0 {
-		return nil, fmt.Errorf("speciality ID cannot be zero")
-	}
-
-	// Read speciality from database
-	err := o.Read(s)
+	var subjectPairs []*SubjectPair
+	_, err := o.QueryTable("subject_pair").Filter("speciality__id", specialityId).All(&subjectPairs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Load related subjects
-	o.LoadRelated(s, "Subjects")
-
-	// Create map to store subject combinations
-	subjectCombinations := make(map[string]string)
-
-	// Iterate over all subjects of the speciality
-	for _, subject1 := range s.Subjects {
-		// Get allowed second subjects for the current subject
-		allowedSubjects, err := GetAllowedSecondSubjects(subject1.Id)
-		if err != nil {
-			return nil, err
+	// Загрузка связанных Subjects для каждой пары предметов
+	for _, pair := range subjectPairs {
+		if pair.Subject1 != nil {
+			err := o.Read(pair.Subject1)
+			if err != nil && err != orm.ErrNoRows {
+				return nil, err
+			}
 		}
-
-		// Formulate subject combinations
-		for _, subject2 := range allowedSubjects {
-			combinationKey := fmt.Sprintf("%s - %s", subject1.Name, subject2.Name)
-			combinationValue := fmt.Sprintf("%d - %d", subject1.Id, subject2.Id)
-			subjectCombinations[combinationKey] = combinationValue
+		if pair.Subject2 != nil {
+			err := o.Read(pair.Subject2)
+			if err != nil && err != orm.ErrNoRows {
+				return nil, err
+			}
 		}
 	}
 
-	return subjectCombinations, nil
+	return subjectPairs, nil
+}
+
+func GetSpecialitiesBySubjectPair(subject1Id, subject2Id int) ([]*Speciality, error) {
+	o := orm.NewOrm()
+	var specialities []*Speciality
+
+	_, err := o.Raw(`
+		SELECT sp.*
+		FROM subject_pair spair
+		JOIN speciality sp ON spair.id = sp.subject_pair_id
+		WHERE spair.subject1_id = ? AND spair.subject2_id = ?
+	`, subject1Id, subject2Id).QueryRows(&specialities)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return specialities, nil
 }
