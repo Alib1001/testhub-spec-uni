@@ -91,3 +91,13 @@ func DeleteSubjectPair(id int) error {
 	_, err := o.Delete(&SubjectPair{Id: id})
 	return err
 }
+
+func GetSubjectPairBySubjectIds(subject1Id, subject2Id int) (*SubjectPair, error) {
+	o := orm.NewOrm()
+	subjectPair := &SubjectPair{}
+	err := o.QueryTable("subject_pair").Filter("Subject1__Id", subject1Id).Filter("Subject2__Id", subject2Id).One(subjectPair)
+	if err != nil {
+		return nil, err
+	}
+	return subjectPair, nil
+}

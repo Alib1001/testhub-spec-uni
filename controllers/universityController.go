@@ -182,8 +182,8 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Param	has_military_dept	query	bool	false	"Наличие военной кафедры"
 // @Param	has_dormitory		query	bool	false	"Наличие общежития"
 // @Param	city_id				query	int		false	"ID города"
-// @Param	speciality_id		query	int		false	"Специальность"
-// @Param   sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
+// @Param	speciality_ids		query	string	false	"Список специальностей в JSON формате, должны передавать массив с id специальнотей"
+// @Param	sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]

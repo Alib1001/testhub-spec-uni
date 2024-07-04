@@ -120,3 +120,29 @@ func (c *SubjectPairController) Delete() {
 	}
 	c.ServeJSON()
 }
+
+// GetBySubjectIds возвращает ID пары предметов по ID первого и второго предмета.
+// @Title GetBySubjectIds
+// @Description Получение ID пары предметов по ID первого и второго предмета.
+// @Param	firstSubjectId	path	int	true	"ID первого предмета"
+// @Param	secondSubjectId	path	int	true	"ID второго предмета"
+// @Success 200 {object} map[string]int	"ID пары предметов"
+// @Failure 400 некорректные ID или другая ошибка
+// @router /get/:firstSubjectId/:secondSubjectId [get]
+func (c *SubjectPairController) GetBySubjectIds() {
+	firstSubjectId, err1 := c.GetInt(":firstSubjectId")
+	secondSubjectId, err2 := c.GetInt(":secondSubjectId")
+	if err1 != nil || err2 != nil {
+		c.Data["json"] = "Invalid subject IDs"
+		c.ServeJSON()
+		return
+	}
+
+	subjectPair, err := models.GetSubjectPairBySubjectIds(firstSubjectId, secondSubjectId)
+	if err != nil {
+		c.Data["json"] = err.Error()
+	} else {
+		c.Data["json"] = map[string]int{"id": subjectPair.Id}
+	}
+	c.ServeJSON()
+}

@@ -263,14 +263,12 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	// Load related specialities for each university
 	for _, uni := range universities {
 		if _, err := o.LoadRelated(uni, "Specialities"); err != nil {
 			return nil, err
 		}
 	}
 
-	// Apply filters sequentially
 	universities, err = filterByMinScore(params, universities)
 	if err != nil {
 		return nil, err
@@ -301,7 +299,11 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	// Apply sorting by average fee
+	universities, err = filterBySpecialityID(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
 	universities, err = filterBySortOrder(params, universities)
 	if err != nil {
 		return nil, err
