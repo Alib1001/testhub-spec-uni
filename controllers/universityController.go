@@ -191,7 +191,7 @@ func (c *UniversityController) SearchUniversitiesByName() {
 func (c *UniversityController) SearchUniversities() {
 	params := make(map[string]interface{})
 
-	// Получаем параметры из запроса
+	// Get parameters from request
 	if minScore, err := c.GetInt("min_score"); err == nil {
 		params["min_score"] = minScore
 	}
@@ -207,19 +207,22 @@ func (c *UniversityController) SearchUniversities() {
 	if cityID, err := c.GetInt("city_id"); err == nil {
 		params["city_id"] = cityID
 	}
-	if specialityID, err := c.GetInt("speciality_id"); err == nil {
-		params["speciality_id"] = specialityID
-	}
 
-	// Получаем параметр speciality_ids как массив целых чисел
+	// Get speciality IDs from request an convert to a slice of ints
+	if specialityIDsStr := c.GetString("speciality_ids"); specialityIDsStr != "" {
+		var specialityIDs []int
+		err := json.Unmarshal([]byte(specialityIDsStr), &specialityIDs)
+		if err == nil {
+			params["speciality_ids"] = specialityIDs
+		}
+	}
 
 	if sortAsc, err := c.GetBool("sort_avg_fee_asc"); err == nil && sortAsc {
-		params["sort_avg_fee_asc"] = true
+		params["sort"] = "avg_fee_asc"
 	} else if sortDesc, err := c.GetBool("sort_avg_fee_desc"); err == nil && sortDesc {
-		params["sort_avg_fee_desc"] = true
+		params["sort"] = "avg_fee_desc"
 	}
 
-	// Debugging: Print received params map
 	log.Printf("Received parameters map: %+v", params)
 
 	universities, err := models.SearchUniversities(params)

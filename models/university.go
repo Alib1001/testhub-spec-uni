@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"testhub-spec-uni/conf"
 	"time"
@@ -295,14 +296,58 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	universities, err = filterBySpecialityID(params, universities)
+	universities, err = filterBySpecialityIDs(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply sorting by average fee
+	universities, err = filterBySortOrder(params, universities)
 	if err != nil {
 		return nil, err
 	}
 
 	return universities, nil
 }
+func filterBySpecialityIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
+	if specialityIDs, ok := params["speciality_ids"].([]int); ok {
+		var filtered []*University
+		for _, uni := range universities {
+			matches := 0
+			for _, spec := range uni.Specialities {
+				for _, id := range specialityIDs {
+					if spec.Id == id {
+						matches++
+						break
+					}
+				}
+			}
+			if matches == len(specialityIDs) {
+				filtered = append(filtered, uni)
+			}
+		}
+		return filtered, nil
+	}
+	return universities, nil
+}
 
+func filterBySortOrder(params map[string]interface{}, universities []*University) ([]*University, error) {
+	if sortOrder, ok := params["sort"].(string); ok {
+		switch sortOrder {
+		case "avg_fee_asc":
+			sort.Slice(universities, func(i, j int) bool {
+				return universities[i].AverageFee < universities[j].AverageFee
+			})
+		case "avg_fee_desc":
+			sort.Slice(universities, func(i, j int) bool {
+				return universities[i].AverageFee > universities[j].AverageFee
+			})
+		default:
+			return universities, fmt.Errorf("invalid sort order: %s", sortOrder)
+		}
+	}
+	return universities, nil
+}
 func filterByMinScore(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if minScore, ok := params["min_score"].(int); ok {
 		var filtered []*University
@@ -315,6 +360,7 @@ func filterByMinScore(params map[string]interface{}, universities []*University)
 	}
 	return universities, nil
 }
+
 func filterByAvgFee(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if avgFee, ok := params["avg_fee"].(int); ok {
 		var filtered []*University
