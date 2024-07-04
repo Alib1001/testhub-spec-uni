@@ -183,15 +183,13 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Param	has_dormitory		query	bool	false	"Наличие общежития"
 // @Param	city_id				query	int		false	"ID города"
 // @Param	speciality_id		query	int		false	"Специальность"
-// @Param	sort_avg_fee_asc	query	bool	false	"Сортировать по возрастанию цены"
-// @Param	sort_avg_fee_desc	query	bool	false	"Сортировать по убыванию цены"
+// @Param   sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]
 func (c *UniversityController) SearchUniversities() {
 	params := make(map[string]interface{})
 
-	// Get parameters from request
 	if minScore, err := c.GetInt("min_score"); err == nil {
 		params["min_score"] = minScore
 	}
@@ -208,7 +206,6 @@ func (c *UniversityController) SearchUniversities() {
 		params["city_id"] = cityID
 	}
 
-	// Get speciality IDs from request an convert to a slice of ints
 	if specialityIDsStr := c.GetString("speciality_ids"); specialityIDsStr != "" {
 		var specialityIDs []int
 		err := json.Unmarshal([]byte(specialityIDsStr), &specialityIDs)
@@ -217,10 +214,9 @@ func (c *UniversityController) SearchUniversities() {
 		}
 	}
 
-	if sortAsc, err := c.GetBool("sort_avg_fee_asc"); err == nil && sortAsc {
-		params["sort"] = "avg_fee_asc"
-	} else if sortDesc, err := c.GetBool("sort_avg_fee_desc"); err == nil && sortDesc {
-		params["sort"] = "avg_fee_desc"
+	sort := c.GetString("sort")
+	if sort == "avg_fee_asc" || sort == "avg_fee_desc" {
+		params["sort"] = sort
 	}
 
 	log.Printf("Received parameters map: %+v", params)
