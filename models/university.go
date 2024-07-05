@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"testhub-spec-uni/conf"
 	"time"
@@ -255,7 +256,7 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
 }
 
 func SearchUniversities(params map[string]interface{}) ([]*University, error) {
-	// Start with all universities
+	// Начнем с поиска всех университетов
 	o := orm.NewOrm()
 	var universities []*University
 	_, err := o.QueryTable("university").All(&universities)
@@ -289,6 +290,11 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
+	universities, err = filterBySubjects(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
 	universities, err = filterByCityID(params, universities)
 	if err != nil {
 		return nil, err
@@ -311,6 +317,7 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 
 	return universities, nil
 }
+
 func filterBySpecialityIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if specialityIDs, ok := params["speciality_ids"].([]int); ok {
 		var filtered []*University
@@ -430,4 +437,55 @@ func filterBySpecialityID(params map[string]interface{}, universities []*Univers
 		return filtered, nil
 	}
 	return universities, nil
+}
+func filterBySubjects(params map[string]interface{}, universities []*University) ([]*University, error) {
+	o := orm.NewOrm()
+
+	// Extract subject IDs from params
+	var firstSubjectId interface{}
+	var secondSubjectId interface{}
+
+	if firstSubjectIdInt, ok := params["first_subject_id"].(int); ok {
+		firstSubjectId = firstSubjectIdInt
+	} else {
+		firstSubjectId = nil // Set to nil if not present or not integer
+	}
+
+	if secondSubjectIdInt, ok := params["second_subject_id"].(int); ok {
+		secondSubjectId = secondSubjectIdInt
+	} else {
+		secondSubjectId = nil // Set to nil if not present or not integer
+	}
+
+	// Build the query
+	query := `
+        SELECT DISTINCT u.*
+        FROM university u
+        JOIN speciality_university su ON u.id = su.university_id
+        JOIN speciality s ON su.speciality_id = s.id
+        JOIN subject_pair sp ON s.subject_pair_id = sp.id
+        WHERE 1=1`
+
+	var args []interface{}
+	argCount := 1
+
+	if firstSubjectId != nil {
+		query += " AND (sp.subject1_id = $" + strconv.Itoa(argCount) + " OR $" + strconv.Itoa(argCount) + " IS NULL)"
+		args = append(args, firstSubjectId)
+		argCount++
+	}
+
+	if secondSubjectId != nil {
+		query += " AND (sp.subject2_id = $" + strconv.Itoa(argCount) + " OR $" + strconv.Itoa(argCount) + " IS NULL)"
+		args = append(args, secondSubjectId)
+		argCount++
+	}
+
+	var filtered []*University
+	_, err := o.Raw(query, args...).QueryRows(&filtered)
+	if err != nil {
+		return nil, err
+	}
+
+	return filtered, nil
 }

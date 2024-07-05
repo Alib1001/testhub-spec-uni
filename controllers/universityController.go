@@ -183,6 +183,8 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Param	has_dormitory		query	bool	false	"Наличие общежития"
 // @Param	city_id				query	int		false	"ID города"
 // @Param	speciality_ids		query	string	false	"Список специальностей в JSON формате, должны передавать массив с id специальнотей"
+// @Param	first_subject_id	query	int		false	"ID первого предмета"
+// @Param	second_subject_id	query	int		false	"ID второго предмета"
 // @Param	sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
@@ -212,6 +214,13 @@ func (c *UniversityController) SearchUniversities() {
 		if err == nil {
 			params["speciality_ids"] = specialityIDs
 		}
+	}
+
+	if firstSubjectID, err := c.GetInt("first_subject_id"); err == nil {
+		params["first_subject_id"] = firstSubjectID
+	}
+	if secondSubjectID, err := c.GetInt("second_subject_id"); err == nil {
+		params["second_subject_id"] = secondSubjectID
 	}
 
 	sort := c.GetString("sort")
