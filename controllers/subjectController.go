@@ -79,6 +79,7 @@ func (c *SubjectController) GetAll() {
 func (c *SubjectController) Update() {
 	id, _ := c.GetInt(":id")
 	var subject models.Subject
+	_ = c.Ctx.Input.CopyBody(1024)
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &subject); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -130,10 +131,10 @@ func (c *SubjectController) SearchSubjectsByName() {
 // GetAllowedSecondSubjects возвращает список предметов, соответствующих первому предмету.
 // @Title GetAllowedSecondSubjects
 // @Description Получение списка предметов, соответствующих первому предмету.
-// @Param	subject1Id	query	int	true	"ID первого предмета"
+// @Param	firstSubjectId	path	int	true	"ID первого предмета"
 // @Success 200 {array} models.Subject	"Список предметов"
 // @Failure 400 ошибка получения списка или другая ошибка
-// @router /allowed_second_subjects [get]
+// @router /secubjects/:firstSubjectId [get]
 func (c *SubjectController) GetAllowedSecondSubjects() {
 	subject1Id, err := c.GetInt(":firstSubjectId")
 	if err != nil {

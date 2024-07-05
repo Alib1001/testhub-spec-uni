@@ -441,23 +441,21 @@ func filterBySpecialityID(params map[string]interface{}, universities []*Univers
 func filterBySubjects(params map[string]interface{}, universities []*University) ([]*University, error) {
 	o := orm.NewOrm()
 
-	// Extract subject IDs from params
 	var firstSubjectId interface{}
 	var secondSubjectId interface{}
 
 	if firstSubjectIdInt, ok := params["first_subject_id"].(int); ok {
 		firstSubjectId = firstSubjectIdInt
 	} else {
-		firstSubjectId = nil // Set to nil if not present or not integer
+		firstSubjectId = nil
 	}
 
 	if secondSubjectIdInt, ok := params["second_subject_id"].(int); ok {
 		secondSubjectId = secondSubjectIdInt
 	} else {
-		secondSubjectId = nil // Set to nil if not present or not integer
+		secondSubjectId = nil
 	}
 
-	// Build the query
 	query := `
         SELECT DISTINCT u.*
         FROM university u

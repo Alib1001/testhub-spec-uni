@@ -1,287 +1,63 @@
 swagger: "2.0"
-info: {}
-basePath: /v1
+info:
+  title: Testhub universities  API
+  description: |
+    API for Testhub universities.
+  version: 1.0.0
+  contact:
+    email: superalibek123@gmail.com
+basePath: /api
 paths:
-  /cities/:
+  /subjectpair/:
     get:
       tags:
-      - cities
+      - subjectpair
       description: |-
-        Получение списка всех городов.
+        Получение списка всех пар предметов.
         <br>
-      operationId: CityController.GetAll
+      operationId: SubjectPairController.GetAll
       responses:
         "200":
-          description: '"Список городов"'
+          description: '"Список пар предметов"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.City'
-        "400":
-          description: '{string} string "400 ошибка получения списка или другая ошибка"'
-  /cities/{id}:
-    put:
-      tags:
-      - cities
-  /citiescities/:
-    post:
-      tags:
-      - cities
-  /citiescities/{id}:
-    get:
-      tags:
-      - cities
-      description: |-
-        Получение информации о городе по ID.
-        <br>
-      operationId: CityController.Get
-      parameters:
-      - in: path
-        name: id
-        description: ID города для получения информации
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: '"Информация о городе"'
-          schema:
-            $ref: '#/definitions/models.City'
-        "400":
-          description: '{string} string "400 некорректный ID или другая ошибка"'
-  /quotas/:
-    get:
-      tags:
-      - quotas
-      description: |-
-        Получение списка всех квот.
-        <br>
-      operationId: QuotaController.GetAll
-      responses:
-        "200":
-          description: '"Список квот"'
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/models.Quota'
-        "400":
-          description: '{string} string "400 ошибка получения списка или другая ошибка"'
-    post:
-      tags:
-      - quotas
-      description: |-
-        Создание новой квоты.
-        <br>
-      operationId: QuotaController.Create
-      parameters:
-      - in: body
-        name: body
-        description: JSON с данными о квоте
-        required: true
-        schema:
-          $ref: '#/definitions/models.Quota'
-      responses:
-        "200":
-          description: '"ID созданной квоты"'
-          schema:
-            $ref: '#/definitions/map[string]int64'
-        "400":
-          description: '{string} string "400 ошибка разбора JSON или другая ошибка"'
-  /quotas/{id}:
-    get:
-      tags:
-      - quotas
-      description: |-
-        Получение информации о квоте по ID.
-        <br>
-      operationId: QuotaController.Get
-      parameters:
-      - in: path
-        name: id
-        description: ID квоты для получения информации
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: '"Информация о квоте"'
-          schema:
-            $ref: '#/definitions/models.Quota'
-        "400":
-          description: '{string} string "400 некорректный ID или другая ошибка"'
-    put:
-      tags:
-      - quotas
-      description: |-
-        Обновление информации о квоте по ID.
-        <br>
-      operationId: QuotaController.Update
-      parameters:
-      - in: path
-        name: id
-        description: ID квоты для обновления информации
-        required: true
-        type: integer
-        format: int64
-      - in: body
-        name: body
-        description: JSON с обновленными данными о квоте
-        required: true
-        schema:
-          $ref: '#/definitions/models.Quota'
-      responses:
-        "200":
-          description: string "Обновление успешно выполнено"
-        "400":
-          description: '{string} string "400 некорректный ID, ошибка разбора JSON
-            или другая ошибка"'
-    delete:
-      tags:
-      - quotas
-      description: |-
-        Удаление квоты по ID.
-        <br>
-      operationId: QuotaController.Delete
-      parameters:
-      - in: path
-        name: id
-        description: ID квоты для удаления
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: string "Удаление успешно выполнено"
-        "400":
-          description: '{string} string "400 некорректный ID или другая ошибка"'
-  /quotas/add-speciality:
-    post:
-      tags:
-      - quotas
-      description: |-
-        Добавление специальности к квоте.
-        <br>
-      operationId: QuotaController.AddSpecialityToQuota
-      parameters:
-      - in: body
-        name: speciality_id
-        description: ID специальности
-        required: true
-        schema:
-          format: int64
-          type: integer
-        type: integer
-        format: int64
-      - in: body
-        name: quota_id
-        description: ID квоты
-        required: true
-        schema:
-          format: int64
-          type: integer
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: "string\t\"Специальность успешно добавлена к квоте\""
-        "400":
-          description: '{string} string "400 ошибка разбора JSON или другая ошибка"'
-  /specialities/:
-    get:
-      tags:
-      - specialities
-      description: |-
-        Получение списка всех специальностей.
-        <br>
-      operationId: SpecialityController.GetAll
-      responses:
-        "200":
-          description: '"Список специальностей"'
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/models.Speciality'
+              $ref: '#/definitions/models.SubjectPair'
         "400":
           description: ошибка получения списка или другая ошибка
-    post:
-      tags:
-      - specialities
-      description: |-
-        Создание новой специальности.
-        <br>
-      operationId: SpecialityController.Create
-      parameters:
-      - in: body
-        name: body
-        description: JSON с данными о специальности
-        required: true
-        schema:
-          $ref: '#/definitions/models.Speciality'
-      responses:
-        "200":
-          description: '"ID созданной специальности"'
-          schema:
-            $ref: '#/definitions/map[string]int64'
-        "400":
-          description: ошибка разбора JSON или другая ошибка
-  /specialities/{id}:
+  /subjectpair/{id}:
     get:
       tags:
-      - specialities
+      - subjectpair
       description: |-
-        Получение информации о специальности по ID.
+        Получение информации о паре предметов по ID.
         <br>
-      operationId: SpecialityController.Get
+      operationId: SubjectPairController.Get
       parameters:
       - in: path
         name: id
-        description: ID специальности для получения информации
+        description: ID пары предметов для получения информации
         required: true
         type: integer
         format: int64
       responses:
         "200":
-          description: '"Информация о специальности"'
+          description: '"Информация о паре предметов"'
           schema:
-            $ref: '#/definitions/models.Speciality'
+            $ref: '#/definitions/models.SubjectPair'
         "400":
           description: некорректный ID или другая ошибка
-    put:
-      tags:
-      - specialities
-      description: |-
-        Обновление информации о специальности по ID.
-        <br>
-      operationId: SpecialityController.Update
-      parameters:
-      - in: path
-        name: id
-        description: ID специальности для обновления информации
-        required: true
-        type: integer
-        format: int64
-      - in: body
-        name: body
-        description: JSON с обновленными данными о специальности
-        required: true
-        schema:
-          $ref: '#/definitions/models.Speciality'
-      responses:
-        "200":
-          description: "string\t\"Обновление успешно выполнено\""
-        "400":
-          description: некорректный ID, ошибка разбора JSON или другая ошибка
     delete:
       tags:
-      - specialities
+      - subjectpair
       description: |-
-        Удаление специальности по ID.
+        Удаление пары предметов по ID.
         <br>
-      operationId: SpecialityController.Delete
+      operationId: SubjectPairController.Delete
       parameters:
       - in: path
         name: id
-        description: ID специальности для удаления
+        description: ID пары предметов для удаления
         required: true
         type: integer
         format: int64
@@ -290,32 +66,94 @@ paths:
           description: "string\t\"Удаление успешно выполнено\""
         "400":
           description: некорректный ID или другая ошибка
-  /specialities/{specialityId}/add-subject/{subjectId}:
-    post:
+  /subjectpair/{id}/{firstSubjectId}/{secondSubjectId}:
+    put:
       tags:
-      - specialities
+      - subjectpair
       description: |-
-        Добавление предмета к специальности.
+        Обновление информации о паре предметов по ID.
         <br>
-      operationId: SpecialityController.AddSubject
+      operationId: SubjectPairController.Update
       parameters:
       - in: path
-        name: specialityId
-        description: ID специальности
+        name: id
+        description: ID пары предметов для обновления информации
         required: true
         type: integer
         format: int64
-      - in: path
-        name: subjectId
-        description: ID предмета
+      - in: query
+        name: firstSubjectId
+        description: ID первого предмета
+        required: true
+        type: integer
+        format: int64
+      - in: query
+        name: secondSubjectId
+        description: ID второго предмета
         required: true
         type: integer
         format: int64
       responses:
         "200":
-          description: "string\t\"Предмет успешно добавлен к специальности\""
+          description: "string\t\"Обновление успешно выполнено\""
         "400":
-          description: некорректный ID или другая ошибка
+          description: некорректные ID или другая ошибка
+  /subjectpair/add/{firstSubjectId}/{secondSubjectId}:
+    post:
+      tags:
+      - subjectpair
+      description: |-
+        Создание новой пары предметов.
+        <br>
+      operationId: SubjectPairController.Add
+      parameters:
+      - in: query
+        name: firstSubjectId
+        description: ID первого предмета
+        required: true
+        type: integer
+        format: int64
+      - in: query
+        name: secondSubjectId
+        description: ID второго предмета
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: '"ID созданной пары предметов"'
+          schema:
+            $ref: '#/definitions/map[string]int64'
+        "400":
+          description: некорректные ID или другая ошибка
+  /subjectpair/get/{firstSubjectId}/{secondSubjectId}:
+    get:
+      tags:
+      - subjectpair
+      description: |-
+        Получение ID пары предметов по ID первого и второго предмета.
+        <br>
+      operationId: SubjectPairController.GetBySubjectIds
+      parameters:
+      - in: path
+        name: firstSubjectId
+        description: ID первого предмета
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: secondSubjectId
+        description: ID второго предмета
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: '"ID пары предметов"'
+          schema:
+            $ref: '#/definitions/map[string]int'
+        "400":
+          description: некорректные ID или другая ошибка
   /subjects/:
     get:
       tags:
@@ -420,111 +258,57 @@ paths:
           description: "string\t\"Удаление успешно выполнено\""
         "400":
           description: некорректный ID или другая ошибка
-  /universities/:
+  /subjects/search:
     get:
       tags:
-      - universities
+      - subjects
       description: |-
-        Получение списка всех университетов.
+        Поиск предметов по имени.
         <br>
-      operationId: UniversityController.GetAll
+      operationId: SubjectController.SearchSubjectsByName
+      parameters:
+      - in: query
+        name: name
+        description: Имя предмета для поиска
+        required: true
+        type: string
       responses:
         "200":
-          description: '"Список университетов"'
+          description: '"Список найденных предметов"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.University'
+              $ref: '#/definitions/models.Subject'
         "400":
-          description: ошибка получения списка или другая ошибка
-    post:
-      tags:
-      - universities
-      description: |-
-        Создание нового университета.
-        <br>
-      operationId: UniversityController.Create
-      parameters:
-      - in: body
-        name: body
-        description: JSON с данными о университете
-        required: true
-        schema:
-          $ref: '#/definitions/models.University'
-      responses:
-        "200":
-          description: '"ID созданного университета"'
-          schema:
-            $ref: '#/definitions/map[string]int64'
-        "400":
-          description: ошибка разбора JSON или другая ошибка
-  /universities/{id}:
+          description: ошибка выполнения поиска
+  /subjects/secubjects/{firstSubjectId}:
     get:
       tags:
-      - universities
+      - subjects
       description: |-
-        Получение информации о университете по ID.
+        Получение списка предметов, соответствующих первому предмету.
         <br>
-      operationId: UniversityController.Get
+      operationId: SubjectController.GetAllowedSecondSubjects
       parameters:
       - in: path
-        name: id
-        description: ID университета для получения информации
+        name: firstSubjectId
+        description: ID первого предмета
         required: true
         type: integer
         format: int64
       responses:
         "200":
-          description: '"Информация о университете"'
+          description: '"Список предметов"'
           schema:
-            $ref: '#/definitions/models.University'
+            type: array
+            items:
+              $ref: '#/definitions/models.Subject'
         "400":
-          description: некорректный ID или другая ошибка
-    put:
-      tags:
-      - universities
-      description: |-
-        Обновление информации о университете по ID.
-        <br>
-      operationId: UniversityController.Update
-      parameters:
-      - in: path
-        name: id
-        description: ID университета для обновления информации
-        required: true
-        type: integer
-        format: int64
-      - in: body
-        name: body
-        description: JSON с обновленными данными о университете
-        required: true
-        schema:
-          $ref: '#/definitions/models.University'
-      responses:
-        "200":
-          description: "string\t\"Обновление успешно выполнено\""
-        "400":
-          description: некорректный ID, ошибка разбора JSON или другая ошибка
-    delete:
-      tags:
-      - universities
-      description: |-
-        Удаление университета по ID.
-        <br>
-      operationId: UniversityController.Delete
-      parameters:
-      - in: path
-        name: id
-        description: ID университета для удаления
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: "string\t\"Удаление успешно выполнено\""
-        "400":
-          description: некорректный ID или другая ошибка
+          description: ошибка получения списка или другая ошибка
 definitions:
+  map[string]int:
+    title: map[string]int
+    type: object
   map[string]int64:
     title: map[string]int64
     type: object
@@ -532,6 +316,9 @@ definitions:
     title: City
     type: object
     properties:
+      CreatedAt:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
@@ -541,6 +328,9 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.University'
+      UpdatedAt:
+        type: string
+        format: datetime
   models.Quota:
     title: Quota
     type: object
@@ -548,6 +338,9 @@ definitions:
       Count:
         type: integer
         format: int64
+      CreatedAt:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
@@ -563,6 +356,9 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.Speciality'
+      UpdatedAt:
+        type: string
+        format: datetime
   models.Speciality:
     title: Speciality
     type: object
@@ -572,6 +368,9 @@ definitions:
         format: int64
       Code:
         type: string
+      CreatedAt:
+        type: string
+        format: datetime
       Description:
         type: string
       Id:
@@ -585,29 +384,53 @@ definitions:
         format: int64
       Name:
         type: string
-      Subjects:
-        type: array
-        items:
-          $ref: '#/definitions/models.Subject'
+      SubjectPair:
+        $ref: '#/definitions/models.SubjectPair'
       Universities:
         type: array
         items:
           $ref: '#/definitions/models.University'
+      UpdatedAt:
+        type: string
+        format: datetime
       VideoLink:
         type: string
   models.Subject:
     title: Subject
     type: object
     properties:
+      CreatedAt:
+        type: string
+        format: datetime
       Id:
         type: integer
         format: int64
       Name:
         type: string
+      UpdatedAt:
+        type: string
+        format: datetime
+  models.SubjectPair:
+    title: SubjectPair
+    type: object
+    properties:
+      CreatedAt:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
       Specialities:
         type: array
         items:
           $ref: '#/definitions/models.Speciality'
+      Subject1:
+        $ref: '#/definitions/models.Subject'
+      Subject2:
+        $ref: '#/definitions/models.Subject'
+      UpdatedAt:
+        type: string
+        format: datetime
   models.University:
     title: University
     type: object
@@ -625,6 +448,9 @@ definitions:
         type: array
         items:
           type: string
+      CreatedAt:
+        type: string
+        format: datetime
       Description:
         type: string
       HasDormitory:
@@ -657,21 +483,40 @@ definitions:
         type: string
       UniversityStatus:
         type: string
+      UpdatedAt:
+        type: string
+        format: datetime
       Website:
+        type: string
+  models.User:
+    title: User
+    type: object
+    properties:
+      CreatedAt:
+        type: string
+        format: datetime
+      FirstName:
+        type: string
+      Id:
+        type: integer
+        format: int64
+      LastName:
+        type: string
+      Password:
+        type: string
+      ProfileImageURL:
+        type: string
+      Role:
+        type: string
+      UpdatedAt:
+        type: string
+        format: datetime
+      Username:
         type: string
 tags:
 - name: subjects
   description: |
     SubjectController обрабатывает запросы для работы с предметами.
-- name: specialities
+- name: subjectpair
   description: |
-    SpecialityController обрабатывает запросы для работы со специальностями.
-- name: universities
-  description: |
-    UniversityController обрабатывает запросы для работы с университетами.
-- name: cities
-  description: |
-    CityController обрабатывает запросы для работы с городами.
-- name: quotas
-  description: |
-    QuotaController обрабатывает запросы для работы с квотами.
+    SubjectPairController обрабатывает запросы для работы с парами предметов.

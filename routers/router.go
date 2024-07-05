@@ -1,3 +1,8 @@
+// @APIVersion 1.0.0
+// @Title Testhub universities  API
+// @Description API for Testhub universities.
+// @Contact superalibek123@gmail.com
+
 package routers
 
 import (
@@ -9,6 +14,7 @@ import (
 func init() {
 	ns := beego.NewNamespace("/api",
 		beego.NSNamespace("/subjects",
+			beego.NSInclude(&controllers.SubjectController{}),
 			beego.NSRouter("/", &controllers.SubjectController{}, "post:Create"),
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "get:Get"),
 			beego.NSRouter("/", &controllers.SubjectController{}, "get:GetAll"),
@@ -18,6 +24,7 @@ func init() {
 		),
 
 		beego.NSNamespace("/subjectpair",
+			beego.NSInclude(&controllers.SubjectPairController{}),
 			beego.NSRouter("/add/:firstSubjectId/:secondSubjectId", &controllers.SubjectPairController{}, "post:Add"),
 			beego.NSRouter("/:id", &controllers.SubjectPairController{}, "get:Get"),
 			beego.NSRouter("/", &controllers.SubjectPairController{}, "get:GetAll"),
@@ -29,6 +36,7 @@ func init() {
 		),
 
 		beego.NSNamespace("/specialities",
+			//beego.NSInclude(&controllers.SpecialityController{}),
 			beego.NSRouter("/", &controllers.SpecialityController{}, "post:Create"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "get:Get"),
 			beego.NSRouter("/", &controllers.SpecialityController{}, "get:GetAll"),
@@ -74,7 +82,7 @@ func init() {
 			beego.NSRouter("/all/:id", &controllers.QuotaController{}, "get:GetQuotaWithSpecialities"),
 			beego.NSRouter("/:quota_id/specialities/:speciality_id", &controllers.QuotaController{}, "post:AddSpecialityToQuota"),
 		),
-
+		/**
 		beego.NSNamespace("/users",
 			beego.NSRouter("/", &controllers.UserController{}),
 			beego.NSRouter("/:id", &controllers.UserController{}, "get:GetUserByID"),
@@ -82,9 +90,10 @@ func init() {
 			beego.NSRouter("/:id", &controllers.UserController{}, "delete:DeleteUser"),
 		),
 
-		//beego.NSRouter("/login", &controllers.AuthController{}, "get:GetLogin;post:PostLogin"),
+		beego.NSRouter("/login", &controllers.AuthController{}, "get:GetLogin;post:PostLogin"),
+		**/
+
 	)
 
-	beego.Router("/login", &controllers.AuthController{}, "get:GetLogin;post:PostLogin")
 	beego.AddNamespace(ns)
 }
