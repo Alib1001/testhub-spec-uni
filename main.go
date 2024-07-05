@@ -44,7 +44,7 @@ func init() {
 		log.Fatalf("Failed to get 'db_name': %v", err)
 	}
 
-	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
+	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable search_path=uni_spec",
 		user, password, host, port, dbName)
 
 	orm.RegisterDataBase("default", driverName, dataSource)
