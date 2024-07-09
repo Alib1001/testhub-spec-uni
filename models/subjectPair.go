@@ -36,7 +36,6 @@ func GetSubjectPairById(id int) (*SubjectPair, error) {
 		return nil, err
 	}
 
-	// Load related subjects
 	if subjectPair.Subject1 != nil {
 		err = o.Read(subjectPair.Subject1)
 		if err != nil && err != orm.ErrNoRows {
@@ -61,7 +60,6 @@ func GetAllSubjectPairs() ([]*SubjectPair, error) {
 		return nil, err
 	}
 
-	// Load related subjects for each pair
 	for _, pair := range subjectPairs {
 		if pair.Subject1 != nil {
 			err := o.Read(pair.Subject1)

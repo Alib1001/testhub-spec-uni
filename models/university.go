@@ -314,28 +314,7 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	return universities, nil
-}
-
-func filterBySpecialityIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
-	if specialityIDs, ok := params["speciality_ids"].([]int); ok {
-		var filtered []*University
-		for _, uni := range universities {
-			matches := 0
-			for _, spec := range uni.Specialities {
-				for _, id := range specialityIDs {
-					if spec.Id == id {
-						matches++
-						break
-					}
-				}
-			}
-			if matches == len(specialityIDs) {
-				filtered = append(filtered, uni)
-			}
-		}
-		return filtered, nil
-	}
+	fmt.Printf("SearchUniversities: total universities after filtering: %d\n", len(universities))
 	return universities, nil
 }
 
@@ -364,6 +343,7 @@ func filterByMinScore(params map[string]interface{}, universities []*University)
 				filtered = append(filtered, uni)
 			}
 		}
+		fmt.Printf("filterByMinScore: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
@@ -377,6 +357,7 @@ func filterByAvgFee(params map[string]interface{}, universities []*University) (
 				filtered = append(filtered, uni)
 			}
 		}
+		fmt.Printf("filterByAvgFee: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
@@ -390,6 +371,7 @@ func filterByHasMilitaryDept(params map[string]interface{}, universities []*Univ
 				filtered = append(filtered, uni)
 			}
 		}
+		fmt.Printf("filterByHasMilitaryDept: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
@@ -403,6 +385,7 @@ func filterByHasDormitory(params map[string]interface{}, universities []*Univers
 				filtered = append(filtered, uni)
 			}
 		}
+		fmt.Printf("filterByHasDormitory: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
@@ -416,6 +399,30 @@ func filterByCityID(params map[string]interface{}, universities []*University) (
 				filtered = append(filtered, uni)
 			}
 		}
+		fmt.Printf("filterByCityID: filtered %d universities\n", len(universities)-len(filtered))
+		return filtered, nil
+	}
+	return universities, nil
+}
+
+func filterBySpecialityIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
+	if specialityIDs, ok := params["speciality_ids"].([]int); ok {
+		var filtered []*University
+		for _, uni := range universities {
+			matches := 0
+			for _, spec := range uni.Specialities {
+				for _, id := range specialityIDs {
+					if spec.Id == id {
+						matches++
+						break
+					}
+				}
+			}
+			if matches == len(specialityIDs) {
+				filtered = append(filtered, uni)
+			}
+		}
+		fmt.Printf("filterBySpecialityIDs: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
@@ -426,35 +433,31 @@ func filterBySpecialityID(params map[string]interface{}, universities []*Univers
 		var filtered []*University
 		for _, uni := range universities {
 			for _, spec := range uni.Specialities {
-				fmt.Printf("University: %d, Speciality: %d\n", uni.Id, spec.Id) // Debugging line
 				if spec.Id == specialityID {
 					filtered = append(filtered, uni)
 					break
 				}
 			}
 		}
+		fmt.Printf("filterBySpecialityID: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
 }
+
 func filterBySubjects(params map[string]interface{}, universities []*University) ([]*University, error) {
 	o := orm.NewOrm()
 
-	var firstSubjectId interface{}
-	var secondSubjectId interface{}
+	// Check if subject IDs are provided in params
+	firstSubjectId, firstOk := params["first_subject_id"].(int)
+	secondSubjectId, secondOk := params["second_subject_id"].(int)
 
-	if firstSubjectIdInt, ok := params["first_subject_id"].(int); ok {
-		firstSubjectId = firstSubjectIdInt
-	} else {
-		firstSubjectId = nil
+	// If both subject IDs are not provided, return original list of universities
+	if !firstOk && !secondOk {
+		return universities, nil
 	}
 
-	if secondSubjectIdInt, ok := params["second_subject_id"].(int); ok {
-		secondSubjectId = secondSubjectIdInt
-	} else {
-		secondSubjectId = nil
-	}
-
+	// Prepare query and arguments
 	query := `
         SELECT DISTINCT u.*
         FROM university u
@@ -466,13 +469,13 @@ func filterBySubjects(params map[string]interface{}, universities []*University)
 	var args []interface{}
 	argCount := 1
 
-	if firstSubjectId != nil {
+	if firstOk {
 		query += " AND (sp.subject1_id = $" + strconv.Itoa(argCount) + " OR $" + strconv.Itoa(argCount) + " IS NULL)"
 		args = append(args, firstSubjectId)
 		argCount++
 	}
 
-	if secondSubjectId != nil {
+	if secondOk {
 		query += " AND (sp.subject2_id = $" + strconv.Itoa(argCount) + " OR $" + strconv.Itoa(argCount) + " IS NULL)"
 		args = append(args, secondSubjectId)
 		argCount++
@@ -484,5 +487,6 @@ func filterBySubjects(params map[string]interface{}, universities []*University)
 		return nil, err
 	}
 
+	fmt.Printf("filterBySubjects: filtered %d universities\n", len(filtered))
 	return filtered, nil
 }
