@@ -14,8 +14,8 @@ type SubjectPairController struct {
 // Add добавляет новую пару предметов в базу данных.
 // @Title Add
 // @Description Создание новой пары предметов.
-// @Param	firstSubjectId	query	int	true	"ID первого предмета"
-// @Param	secondSubjectId	query	int	true	"ID второго предмета"
+// @Param	firstSubjectId	path	int	true	"ID первого предмета"
+// @Param	secondSubjectId	path	int	true	"ID второго предмета"
 // @Success 200 {object} map[string]int64	"ID созданной пары предметов"
 // @Failure 400 некорректные ID или другая ошибка
 // @router /add/:firstSubjectId/:secondSubjectId [post]
@@ -76,8 +76,8 @@ func (c *SubjectPairController) GetAll() {
 // @Title Update
 // @Description Обновление информации о паре предметов по ID.
 // @Param	id		path	int	true	"ID пары предметов для обновления информации"
-// @Param	firstSubjectId	query	int	true	"ID первого предмета"
-// @Param	secondSubjectId	query	int	true	"ID второго предмета"
+// @Param	firstSubjectId	path	int	true	"ID первого предмета"
+// @Param	secondSubjectId	path	int	true	"ID второго предмета"
 // @Success 200 string	"Обновление успешно выполнено"
 // @Failure 400 некорректные ID или другая ошибка
 // @router /:id/:firstSubjectId/:secondSubjectId [put]

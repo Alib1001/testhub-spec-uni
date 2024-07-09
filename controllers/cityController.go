@@ -18,7 +18,7 @@ type CityController struct {
 // @Param	body	body	models.City	true	"JSON с данными о городе"
 // @Success 200 {object} map[string]int64 {"id": 1} "ID созданного города"
 // @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
-// @router cities/ [post]
+// @router / [post]
 func (c *CityController) Create() {
 	var city models.City
 
@@ -51,7 +51,7 @@ func (c *CityController) Create() {
 // @Param	id		path	int	true	"ID города для получения информации"
 // @Success 200 {object} models.City "Информация о городе"
 // @Failure 400 {string} string "400 некорректный ID или другая ошибка"
-// @router cities/:id [get]
+// @router /:id [get]
 func (c *CityController) Get() {
 	id, _ := c.GetInt(":id")
 	city, err := models.GetCityById(id)
@@ -126,7 +126,7 @@ func (c *CityController) Delete() {
 // @Param	id		path	int	true	"ID города для получения информации"
 // @Success 200 {object} models.City "Информация о городе с университетами"
 // @Failure 400 {string} string "400 некорректный ID или другая ошибка"
-// @router /:id/universities [get]
+// @router /info/:id [get]
 func (c *CityController) GetWithUniversities() {
 	id, _ := c.GetInt(":id")
 	city, err := models.GetCityWithUniversities(id)

@@ -122,7 +122,7 @@ func (c *UniversityController) Delete() {
 // @Param	cityId		        path	int	true	"ID города"
 // @Success 200 string	"Город успешно назначен"
 // @Failure 400 некорректные ID или другая ошибка
-// @router /assign_city/:universityId/:cityId [put]
+// @router /assigncity/:universityId/:cityId [put]
 func (c *UniversityController) AssignCityToUniversity() {
 	universityId, _ := c.GetInt(":universityId")
 	cityId, _ := c.GetInt(":cityId")
@@ -162,7 +162,7 @@ func (c *UniversityController) AddSpecialityToUniversity() {
 // @Param	name		query	string	true	"Имя университета для поиска"
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
-// @router /search [get]
+// @router /searchname [get]
 func (c *UniversityController) SearchUniversitiesByName() {
 	name := c.GetString("name")
 	universities, err := models.SearchUniversitiesByName(name)
@@ -188,7 +188,7 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Param	sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
 // @Success 200 {array} models.University "Список найденных университетов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
-// @router /search [get]
+// @router /searchfilter [get]
 func (c *UniversityController) SearchUniversities() {
 	params := make(map[string]interface{})
 

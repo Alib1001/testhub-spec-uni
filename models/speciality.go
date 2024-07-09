@@ -237,13 +237,25 @@ func GetAllSpecialitiesWithSubjectPairs() ([]*Speciality, error) {
 
 func GetSubjectPairsBySpecialityId(specialityId int) ([]*SubjectPair, error) {
 	o := orm.NewOrm()
-	var subjectPairs []*SubjectPair
-	_, err := o.QueryTable("subject_pair").Filter("speciality__id", specialityId).All(&subjectPairs)
+	var specialities []*Speciality
+
+	// Найти все Speciality с данным specialityId
+	_, err := o.QueryTable("speciality").Filter("id", specialityId).All(&specialities)
 	if err != nil {
 		return nil, err
 	}
 
-	// Загрузка связанных Subjects для каждой пары предметов
+	var subjectPairs []*SubjectPair
+	for _, speciality := range specialities {
+		if speciality.SubjectPair != nil {
+			err := o.Read(speciality.SubjectPair)
+			if err != nil && err != orm.ErrNoRows {
+				return nil, err
+			}
+			subjectPairs = append(subjectPairs, speciality.SubjectPair)
+		}
+	}
+
 	for _, pair := range subjectPairs {
 		if pair.Subject1 != nil {
 			err := o.Read(pair.Subject1)

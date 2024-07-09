@@ -10,6 +10,714 @@
     },
     "basePath": "/api",
     "paths": {
+        "/cities/": {
+            "get": {
+                "tags": [
+                    "cities"
+                ],
+                "description": "Получение списка всех городов.\n\u003cbr\u003e",
+                "operationId": "CityController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список городов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.City"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка получения списка или другая ошибка\""
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "cities"
+                ],
+                "description": "Создание нового города.\n\u003cbr\u003e",
+                "operationId": "CityController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с данными о городе",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.City"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"id\": 1} \"ID созданного города\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка разбора JSON или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/cities/info/{id}": {
+            "get": {
+                "tags": [
+                    "cities"
+                ],
+                "description": "Получение информации о городе с университетами по ID.\n\u003cbr\u003e",
+                "operationId": "CityController.GetWithUniversities",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID города для получения информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о городе с университетами\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.City"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/cities/search": {
+            "get": {
+                "tags": [
+                    "cities"
+                ],
+                "description": "Поиск городов по имени.\n\u003cbr\u003e",
+                "operationId": "CityController.SearchCities",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "name",
+                        "description": "Имя города для поиска",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Список найденных городов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.City"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка поиска или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/cities/{id}": {
+            "get": {
+                "tags": [
+                    "cities"
+                ],
+                "description": "Получение информации о городе по ID.\n\u003cbr\u003e",
+                "operationId": "CityController.Get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID города для получения информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о городе\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.City"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID или другая ошибка\""
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "cities"
+                ],
+                "description": "Обновление информации о городе по ID.\n\u003cbr\u003e",
+                "operationId": "CityController.Update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID города для обновления информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с обновленными данными о городе",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.City"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string \"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID, ошибка разбора JSON или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/quotas/": {
+            "get": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Получение списка всех квот.\n\u003cbr\u003e",
+                "operationId": "QuotaController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список квот\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Quota"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка получения списка или другая ошибка\""
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Создание новой квоты.\n\u003cbr\u003e",
+                "operationId": "QuotaController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с данными о квоте",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Quota"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданной квоты\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка разбора JSON или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/quotas/all/{id}": {
+            "get": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Получение информации о квоте вместе с ассоциированными специальностями по ID.\n\u003cbr\u003e",
+                "operationId": "QuotaController.GetQuotaWithSpecialities",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID квоты для получения информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о квоте вместе с специальностями\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.Quota"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/quotas/{id}": {
+            "get": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Получение информации о квоте по ID.\n\u003cbr\u003e",
+                "operationId": "QuotaController.Get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID квоты для получения информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о квоте\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.Quota"
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID или другая ошибка\""
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Обновление информации о квоте по ID.\n\u003cbr\u003e",
+                "operationId": "QuotaController.Update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID квоты для обновления информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с обновленными данными о квоте",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Quota"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string \"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID, ошибка разбора JSON или другая ошибка\""
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Удаление квоты по ID.\n\u003cbr\u003e",
+                "operationId": "QuotaController.Delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID квоты для удаления",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string \"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 некорректный ID или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/quotas/{quota_id}/specialities/{speciality_id}": {
+            "post": {
+                "tags": [
+                    "quotas"
+                ],
+                "description": "Добавление специальности к квоте по их ID.\n\u003cbr\u003e",
+                "operationId": "QuotaController.AddSpecialityToQuota",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "quota_id",
+                        "description": "ID квоты",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Специальность успешно добавлена к квоте\""
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка разбора JSON или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/specialities/": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Получение списка всех специальностей.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список специальностей\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Speciality"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка получения списка или другая ошибка"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Создание новой специальности.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с данными о специальности",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Speciality"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданной специальности\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка разбора JSON или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/specialities/associatePair/{speciality_id}/{subject_pair_id}": {
+            "put": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "связывает специальность с парой предметов\n\u003cbr\u003e",
+                "operationId": "SpecialityController.AssociateSpecialityWithSubjectPair",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "subject_pair_id",
+                        "description": "ID пары предметов",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.SubjectPair"
+                        }
+                    },
+                    "400": {
+                        "description": "\"Invalid input\""
+                    },
+                    "404": {
+                        "description": "\"SubjectPair not found\""
+                    }
+                }
+            }
+        },
+        "/specialities/byspec/{speciality_id}": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "получает все пары предметов для заданной специальности\n\u003cbr\u003e",
+                "operationId": "SpecialityController.GetSubjectPairsBySpecialityId",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.SubjectPair"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "\"Invalid input\""
+                    },
+                    "404": {
+                        "description": "\"SubjectPairs not found\""
+                    }
+                }
+            }
+        },
+        "/specialities/bysubjects/{subject1_id}/{subject2_id}": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "получает специальность по ID первого и второго предметов\n\u003cbr\u003e",
+                "operationId": "SpecialityController.GetSpecialityBySubjectPair",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "subject1_id",
+                        "description": "ID первого предмета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "subject2_id",
+                        "description": "ID второго предмета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Speciality"
+                        }
+                    },
+                    "400": {
+                        "description": "\"Invalid input\""
+                    },
+                    "404": {
+                        "description": "\"Speciality not found\""
+                    }
+                }
+            }
+        },
+        "/specialities/byuni/{universityId}": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Получение списка специальностей, связанных с университетом.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.GetSpecialitiesInUni",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Список специальностей университета\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Speciality"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/specialities/search": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Search for specialities by name prefix.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.SearchSpecialitiesByName",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "prefix",
+                        "description": "Prefix of the speciality name to search for",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"List of specialities\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Speciality"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "error searching or other error"
+                    }
+                }
+            }
+        },
+        "/specialities/{id}": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Получение информации о специальности по ID.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.Get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID специальности для получения информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о специальности\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.Speciality"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Обновление информации о специальности по ID.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.Update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID специальности для обновления информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с обновленными данными о специальности",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Speciality"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Удаление специальности по ID.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.Delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID специальности для удаления",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            }
+        },
         "/subjectpair/": {
             "get": {
                 "tags": [
@@ -42,7 +750,7 @@
                 "operationId": "SubjectPairController.Add",
                 "parameters": [
                     {
-                        "in": "query",
+                        "in": "path",
                         "name": "firstSubjectId",
                         "description": "ID первого предмета",
                         "required": true,
@@ -50,7 +758,7 @@
                         "format": "int64"
                     },
                     {
-                        "in": "query",
+                        "in": "path",
                         "name": "secondSubjectId",
                         "description": "ID второго предмета",
                         "required": true,
@@ -181,7 +889,7 @@
                         "format": "int64"
                     },
                     {
-                        "in": "query",
+                        "in": "path",
                         "name": "firstSubjectId",
                         "description": "ID первого предмета",
                         "required": true,
@@ -189,7 +897,7 @@
                         "format": "int64"
                     },
                     {
-                        "in": "query",
+                        "in": "path",
                         "name": "secondSubjectId",
                         "description": "ID второго предмета",
                         "required": true,
@@ -398,6 +1106,333 @@
                         "in": "path",
                         "name": "id",
                         "description": "ID предмета для удаления",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Удаление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/universities/": {
+            "get": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Получение списка всех университетов.\n\u003cbr\u003e",
+                "operationId": "UniversityController.GetAll",
+                "responses": {
+                    "200": {
+                        "description": "\"Список университетов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.University"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка получения списка или другая ошибка"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Создание нового университета.\n\u003cbr\u003e",
+                "operationId": "UniversityController.Create",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с данными о университете",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.University"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID созданного университета\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "оsaшибка разбора JSON или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/universities/assign_speciality/{universityId}/{specialityId}": {
+            "post": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Добавление специальности к университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AddSpecialityToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "specialityId",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Специальность успешно добавлена к университету\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/universities/assigncity/{universityId}/{cityId}": {
+            "put": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Назначение города университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AssignCityToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "cityId",
+                        "description": "ID города",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Город успешно назначен\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/universities/searchfilter": {
+            "get": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Поиск университетов по параметрам.\n\u003cbr\u003e",
+                "operationId": "UniversityController.SearchUniversities",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "min_score",
+                        "description": "Минимальный балл",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "avg_fee",
+                        "description": "Средняя цена",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "has_military_dept",
+                        "description": "Наличие военной кафедры",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "query",
+                        "name": "has_dormitory",
+                        "description": "Наличие общежития",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "query",
+                        "name": "city_id",
+                        "description": "ID города",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "speciality_ids",
+                        "description": "Список специальностей в JSON формате, должны передавать массив с id специальнотей",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "first_subject_id",
+                        "description": "ID первого предмета",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "second_subject_id",
+                        "description": "ID второго предмета",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "description": "Sort parameter (avg_fee_asc or avg_fee_desc)",
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Список найденных университетов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.University"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка поиска или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/universities/searchname": {
+            "get": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Поиск университетов по имени.\n\u003cbr\u003e",
+                "operationId": "UniversityController.SearchUniversities",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "name",
+                        "description": "Имя университета для поиска",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Список найденных университетов\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.University"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "{string} string \"400 ошибка поиска или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/universities/{id}": {
+            "get": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Получение информации о университете по ID.\n\u003cbr\u003e",
+                "operationId": "UniversityController.Get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID университета для получения информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Информация о университете\"",
+                        "schema": {
+                            "$ref": "#/definitions/models.University"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Обновление информации о университете по ID.\n\u003cbr\u003e",
+                "operationId": "UniversityController.Update",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID университета для обновления информации",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с обновленными данными о университете",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.University"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Обновление успешно выполнено\""
+                    },
+                    "400": {
+                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Удаление университета по ID.\n\u003cbr\u003e",
+                "operationId": "UniversityController.Delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID университета для удаления",
                         "required": true,
                         "type": "integer",
                         "format": "int64"
@@ -719,6 +1754,18 @@
         {
             "name": "subjectpair",
             "description": "SubjectPairController обрабатывает запросы для работы с парами предметов.\n"
+        },
+        {
+            "name": "specialities",
+            "description": "SpecialityController обрабатывает запросы для работы со специальностями.\n"
+        },
+        {
+            "name": "universities",
+            "description": "UniversityController обрабатывает запросы для работы с университетами.\n"
+        },
+        {
+            "name": "quotas",
+            "description": "QuotaController обрабатывает запросы для работы с квотами.\n"
         }
     ]
 }

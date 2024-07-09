@@ -40,6 +40,7 @@ func (c *SpecialityController) SearchSpecialitiesByName() {
 // @router / [post]
 func (c *SpecialityController) Create() {
 	var speciality models.Speciality
+	_ = c.Ctx.Input.CopyBody(1024)
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -95,6 +96,8 @@ func (c *SpecialityController) GetAll() {
 // @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
 func (c *SpecialityController) Update() {
+	_ = c.Ctx.Input.CopyBody(1024)
+
 	id, _ := c.GetInt(":id")
 	var speciality models.Speciality
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {

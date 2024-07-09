@@ -256,7 +256,6 @@ func SearchUniversitiesByName(prefix string) ([]University, error) {
 }
 
 func SearchUniversities(params map[string]interface{}) ([]*University, error) {
-	// Начнем с поиска всех университетов
 	o := orm.NewOrm()
 	var universities []*University
 	_, err := o.QueryTable("university").All(&universities)

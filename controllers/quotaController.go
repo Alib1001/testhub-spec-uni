@@ -83,12 +83,19 @@ func (c *QuotaController) GetAll() {
 // @Failure 400 {string} string "400 некорректный ID, ошибка разбора JSON или другая ошибка"
 // @router /:id [put]
 func (c *QuotaController) Update() {
+	_ = c.Ctx.Input.CopyBody(1024)
 	id, _ := c.GetInt(":id")
 	var quota models.Quota
-	json.Unmarshal(c.Ctx.Input.RequestBody, &quota)
+
+	// Проверка десериализации JSON
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &quota); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
 	quota.Id = id
-	err := models.UpdateQuota(&quota)
-	if err == nil {
+	if err := models.UpdateQuota(&quota); err == nil {
 		c.Data["json"] = "Update successful"
 	} else {
 		c.Data["json"] = err.Error()
@@ -114,22 +121,14 @@ func (c *QuotaController) Delete() {
 	c.ServeJSON()
 }
 
-// AddSpecialityToQuota adds a speciality to a quota.
+// AddSpecialityToQuota adds a speciality to a quota by their respective IDs.
 // @Title AddSpecialityToQuota
-// @Description Добавление специальности к квоте.
-// @Param	speciality_id	body	int	true	"ID специальности"
-// @Param	quota_id	body	int	true	"ID квоты"
+// @Description Добавление специальности к квоте по их ID.
+// @Param	quota_id	path	int	true	"ID квоты"
+// @Param	speciality_id	path	int	true	"ID специальности"
 // @Success 200 string	"Специальность успешно добавлена к квоте"
 // @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
-// @router /add-speciality [post]
-// AddSpecialityToQuota добавляет специальность к квоте.
-// @Title AddSpecialityToQuota
-// @Description Добавление специальности к квоте.
-// @Param	speciality_id	body	int	true	"ID специальности"
-// @Param	quota_id	body	int	true	"ID квоты"
-// @Success 200 string	"Специальность успешно добавлена к квоте"
-// @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
-// @router /add-speciality [post]
+// @router /:quota_id/specialities/:speciality_id [post]
 func (c *QuotaController) AddSpecialityToQuota() {
 	quotaId, err1 := c.GetInt(":quota_id")
 	specialityId, err2 := c.GetInt(":speciality_id")
@@ -149,6 +148,13 @@ func (c *QuotaController) AddSpecialityToQuota() {
 	c.ServeJSON()
 }
 
+// GetQuotaWithSpecialities retrieves information about a quota including its associated specialities by ID.
+// @Title GetQuotaWithSpecialities
+// @Description Получение информации о квоте вместе с ассоциированными специальностями по ID.
+// @Param	id		path	int	true	"ID квоты для получения информации"
+// @Success 200 {object} models.Quota "Информация о квоте вместе с специальностями"
+// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
+// @router /all/:id [get]
 func (c *QuotaController) GetQuotaWithSpecialities() {
 	id, err := c.GetInt(":id")
 	if err != nil {
