@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"testhub-spec-uni/conf"
+	"testhub-spec-uni/controllers"
+	_ "testhub-spec-uni/routers"
+
 	_ "testhub-spec-uni/routers"
 
 	"github.com/astaxie/beego/orm"
@@ -43,29 +45,32 @@ func init() {
 		log.Fatalf("Failed to get 'db_name': %v", err)
 	}
 
-	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable search_path=uni_spec",
+	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
 		user, password, host, port, dbName)
 
 	orm.RegisterDataBase("default", driverName, dataSource)
 	orm.RunSyncdb("default", false, true)
 	fmt.Println(driverName)
-
-	conf.InitElasticsearch()
-
 }
 
 func main() {
 
+	// Configure directory where Swagger UI files are located
 	web.BConfig.WebConfig.DirectoryIndex = true
 	web.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
 
-	//beego.InsertFilter("/api/*", web.BeforeRouter, middleware.AuthMiddleware)
-	beego.Run()
+	// Include controllers for Swagger docs generation
+	beego.Include(&controllers.SubjectController{})
+	beego.Include(&controllers.SpecialityController{})
+	beego.Include(&controllers.UniversityController{})
+	beego.Include(&controllers.CityController{})
+	beego.Include(&controllers.QuotaController{})
 
+	// Start the application
+	beego.Run()
 }
 
 //run: bee run -gendoc=true -downdoc=true
-//TODO: alphabet sort, rating, documentation test
