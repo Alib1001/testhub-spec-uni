@@ -1,57 +1,37 @@
 version: '3.8'
+
 services:
-  db:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1001
-      POSTGRES_DB: postgres
-    ports:
-      - "5430:5432"
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:sha256-fcf6b29cb00f1db56921e6cb47b506e6a207fcaeae777765dfa733dc007513a6
-    environment:
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTICSEARCH_PASSWORD=10011001
-      - ELASTICSEARCH_NODE_NAME=node-1
-      - ELASTICSEARCH_CLUSTER_NAME=elasticsearch
-      - ELASTICSEARCH_ENABLE_SECURITY=true
-    ports:
-      - "9200:9200"
-    volumes:
-      - esdata:/bitnami/elasticsearch
-
   app:
     build: .
-    ports:
-      - "8080:8080"
     depends_on:
-      - db
       - elasticsearch
     environment:
-      DB_DRIVER: postgres
-      DB_USER: postgres
-      DB_PASSWORD: 1001
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: postgres
       ES_HOSTS: http://elasticsearch:9200
-      ES_USER: elastic
-      ES_PASSWORD: 10011001
-    volumes:
-      - .:/app
-    working_dir: /app
-
-  nginx:
-    image: nginx:latest
+      DB_DRIVER: postgres
+      DB_USER: course_dev
+      DB_PASSWORD: course_dev
+      DB_HOST: 185.125.90.25
+      DB_PORT: 5433
+      DB_NAME: course_dev
     ports:
-      - "80:80"
+      - "8085:8085"
+    networks:
+      - es-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - app
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - es-net
 
 volumes:
   esdata:
-    driver: local
+
+networks:
+  es-net:

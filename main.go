@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"testhub-spec-uni/conf" // добавим этот импорт
 	"testhub-spec-uni/controllers"
-	_ "testhub-spec-uni/routers"
-
 	_ "testhub-spec-uni/routers"
 
 	"github.com/astaxie/beego/orm"
@@ -45,15 +44,21 @@ func init() {
 		log.Fatalf("Failed to get 'db_name': %v", err)
 	}
 
-	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-		user, password, host, port, dbName)
+	schema := "uni_spec"
+	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable search_path=%s",
+		user, password, host, port, dbName, schema)
 
 	orm.RegisterDataBase("default", driverName, dataSource)
 	orm.RunSyncdb("default", false, true)
 	fmt.Println(driverName)
+	conf.InitElasticsearch()
 }
 
 func main() {
+	// Инициализируем Elasticsearch клиент
+	log.Println("Initializing Elasticsearch...")
+	conf.InitElasticsearch()
+	log.Println("Elasticsearch initialized.")
 
 	// Configure directory where Swagger UI files are located
 	web.BConfig.WebConfig.DirectoryIndex = true
@@ -72,5 +77,3 @@ func main() {
 	// Start the application
 	beego.Run()
 }
-
-//run: bee run -gendoc=true -downdoc=true

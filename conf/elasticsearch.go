@@ -4,21 +4,23 @@ import (
 	"log"
 	"os"
 
-	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v7"
 )
 
 var EsClient *elasticsearch.Client
 
 func InitElasticsearch() {
 	esHost := os.Getenv("ES_HOSTS")
-	esUser := os.Getenv("ES_USER")
-	esPassword := os.Getenv("ES_PASSWORD")
+	if esHost == "" {
+		log.Fatalf("ES_HOSTS environment variable not set")
+	}
+
+	log.Printf("Using Elasticsearch host: %s", esHost)
+
 	cfg := elasticsearch.Config{
 		Addresses: []string{
 			esHost,
 		},
-		Username: esUser,
-		Password: esPassword,
 	}
 
 	var err error

@@ -1,34 +1,27 @@
-# Используем официальный образ Golang как базовый
-FROM golang:1.22-alpine AS build
+# Используем официальный образ Golang для сборки
+FROM golang:1.22-alpine as builder
 
-# Устанавливаем рабочую директорию внутри контейнера
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем исходный код
+# Копируем файлы проекта в рабочую директорию
 COPY . .
 
-# Собираем бинарный файл
-RUN go build -o testhub-spec-uni
+# Устанавливаем зависимости и собираем приложение
+RUN go mod tidy
+RUN go build -o main .
 
-# Используем минимальный образ для конечного контейнера
+# Используем минимальный образ Debian для запуска
 FROM debian:bookworm-slim
 
-# Создаем рабочую директорию
+# Устанавливаем необходимые пакеты
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+
+# Копируем бинарник из стадии сборки и устанавливаем права
 WORKDIR /app
+COPY --from=builder /app/main /app/main
+COPY --from=builder /app/conf /app/conf
+RUN chmod +x /app/main
 
-# Копируем бинарный файл из предыдущего этапа
-COPY --from=build /app/testhub-spec-uni .
-
-# Определяем порт, который будет использоваться
-EXPOSE 8080
-
-# Устанавливаем переменные окружения
-ENV DB_DRIVER=postgres
-ENV DB_USER=postgres
-ENV DB_PASSWORD=1001
-ENV DB_HOST=db
-ENV DB_PORT=5432
-ENV DB_NAME=postgres
-
-# Запускаем приложение
-CMD ["./testhub-spec-uni"]
+# Команда для запуска приложения
+CMD ["/app/main"]
