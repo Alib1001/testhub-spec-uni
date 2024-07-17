@@ -14,18 +14,16 @@ import (
 )
 
 type Speciality struct {
-	Id           int    `orm:"auto"`
-	Name         string `orm:"size(128)"`
-	Code         string `orm:"size(64)"`
-	AnnualGrants int
-	MinScore     int
-	MaxScore     int
+	Id           int           `orm:"auto"`
+	Name         string        `orm:"size(128)"`
+	Code         string        `orm:"size(64)"`
 	VideoLink    string        `orm:"size(256)"`
 	Description  string        `orm:"type(text)"`
 	Universities []*University `orm:"reverse(many)"`
 	SubjectPair  *SubjectPair  `orm:"rel(fk);on_delete(set_null);null"`
 	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
+	PointStats   []*PointStat  `orm:"reverse(many)"`
 }
 
 type SpecialitySearchResponse struct {

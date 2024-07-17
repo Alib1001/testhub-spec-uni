@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 WORKDIR /app
 COPY --from=builder /app/main /app/main
 COPY --from=builder /app/conf /app/conf
+COPY --from=builder /app/swagger /app/swagger
 RUN chmod +x /app/main
 
 # Команда для запуска приложения

@@ -47,6 +47,8 @@ func init() {
 			beego.NSRouter("/bysubjects/:subject1_id/:subject2_id", &controllers.SpecialityController{}, "get:GetSpecialitiesBySubjectPair"),
 			beego.NSRouter("/associatepair/:speciality_id/:subject_pair_id", &controllers.SpecialityController{}, "put:AssociateSpecialityWithSubjectPair"),
 			beego.NSRouter("/byspec/:speciality_id", &controllers.SpecialityController{}, "get:GetSubjectPairsBySpecialityId"),
+			beego.NSRouter("/addpointstat/:universityId/:specialityId", &controllers.SpecialityController{}, "post:AddPointStat"),
+			beego.NSRouter("/pointstats/:universityId/:specialityId", &controllers.SpecialityController{}, "get:GetPointStatsByUniversityAndSpeciality"),
 
 			//beego.NSRouter("/subject_combinations/:id", &controllers.SpecialityController{}, "get:GetSubjectsCombinationForSpeciality"),
 			//beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),

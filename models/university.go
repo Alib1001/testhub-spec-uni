@@ -32,6 +32,7 @@ type University struct {
 	PhotosUrlList    []string      `orm:"-"`
 	Description      string        `orm:"type(text)"`
 	Specialities     []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
+	PointStats       []*PointStat  `orm:"reverse(many)"`
 	City             *City         `orm:"rel(fk)"`
 	CreatedAt        time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt        time.Time     `orm:"auto_now;type(datetime)"`
