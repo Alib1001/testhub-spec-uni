@@ -15,30 +15,36 @@ import (
 )
 
 type University struct {
-	Id               int      `orm:"auto"`
-	UniversityCode   string   `orm:"size(64)"`
-	Name             string   `orm:"size(128)"`
-	Abbreviation     string   `orm:"size(64)"`
-	UniversityStatus string   `orm:"size(64)"`
-	Address          string   `orm:"size(256)"`
-	Website          string   `orm:"size(128)"`
-	SocialMediaList  []string `orm:"-"`
-	ContactList      []string `orm:"-"`
-	AverageFee       int
-	ProfileImageUrl  string `orm:"size(256)"`
-	MinEntryScore    int
-	PhotosUrlList    []string      `orm:"-"`
-	Description      string        `orm:"type(text)"`
-	Specialities     []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
-	Services         []*Service    `orm:"rel(m2m);rel_table(university_service)"`
-	PointStats       []*PointStat  `orm:"reverse(many)"`
-	City             *City         `orm:"rel(fk)"`
-	CreatedAt        time.Time     `orm:"auto_now_add;type(datetime)"`
-	UpdatedAt        time.Time     `orm:"auto_now;type(datetime)"`
-	CallCenterNumber string        `orm:"size(64)"`
-	WhatsAppNumber   string        `orm:"size(64)"`
-	StudyFormat      string        `orm:"size(64)"`
-	AddressLink      string        `orm:"size(256)"`
+	Id                 int      `orm:"auto"`
+	UniversityCode     string   `orm:"size(64)"`
+	Name               string   `orm:"size(128)"`
+	Abbreviation       string   `orm:"size(64)"`
+	AbbreviationRu     string   `orm:"size(64)"`
+	AbbreviationKz     string   `orm:"size(64)"`
+	UniversityStatus   string   `orm:"size(64)"`
+	UniversityStatusRu string   `orm:"size(64)"`
+	UniversityStatusKz string   `orm:"size(64)"`
+	Address            string   `orm:"size(256)"`
+	Website            string   `orm:"size(128)"`
+	SocialMediaList    []string `orm:"-"`
+	ContactList        []string `orm:"-"`
+	AverageFee         int
+	ProfileImageUrl    string `orm:"size(256)"`
+	MinEntryScore      int
+	PhotosUrlList      []string      `orm:"-"`
+	Description        string        `orm:"type(text)"`
+	Specialities       []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
+	Services           []*Service    `orm:"rel(m2m);rel_table(university_service)"`
+	PointStats         []*PointStat  `orm:"reverse(many)"`
+	City               *City         `orm:"rel(fk)"`
+	CreatedAt          time.Time     `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt          time.Time     `orm:"auto_now;type(datetime)"`
+	CallCenterNumber   string        `orm:"size(64)"`
+	WhatsAppNumber     string        `orm:"size(64)"`
+	StudyFormat        string        `orm:"size(64)"`
+	StudyFormatRu      string        `orm:"size(64)"`
+	StudyFormatKz      string        `orm:"size(64)"`
+	AddressLink        string        `orm:"size(256)"`
 }
 
 type UniversitySearchResponse struct {

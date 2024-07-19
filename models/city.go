@@ -15,7 +15,9 @@ import (
 
 type City struct {
 	Id           int           `orm:"auto"`
-	Name         string        `orm:"size(128)"`
+	Name         string        `orm:"size(128)"` // Для отображения на нужном языке
+	NameRu       string        `orm:"size(128)"`
+	NameKz       string        `orm:"size(128)"`
 	Universities []*University `orm:"reverse(many)"`
 	CreatedAt    time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
@@ -49,18 +51,23 @@ func AddCity(city *City) (int64, error) {
 	return id, nil
 }
 
-func GetCityById(id int) (*City, error) {
+func GetCityById(id int, language string) (*City, error) {
 	o := orm.NewOrm()
 	city := &City{Id: id}
 	err := o.Read(city)
-	return city, err
-}
+	if err != nil {
+		return nil, err
+	}
 
-func GetAllCities() ([]*City, error) {
-	o := orm.NewOrm()
-	var cities []*City
-	_, err := o.QueryTable("city").All(&cities)
-	return cities, err
+	// Применяем фильтрацию по языку
+	switch language {
+	case "ru":
+		city.Name = city.NameRu
+	case "kz":
+		city.Name = city.NameKz
+	}
+
+	return city, nil
 }
 
 func UpdateCity(city *City) error {
@@ -75,7 +82,7 @@ func DeleteCity(id int) error {
 	return err
 }
 
-func GetCityWithUniversities(id int) (*City, error) {
+func GetCityWithUniversities(id int, language string) (*City, error) {
 	o := orm.NewOrm()
 	city := &City{Id: id}
 	if err := o.Read(city); err != nil {
@@ -84,8 +91,18 @@ func GetCityWithUniversities(id int) (*City, error) {
 	if _, err := o.LoadRelated(city, "Universities"); err != nil {
 		return nil, err
 	}
+
+	// Применяем фильтрацию по языку
+	switch language {
+	case "ru":
+		city.Name = city.NameRu
+	case "kz":
+		city.Name = city.NameKz
+	}
+
 	return city, nil
 }
+
 func IndexCity(city *City) error {
 	data, err := json.Marshal(city)
 	if err != nil {
@@ -121,16 +138,48 @@ func IndexCity(city *City) error {
 	return nil
 }
 
-func SearchCitiesByName(prefix string) ([]City, error) {
+func GetAllCitiesByLanguage(language string) ([]*City, error) {
+	o := orm.NewOrm()
+	var cities []*City
+	_, err := o.QueryTable("city").All(&cities)
+	if err != nil {
+		return nil, err
+	}
+
+	// Применяем фильтрацию по языку
+	for _, city := range cities {
+		switch language {
+		case "ru":
+			city.Name = city.NameRu
+		case "kz":
+			city.Name = city.NameKz
+		}
+	}
+
+	return cities, nil
+}
+
+func SearchCitiesByName(name, language string) ([]City, error) {
 	var results []City
+
+	// Применяем фильтрацию по языку
+	var field string
+	switch language {
+	case "ru":
+		field = "NameRu"
+	case "kz":
+		field = "NameKz"
+	default:
+		return results, fmt.Errorf("unsupported language: %s", language)
+	}
 
 	query := fmt.Sprintf(`{
 		"query": {
 			"wildcard": {
-				"Name": "%s*"
+				"%s": "%s*"
 			}
 		}
-	}`, prefix)
+	}`, field, name)
 
 	res, err := conf.EsClient.Search(
 		conf.EsClient.Search.WithContext(context.Background()),

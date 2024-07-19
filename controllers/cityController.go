@@ -45,16 +45,24 @@ func (c *CityController) Create() {
 	c.ServeJSON()
 }
 
-// Get returns information about a city by its ID.
+// Get возвращает информацию о городе по его ID.
 // @Title Get
 // @Description Получение информации о городе по ID.
 // @Param	id		path	int	true	"ID города для получения информации"
+// @Param	Accept-Language header string true "Язык для получения данных, 'ru' или 'kz'"
 // @Success 200 {object} models.City "Информация о городе"
 // @Failure 400 {string} string "400 некорректный ID или другая ошибка"
 // @router /:id [get]
 func (c *CityController) Get() {
 	id, _ := c.GetInt(":id")
-	city, err := models.GetCityById(id)
+	language := c.Ctx.Input.Header("Accept-Language")
+	if language != "ru" && language != "kz" {
+		c.Data["json"] = "Invalid or unsupported language"
+		c.ServeJSON()
+		return
+	}
+
+	city, err := models.GetCityById(id, language)
 	if err == nil {
 		c.Data["json"] = city
 	} else {
@@ -63,14 +71,22 @@ func (c *CityController) Get() {
 	c.ServeJSON()
 }
 
-// GetAll returns a list of all cities.
+// GetAll возвращает список всех городов на указанном языке.
 // @Title GetAll
-// @Description Получение списка всех городов.
+// @Description Получение списка всех городов на указанном языке.
+// @Param  Accept-Language  header  string  true  "Язык для получения данных, 'ru' или 'kz'"
 // @Success 200 {array} models.City "Список городов"
 // @Failure 400 {string} string "400 ошибка получения списка или другая ошибка"
 // @router / [get]
 func (c *CityController) GetAll() {
-	cities, err := models.GetAllCities()
+	language := c.Ctx.Input.Header("Accept-Language")
+	if language != "ru" && language != "kz" {
+		c.Data["json"] = "Invalid or unsupported language"
+		c.ServeJSON()
+		return
+	}
+
+	cities, err := models.GetAllCitiesByLanguage(language)
 	if err == nil {
 		c.Data["json"] = cities
 	} else {
@@ -124,12 +140,20 @@ func (c *CityController) Delete() {
 // @Title GetWithUniversities
 // @Description Получение информации о городе с университетами по ID.
 // @Param	id		path	int	true	"ID города для получения информации"
+// @Param	Accept-Language header string true "Язык для получения данных, 'ru' или 'kz'"
 // @Success 200 {object} models.City "Информация о городе с университетами"
 // @Failure 400 {string} string "400 некорректный ID или другая ошибка"
 // @router /info/:id [get]
 func (c *CityController) GetWithUniversities() {
 	id, _ := c.GetInt(":id")
-	city, err := models.GetCityWithUniversities(id)
+	language := c.Ctx.Input.Header("Accept-Language")
+	if language != "ru" && language != "kz" {
+		c.Data["json"] = "Invalid or unsupported language"
+		c.ServeJSON()
+		return
+	}
+
+	city, err := models.GetCityWithUniversities(id, language)
 	if err == nil {
 		c.Data["json"] = city
 	} else {
@@ -142,12 +166,20 @@ func (c *CityController) GetWithUniversities() {
 // @Title SearchCities
 // @Description Поиск городов по имени.
 // @Param	name		query	string	true	"Имя города для поиска"
+// @Param	Accept-Language header string true "Язык для получения данных, 'ru' или 'kz'"
 // @Success 200 {array} models.City "Список найденных городов"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]
 func (c *CityController) SearchCities() {
 	name := c.GetString("name")
-	cities, err := models.SearchCitiesByName(name)
+	language := c.Ctx.Input.Header("Accept-Language")
+	if language != "ru" && language != "kz" {
+		c.Data["json"] = "Invalid or unsupported language"
+		c.ServeJSON()
+		return
+	}
+
+	cities, err := models.SearchCitiesByName(name, language)
 	if err == nil {
 		c.Data["json"] = cities
 	} else {

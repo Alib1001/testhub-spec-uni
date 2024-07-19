@@ -16,7 +16,7 @@ import (
 type Speciality struct {
 	Id           int           `orm:"auto"`
 	Name         string        `orm:"size(128)"`
-	Code         string        `	orm:"size(64)"`
+	Code         string        `orm:"size(64)"`
 	VideoLink    string        `orm:"size(256)"`
 	Description  string        `orm:"type(text)"`
 	Universities []*University `orm:"reverse(many)"`
