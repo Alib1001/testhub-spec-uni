@@ -16,6 +16,8 @@ import (
 type Subject struct {
 	Id        int       `orm:"auto"`
 	Name      string    `orm:"size(128)"`
+	NameKz    string    `orm:"size(128)"`
+	NameRu    string    `orm:"size(128)"`
 	CreatedAt time.Time `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt time.Time `orm:"auto_now;type(datetime)"`
 }
@@ -117,7 +119,7 @@ func SearchSubjectsByName(prefix string) ([]Subject, error) {
         "query": {
             "query_string": {
                 "query": "%s*",
-                "fields": ["Name"]
+                "fields": ["Name", "NameKz", "NameRu"]
             }
         }
     }`, prefix)

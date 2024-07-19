@@ -48,7 +48,7 @@ func init() {
 			beego.NSRouter("/associatepair/:speciality_id/:subject_pair_id", &controllers.SpecialityController{}, "put:AssociateSpecialityWithSubjectPair"),
 			beego.NSRouter("/byspec/:speciality_id", &controllers.SpecialityController{}, "get:GetSubjectPairsBySpecialityId"),
 			beego.NSRouter("/addpointstat/:universityId/:specialityId", &controllers.SpecialityController{}, "post:AddPointStat"),
-			beego.NSRouter("/pointstats/:universityId/:specialityId", &controllers.SpecialityController{}, "get:GetPointStatsByUniversityAndSpeciality"),
+			beego.NSRouter("/pointstatsbyparams/:universityId/:specialityId", &controllers.SpecialityController{}, "get:GetPointStatsByUniversityAndSpeciality"),
 
 			//beego.NSRouter("/subject_combinations/:id", &controllers.SpecialityController{}, "get:GetSubjectsCombinationForSpeciality"),
 			//beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),
@@ -62,6 +62,8 @@ func init() {
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "delete:Delete"),
 			beego.NSRouter("/assigncity/:universityId/:cityId", &controllers.UniversityController{}, "put:AssignCityToUniversity"),
 			beego.NSRouter("/assignspec/:universityId/:specialityId", &controllers.UniversityController{}, "post:AddSpecialityToUniversity"),
+			beego.NSRouter("/assignspecialities/:universityId", &controllers.UniversityController{}, "post:AddSpecialitiesToUniversity"),
+			beego.NSRouter("/assignservices/:universityId", &controllers.UniversityController{}, "post:AddServicesToUniversity"),
 			beego.NSRouter("/searchname", &controllers.UniversityController{}, "get:SearchUniversitiesByName"),
 			beego.NSRouter("/searchfilter", &controllers.UniversityController{}, "get:SearchUniversities"),
 		),
@@ -88,6 +90,19 @@ func init() {
 			beego.NSRouter("/all/:id", &controllers.QuotaController{}, "get:GetQuotaWithSpecialities"),
 			beego.NSRouter("/:quota_id/specialities/:speciality_id", &controllers.QuotaController{}, "post:AddSpecialityToQuota"),
 		),
+
+		beego.NSNamespace("/services",
+			beego.NSInclude(&controllers.ServiceController{}),
+			beego.NSRouter("/search", &controllers.ServiceController{}, "get:SearchServices"),
+			beego.NSRouter("/", &controllers.ServiceController{}, "post:AddService"),
+			beego.NSRouter("/", &controllers.ServiceController{}, "get:GetAllServices"),
+			beego.NSRouter("/:id", &controllers.ServiceController{}, "get:GetServiceById"),
+			beego.NSRouter("/:id", &controllers.ServiceController{}, "delete:DeleteService"),
+			beego.NSRouter("/", &controllers.ServiceController{}, "put:UpdateService"),
+			beego.NSRouter("/bind/:serviceId/:universityId", &controllers.ServiceController{}, "post:AddServiceToUniversity"),
+			beego.NSRouter("/getbyuni/:universityId", &controllers.ServiceController{}, "get:GetServicesByUniversityId"),
+		),
+
 		/**
 		beego.NSNamespace("/users",
 			beego.NSRouter("/", &controllers.UserController{}),

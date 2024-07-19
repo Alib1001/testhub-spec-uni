@@ -25,17 +25,20 @@ type University struct {
 	SocialMediaList  []string `orm:"-"`
 	ContactList      []string `orm:"-"`
 	AverageFee       int
-	HasMilitaryDept  bool
-	HasDormitory     bool
 	ProfileImageUrl  string `orm:"size(256)"`
 	MinEntryScore    int
 	PhotosUrlList    []string      `orm:"-"`
 	Description      string        `orm:"type(text)"`
 	Specialities     []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
+	Services         []*Service    `orm:"rel(m2m);rel_table(university_service)"`
 	PointStats       []*PointStat  `orm:"reverse(many)"`
 	City             *City         `orm:"rel(fk)"`
 	CreatedAt        time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt        time.Time     `orm:"auto_now;type(datetime)"`
+	CallCenterNumber string        `orm:"size(64)"`
+	WhatsAppNumber   string        `orm:"size(64)"`
+	StudyFormat      string        `orm:"size(64)"`
+	AddressLink      string        `orm:"size(256)"`
 }
 
 type UniversitySearchResponse struct {
@@ -70,7 +73,19 @@ func GetUniversityById(id int) (*University, error) {
 	o := orm.NewOrm()
 	university := &University{Id: id}
 	err := o.Read(university)
-	return university, err
+	if err != nil {
+		return nil, err
+	}
+
+	// Load related specialities and services
+	if _, err := o.LoadRelated(university, "Specialities"); err != nil {
+		return nil, err
+	}
+	if _, err := o.LoadRelated(university, "Services"); err != nil {
+		return nil, err
+	}
+
+	return university, nil
 }
 
 func GetAllUniversities() ([]*University, error) {
@@ -83,7 +98,16 @@ func GetAllUniversities() ([]*University, error) {
 func UpdateUniversity(university *University) error {
 	o := orm.NewOrm()
 	_, err := o.Update(university)
-	return err
+	if err != nil {
+		return err
+	}
+
+	err = IndexUniversity(university)
+	if err != nil {
+		return fmt.Errorf("university updated but failed to re-index in Elasticsearch: %v", err)
+	}
+
+	return nil
 }
 
 func DeleteUniversity(id int) error {
@@ -157,12 +181,13 @@ func IndexUniversity(university *University) error {
 		return err
 	}
 
-	// Include speciality IDs in the indexed data
+	// Include speciality and service IDs in the indexed data
 	dataMap := make(map[string]interface{})
 	if err := json.Unmarshal(data, &dataMap); err != nil {
 		return err
 	}
 	dataMap["speciality_ids"] = getSpecialityIDs(university)
+	dataMap["service_ids"] = getServiceIDs(university)
 
 	// Convert back to JSON after updating
 	updatedData, err := json.Marshal(dataMap)
@@ -209,17 +234,85 @@ func getSpecialityIDs(university *University) []int {
 	return specialityIDs
 }
 
+func getServiceIDs(university *University) []int {
+	var serviceIDs []int
+	for _, service := range university.Services {
+		serviceIDs = append(serviceIDs, service.Id)
+	}
+	return serviceIDs
+}
+
+func AddSpecialitiesToUniversity(specialityIds []int, universityId int) error {
+	o := orm.NewOrm()
+
+	university := &University{Id: universityId}
+	if err := o.Read(university); err != nil {
+		return err
+	}
+
+	for _, specialityId := range specialityIds {
+		speciality := &Speciality{Id: specialityId}
+		if err := o.Read(speciality); err != nil {
+			return err
+		}
+
+		exist := o.QueryM2M(university, "Specialities").Exist(speciality)
+		if exist {
+			continue // Skip already assigned specialities
+		}
+
+		if _, err := o.QueryM2M(university, "Specialities").Add(speciality); err != nil {
+			return err
+		}
+	}
+
+	o.LoadRelated(university, "Specialities")
+	fmt.Printf("Specialities for university %d: %v\n", universityId, university.Specialities)
+
+	return nil
+}
+
+func AddServicesToUniversity(serviceIds []int, universityId int) error {
+	o := orm.NewOrm()
+
+	university := &University{Id: universityId}
+	if err := o.Read(university); err != nil {
+		return err
+	}
+
+	for _, serviceId := range serviceIds {
+		service := &Service{Id: serviceId}
+		if err := o.Read(service); err != nil {
+			return err
+		}
+
+		exist := o.QueryM2M(university, "Services").Exist(service)
+		if exist {
+			continue // Skip already assigned services
+		}
+
+		if _, err := o.QueryM2M(university, "Services").Add(service); err != nil {
+			return err
+		}
+	}
+
+	o.LoadRelated(university, "Services")
+	fmt.Printf("Services for university %d: %v\n", universityId, university.Services)
+
+	return nil
+}
+
 func SearchUniversitiesByName(prefix string) ([]University, error) {
 	var results []University
 
 	query := fmt.Sprintf(`{
-        "query": {
-            "query_string": {
-                "query": "%s*",
-                "fields": ["Name", "Abbreviation", "UniversityCode"]
-            }
-        }
-    }`, prefix)
+		"query": {
+			"query_string": {
+				"query": "%s*",
+				"fields": ["Name", "Abbreviation", "UniversityCode"]
+			}
+		}
+	}`, prefix)
 	res, err := conf.EsClient.Search(
 		conf.EsClient.Search.WithContext(context.Background()),
 		conf.EsClient.Search.WithIndex("universities"),
@@ -268,6 +361,9 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		if _, err := o.LoadRelated(uni, "Specialities"); err != nil {
 			return nil, err
 		}
+		if _, err := o.LoadRelated(uni, "Services"); err != nil {
+			return nil, err
+		}
 	}
 
 	universities, err = filterByMinScore(params, universities)
@@ -280,15 +376,17 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	universities, err = filterByHasMilitaryDept(params, universities)
-	if err != nil {
-		return nil, err
-	}
+	/*
+		universities, err = filterByHasMilitaryDept(params, universities)
+		if err != nil {
+			return nil, err
+		}
 
-	universities, err = filterByHasDormitory(params, universities)
-	if err != nil {
-		return nil, err
-	}
+		universities, err = filterByHasDormitory(params, universities)
+		if err != nil {
+			return nil, err
+		}
+	*/
 
 	universities, err = filterBySubjects(params, universities)
 	if err != nil {
@@ -296,6 +394,11 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 	}
 
 	universities, err = filterByCityID(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterByStudyFormat(params, universities)
 	if err != nil {
 		return nil, err
 	}
@@ -311,6 +414,11 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 	}
 
 	universities, err = filterBySortOrder(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterByServiceIDs(params, universities)
 	if err != nil {
 		return nil, err
 	}
@@ -364,6 +472,7 @@ func filterByAvgFee(params map[string]interface{}, universities []*University) (
 	return universities, nil
 }
 
+/*
 func filterByHasMilitaryDept(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if hasMilitaryDept, ok := params["has_military_dept"].(bool); ok {
 		var filtered []*University
@@ -391,6 +500,8 @@ func filterByHasDormitory(params map[string]interface{}, universities []*Univers
 	}
 	return universities, nil
 }
+
+*/
 
 func filterByCityID(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if cityID, ok := params["city_id"].(int); ok {
@@ -428,6 +539,43 @@ func filterBySpecialityIDs(params map[string]interface{}, universities []*Univer
 	}
 	return universities, nil
 }
+func filterByServiceIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
+	if serviceIDs, ok := params["service_ids"].([]int); ok {
+		var filtered []*University
+		for _, uni := range universities {
+			fmt.Println("ID: ", uni.Services)
+			matches := 0
+			for _, service := range uni.Services {
+				for _, id := range serviceIDs {
+					if service.Id == id {
+						matches++
+						break
+					}
+				}
+			}
+			if matches == len(serviceIDs) {
+				filtered = append(filtered, uni)
+			}
+		}
+		fmt.Printf("filterByServiceIDs: filtered %d universities\n", len(universities)-len(filtered))
+		return filtered, nil
+	}
+	return universities, nil
+}
+
+func filterByStudyFormat(params map[string]interface{}, universities []*University) ([]*University, error) {
+	if studyFormat, ok := params["study_format"].(string); ok {
+		var filtered []*University
+		for _, uni := range universities {
+			if uni.StudyFormat == studyFormat {
+				filtered = append(filtered, uni)
+			}
+		}
+		fmt.Printf("filterByStudyFormat: filtered %d universities\n", len(universities)-len(filtered))
+		return filtered, nil
+	}
+	return universities, nil
+}
 
 func filterBySpecialityID(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if specialityID, ok := params["speciality_id"].(int); ok {
@@ -440,7 +588,6 @@ func filterBySpecialityID(params map[string]interface{}, universities []*Univers
 				}
 			}
 		}
-		fmt.Printf("filterBySpecialityID: filtered %d universities\n", len(universities)-len(filtered))
 		return filtered, nil
 	}
 	return universities, nil
@@ -459,8 +606,8 @@ func filterBySubjects(params map[string]interface{}, universities []*University)
 	}
 
 	// Prepare query and arguments
-	query := `
-        SELECT DISTINCT u.*
+	query :=
+		`SELECT DISTINCT u.*
         FROM university u
         JOIN speciality_university su ON u.id = su.university_id
         JOIN speciality s ON su.speciality_id = s.id

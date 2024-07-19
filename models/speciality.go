@@ -16,7 +16,7 @@ import (
 type Speciality struct {
 	Id           int           `orm:"auto"`
 	Name         string        `orm:"size(128)"`
-	Code         string        `orm:"size(64)"`
+	Code         string        `	orm:"size(64)"`
 	VideoLink    string        `orm:"size(256)"`
 	Description  string        `orm:"type(text)"`
 	Universities []*University `orm:"reverse(many)"`
@@ -93,13 +93,19 @@ func IndexSpeciality(speciality *Speciality) error {
 func GetSpecialityById(id int) (*Speciality, error) {
 	o := orm.NewOrm()
 	speciality := &Speciality{Id: id}
-	err := o.Read(speciality)
+	err := o.QueryTable("speciality").Filter("Id", id).RelatedSel().One(speciality)
 	if err != nil {
 		return nil, err
 	}
 
-	// Загрузка связанных SubjectPair
-	err = o.Read(speciality.SubjectPair)
+	if speciality.SubjectPair != nil {
+		err = o.Read(speciality.SubjectPair)
+		if err != nil && err != orm.ErrNoRows {
+			return nil, err
+		}
+	}
+
+	_, err = o.QueryTable("point_stat").Filter("Speciality__Id", id).RelatedSel().All(&speciality.PointStats)
 	if err != nil && err != orm.ErrNoRows {
 		return nil, err
 	}

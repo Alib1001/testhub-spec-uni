@@ -20,7 +20,7 @@ type SpecialityController struct {
 // @Param	prefix	query	string	true	"Prefix of the speciality name to search for"
 // @Success 200 {array} models.Speciality	"List of specialities"
 // @Failure 400 error searching or other error
-// @router /search [get]
+// @router /search_by_name [get]
 func (c *SpecialityController) SearchSpecialitiesByName() {
 	prefix := c.GetString("prefix")
 	if specialities, err := models.SearchSpecialitiesByName(prefix); err == nil {
@@ -40,7 +40,6 @@ func (c *SpecialityController) SearchSpecialitiesByName() {
 // @router / [post]
 func (c *SpecialityController) Create() {
 	var speciality models.Speciality
-	_ = c.Ctx.Input.CopyBody(1024)
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -96,8 +95,6 @@ func (c *SpecialityController) GetAll() {
 // @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
 func (c *SpecialityController) Update() {
-	_ = c.Ctx.Input.CopyBody(1024)
-
 	id, _ := c.GetInt(":id")
 	var speciality models.Speciality
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
@@ -152,7 +149,7 @@ func (c *SpecialityController) GetByUniversity() {
 	}
 
 	if len(specialities) == 0 {
-		c.Data["json"] = []models.Speciality{} // Возвращаем пустой массив вместо nil
+		c.Data["json"] = []models.Speciality{}
 	} else {
 		c.Data["json"] = specialities
 	}
@@ -248,25 +245,27 @@ func (c *SpecialityController) GetSpecialitiesBySubjectPair() {
 	c.ServeJSON()
 }
 
-// AddPointStat добавляет новую запись статистики баллов для заданной специальности и университета.
+// AddPointStat добавляет статистику по баллам для специальности и университета.
 // @Title AddPointStat
-// @Description Добавление новой записи статистики баллов.
-// @Param	speciality_id		path	int	true	"ID специальности"
-// @Param	university_id		path	int	true	"ID университета"
-// @Param	body	body	models.PointStat	true	"JSON с данными о статистике баллов"
-// @Success 200 {object} map[string]int64	"ID созданной записи статистики баллов"
+// @Description Добавление статистики по баллам для специальности и университета.
+// @Param	universityId		path	int	true	 "ID университета"
+// @Param	specialityId		path	int	true	"ID специальности"
+// @Param	body	body	models.PointStat	true	"JSON с данными о статистике по баллам"
+// @Success 200 {object} map[string]int64	"ID добавленной статистики"
 // @Failure 400 ошибка разбора JSON или другая ошибка
-// @router /addpointstat/:specialityId:universityId [post]
+// @router /addPointStat/:universityId/:specialityId [post]
 func (c *SpecialityController) AddPointStat() {
-	specialityID, err := c.GetInt(":specialityId")
+	_ = c.Ctx.Input.CopyBody(1024)
+
+	universityId, err := c.GetInt(":universityId")
 	if err != nil {
-		c.CustomAbort(http.StatusBadRequest, "Invalid specialityId")
+		c.CustomAbort(400, "Invalid university ID")
 		return
 	}
 
-	universityID, err := c.GetInt(":universityId")
+	specialityId, err := c.GetInt(":specialityId")
 	if err != nil {
-		c.CustomAbort(http.StatusBadRequest, "Invalid university_id")
+		c.CustomAbort(400, "Invalid speciality ID")
 		return
 	}
 
@@ -277,8 +276,11 @@ func (c *SpecialityController) AddPointStat() {
 		return
 	}
 
-	// Вызываем метод модели для добавления статистики баллов с указанием специальности и университета
-	id, err := models.AddPointStat(specialityID, universityID, &pointStat)
+	// Устанавливаем ID университета и специальности из параметров запроса
+	pointStat.University = &models.University{Id: universityId}
+	pointStat.Speciality = &models.Speciality{Id: specialityId}
+
+	id, err := models.AddPointStat(universityId, specialityId, &pointStat)
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
@@ -287,14 +289,14 @@ func (c *SpecialityController) AddPointStat() {
 	c.ServeJSON()
 }
 
-// GetPointStatsByUniversityAndSpeciality возвращает статистические показатели для университета и специальности.
+// GetPointStatsByUniversityAndSpeciality возвращает статистику по баллам для специальности и университета.
 // @Title GetPointStatsByUniversityAndSpeciality
-// @Description Получение статистических показателей для университета и специальности.
+// @Description Получение статистики по баллам для специальности и университета.
 // @Param	universityId		path	int	true	"ID университета"
 // @Param	specialityId		path	int	true	"ID специальности"
-// @Success 200 {array} models.PointStat	"Список статистических показателей"
+// @Success 200 {array} models.PointStat	"Список статистики по баллам"
 // @Failure 400 некорректный ID или другая ошибка
-// @router /pointstats/:universityId/:specialityId [get]
+// @router /pointstatsbyparams/:universityId/:specialityId [get]
 func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 	universityId, err := c.GetInt(":universityId")
 	if err != nil {
@@ -315,7 +317,7 @@ func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 	}
 
 	if len(pointStats) == 0 {
-		c.Data["json"] = []models.PointStat{}
+		c.Data["json"] = []models.PointStat{} // Возвращаем пустой массив, если статистика не найдена
 	} else {
 		c.Data["json"] = pointStats
 	}

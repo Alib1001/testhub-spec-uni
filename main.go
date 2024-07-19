@@ -74,6 +74,8 @@ func main() {
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
 
-	// Start the application
+	//TODO : добавить фильтр по форме обучения
+	//TODO: мультиязычность
+
 	beego.Run()
 }

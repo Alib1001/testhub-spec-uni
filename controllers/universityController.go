@@ -156,6 +156,59 @@ func (c *UniversityController) AddSpecialityToUniversity() {
 	c.ServeJSON()
 }
 
+// AddSpecialitiesToUniversity добавляет несколько специальностей к университету по их ID.Передавать в тело с обычный массив [x,y]
+// @Title AddSpecialitiesToUniversity
+// @Description Добавление нескольких специальностей к университету.
+// @Param	universityId		path	int				true	"ID университета"
+// @Param	body				body	[]int			true	"Массив ID специальностей"
+// @Success 200 string	"Специальности успешно добавлены к университету"
+// @Failure 400 некорректные ID или другая ошибка
+// @router /assign_specialities/:universityId [post]
+func (c *UniversityController) AddSpecialitiesToUniversity() {
+	universityId, _ := c.GetInt(":universityId")
+	_ = c.Ctx.Input.CopyBody(512)
+	var specialityIds []int
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &specialityIds); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	err := models.AddSpecialitiesToUniversity(specialityIds, universityId)
+	if err == nil {
+		c.Data["json"] = "Specialities added to university successfully"
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// AddServicesToUniversity добавляет несколько сервисов к университету по их ID.Передавать в тело с обычный массив [x,y]
+// @Title AddServicesToUniversity
+// @Description Добавление нескольких сервисов к университету.
+// @Param	universityId		path	int				true	"ID университета"
+// @Param	body				body	[]int			true	"Массив ID сервисов"
+// @Success 200 string	"Сервисы успешно добавлены к университету"
+// @Failure 400 некорректные ID или другая ошибка
+// @router /assign_services/:universityId [post]
+func (c *UniversityController) AddServicesToUniversity() {
+	universityId, _ := c.GetInt(":universityId")
+	var serviceIds []int
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &serviceIds); err != nil {
+		c.Data["json"] = err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	err := models.AddServicesToUniversity(serviceIds, universityId)
+	if err == nil {
+		c.Data["json"] = "Services added to university successfully"
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
 // SearchUniversities ищет университеты по имени, абревиатуре или коду.
 // @Title SearchUniversities
 // @Description Поиск университетов по имени.
@@ -179,10 +232,9 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Description Поиск университетов по параметрам.
 // @Param	min_score			query	int		false	"Минимальный балл"
 // @Param	avg_fee				query	int		false	"Средняя цена"
-// @Param	has_military_dept	query	bool	false	"Наличие военной кафедры"
-// @Param	has_dormitory		query	bool	false	"Наличие общежития"
 // @Param	city_id				query	int		false	"ID города"
 // @Param	speciality_ids		query	string	false	"Список специальностей в JSON формате, должны передавать массив с id специальнотей"
+// @Param	service_ids			query	string	false	"Список сервисов в JSON формате, должны передавать массив с id сервисов"
 // @Param	first_subject_id	query	int		false	"ID первого предмета"
 // @Param	second_subject_id	query	int		false	"ID второго предмета"
 // @Param	sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
@@ -213,6 +265,16 @@ func (c *UniversityController) SearchUniversities() {
 		err := json.Unmarshal([]byte(specialityIDsStr), &specialityIDs)
 		if err == nil {
 			params["speciality_ids"] = specialityIDs
+		}
+	}
+
+	if serviceIDsStr := c.GetString("service_ids"); serviceIDsStr != "" {
+		var serviceIDs []int
+		err := json.Unmarshal([]byte(serviceIDsStr), &serviceIDs)
+		if err == nil {
+			params["service_ids"] = serviceIDs
+		} else {
+			log.Printf("Error unmarshaling service_ids: %v", err)
 		}
 	}
 
