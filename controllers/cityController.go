@@ -146,7 +146,7 @@ func (c *CityController) Delete() {
 // @router /info/:id [get]
 func (c *CityController) GetWithUniversities() {
 	id, _ := c.GetInt(":id")
-	language := c.Ctx.Input.Header("Accept-Language")
+	language := c.Ctx.Input.Header("lang")
 	if language != "ru" && language != "kz" {
 		c.Data["json"] = "Invalid or unsupported language"
 		c.ServeJSON()

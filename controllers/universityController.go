@@ -209,24 +209,6 @@ func (c *UniversityController) AddServicesToUniversity() {
 	c.ServeJSON()
 }
 
-// SearchUniversities ищет университеты по имени, абревиатуре или коду.
-// @Title SearchUniversities
-// @Description Поиск университетов по имени.
-// @Param	name		query	string	true	"Имя университета для поиска"
-// @Success 200 {array} models.University "Список найденных университетов"
-// @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
-// @router /searchname [get]
-func (c *UniversityController) SearchUniversitiesByName() {
-	name := c.GetString("name")
-	universities, err := models.SearchUniversitiesByName(name)
-	if err == nil {
-		c.Data["json"] = universities
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
 // SearchUniversities ищет университеты по различным параметрам.
 // @Title SearchUniversities
 // @Description Поиск университетов по параметрам.
@@ -238,9 +220,13 @@ func (c *UniversityController) SearchUniversitiesByName() {
 // @Param	first_subject_id	query	int		false	"ID первого предмета"
 // @Param	second_subject_id	query	int		false	"ID второго предмета"
 // @Param	sort    			query   string  false  "Sort parameter (avg_fee_asc or avg_fee_desc)"
-// @Success 200 {array} models.University "Список найденных университетов"
+// @Param  name                query   string  false  "Название университета или его часть"
+// @Param  study_format        query   string  false  "Формат обучения (full_time, part_time, etc.)"
+// @Param  page                query   int     false  "Номер страницы"
+// @Param  per_page            query   int     false  "Количество элементов на одной странице"
+// @Success 200 {object} models.SearchResult "Список найденных университетов с информацией о пагинации"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
-// @router /searchfilter [get]
+// @router /search [get]
 func (c *UniversityController) SearchUniversities() {
 	params := make(map[string]interface{})
 
@@ -259,7 +245,6 @@ func (c *UniversityController) SearchUniversities() {
 	if cityID, err := c.GetInt("city_id"); err == nil {
 		params["city_id"] = cityID
 	}
-
 	if specialityIDsStr := c.GetString("speciality_ids"); specialityIDsStr != "" {
 		var specialityIDs []int
 		err := json.Unmarshal([]byte(specialityIDsStr), &specialityIDs)
@@ -267,7 +252,6 @@ func (c *UniversityController) SearchUniversities() {
 			params["speciality_ids"] = specialityIDs
 		}
 	}
-
 	if serviceIDsStr := c.GetString("service_ids"); serviceIDsStr != "" {
 		var serviceIDs []int
 		err := json.Unmarshal([]byte(serviceIDsStr), &serviceIDs)
@@ -277,24 +261,33 @@ func (c *UniversityController) SearchUniversities() {
 			log.Printf("Error unmarshaling service_ids: %v", err)
 		}
 	}
-
 	if firstSubjectID, err := c.GetInt("first_subject_id"); err == nil {
 		params["first_subject_id"] = firstSubjectID
 	}
 	if secondSubjectID, err := c.GetInt("second_subject_id"); err == nil {
 		params["second_subject_id"] = secondSubjectID
 	}
-
-	sort := c.GetString("sort")
-	if sort == "avg_fee_asc" || sort == "avg_fee_desc" {
+	if sort := c.GetString("sort"); sort == "avg_fee_asc" || sort == "avg_fee_desc" {
 		params["sort"] = sort
+	}
+	if name := c.GetString("name"); name != "" {
+		params["name"] = name
+	}
+	if studyFormat := c.GetString("study_format"); studyFormat != "" {
+		params["study_format"] = studyFormat
+	}
+	if page, err := c.GetInt("page"); err == nil {
+		params["page"] = page
+	}
+	if perPage, err := c.GetInt("per_page"); err == nil {
+		params["per_page"] = perPage
 	}
 
 	log.Printf("Received parameters map: %+v", params)
 
-	universities, err := models.SearchUniversities(params)
+	result, err := models.SearchUniversities(params)
 	if err == nil {
-		c.Data["json"] = universities
+		c.Data["json"] = result
 	} else {
 		c.Data["json"] = err.Error()
 	}

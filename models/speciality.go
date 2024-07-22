@@ -243,7 +243,6 @@ func GetSubjectPairsBySpecialityId(specialityId int) ([]*SubjectPair, error) {
 	o := orm.NewOrm()
 	var specialities []*Speciality
 
-	// Найти все Speciality с данным specialityId
 	_, err := o.QueryTable("speciality").Filter("id", specialityId).All(&specialities)
 	if err != nil {
 		return nil, err

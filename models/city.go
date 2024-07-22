@@ -15,7 +15,7 @@ import (
 
 type City struct {
 	Id           int           `orm:"auto"`
-	Name         string        `orm:"size(128)"` // Для отображения на нужном языке
+	Name         string        `orm:"size(128)"`
 	NameRu       string        `orm:"size(128)"`
 	NameKz       string        `orm:"size(128)"`
 	Universities []*University `orm:"reverse(many)"`
@@ -59,7 +59,6 @@ func GetCityById(id int, language string) (*City, error) {
 		return nil, err
 	}
 
-	// Применяем фильтрацию по языку
 	switch language {
 	case "ru":
 		city.Name = city.NameRu
@@ -92,7 +91,6 @@ func GetCityWithUniversities(id int, language string) (*City, error) {
 		return nil, err
 	}
 
-	// Применяем фильтрацию по языку
 	switch language {
 	case "ru":
 		city.Name = city.NameRu
@@ -146,7 +144,6 @@ func GetAllCitiesByLanguage(language string) ([]*City, error) {
 		return nil, err
 	}
 
-	// Применяем фильтрацию по языку
 	for _, city := range cities {
 		switch language {
 		case "ru":
@@ -162,7 +159,6 @@ func GetAllCitiesByLanguage(language string) ([]*City, error) {
 func SearchCitiesByName(name, language string) ([]City, error) {
 	var results []City
 
-	// Применяем фильтрацию по языку
 	var field string
 	switch language {
 	case "ru":

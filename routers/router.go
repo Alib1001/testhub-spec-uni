@@ -64,10 +64,8 @@ func init() {
 			beego.NSRouter("/assignspec/:universityId/:specialityId", &controllers.UniversityController{}, "post:AddSpecialityToUniversity"),
 			beego.NSRouter("/assignspecialities/:universityId", &controllers.UniversityController{}, "post:AddSpecialitiesToUniversity"),
 			beego.NSRouter("/assignservices/:universityId", &controllers.UniversityController{}, "post:AddServicesToUniversity"),
-			beego.NSRouter("/searchname", &controllers.UniversityController{}, "get:SearchUniversitiesByName"),
-			beego.NSRouter("/searchfilter", &controllers.UniversityController{}, "get:SearchUniversities"),
+			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
 		),
-		//TODO : проверить searchfilter
 
 		beego.NSNamespace("/cities",
 			beego.NSInclude(&controllers.CityController{}),

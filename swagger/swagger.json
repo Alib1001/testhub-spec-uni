@@ -15,8 +15,17 @@
                 "tags": [
                     "cities"
                 ],
-                "description": "Получение списка всех городов.\n\u003cbr\u003e",
+                "description": "Получение списка всех городов на указанном языке.\n\u003cbr\u003e",
                 "operationId": "CityController.GetAll",
+                "parameters": [
+                    {
+                        "in": "header",
+                        "name": "Accept-Language",
+                        "description": "Язык для получения данных, 'ru' или 'kz'",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "\"Список городов\"",
@@ -77,6 +86,13 @@
                         "required": true,
                         "type": "integer",
                         "format": "int64"
+                    },
+                    {
+                        "in": "header",
+                        "name": "Accept-Language",
+                        "description": "Язык для получения данных, 'ru' или 'kz'",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -104,6 +120,13 @@
                         "in": "query",
                         "name": "name",
                         "description": "Имя города для поиска",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "header",
+                        "name": "Accept-Language",
+                        "description": "Язык для получения данных, 'ru' или 'kz'",
                         "required": true,
                         "type": "string"
                     }
@@ -139,6 +162,13 @@
                         "required": true,
                         "type": "integer",
                         "format": "int64"
+                    },
+                    {
+                        "in": "header",
+                        "name": "Accept-Language",
+                        "description": "Язык для получения данных, 'ru' или 'kz'",
+                        "required": true,
+                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -394,6 +424,236 @@
                 }
             }
         },
+        "/services/": {
+            "get": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Get all services\n\u003cbr\u003e",
+                "operationId": "ServiceController.GetAllServices",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Service"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Update an existing service\n\u003cbr\u003e",
+                "operationId": "ServiceController.UpdateService",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Service data",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Service"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} update success!"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Add a new service\n\u003cbr\u003e",
+                "operationId": "ServiceController.AddService",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Service data",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Service"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{int} models.Service.Id"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    }
+                }
+            }
+        },
+        "/services/bind/{serviceId}/{universityId}": {
+            "post": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Bind a service to a university\n\u003cbr\u003e",
+                "operationId": "ServiceController.AddServiceToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "serviceId",
+                        "description": "Service ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "University ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} bind success!"
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    }
+                }
+            }
+        },
+        "/services/getbyuni/{universityId}": {
+            "get": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Retrieve services associated with a university by its ID\n\u003cbr\u003e",
+                "operationId": "ServiceController.GetServicesByUniversityId",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "universityId",
+                        "description": "University ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Service"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid university ID"
+                    }
+                }
+            }
+        },
+        "/services/search": {
+            "get": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Search for services by name\n\u003cbr\u003e",
+                "operationId": "ServiceController.SearchServices",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "prefix",
+                        "description": "Prefix for service name",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Service"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input"
+                    }
+                }
+            }
+        },
+        "/services/{id}": {
+            "get": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Get service by ID\n\u003cbr\u003e",
+                "operationId": "ServiceController.GetServiceById",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "Service ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.Service"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Delete a service by ID\n\u003cbr\u003e",
+                "operationId": "ServiceController.DeleteService",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "Service ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} delete success!"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            }
+        },
         "/specialities/": {
             "get": {
                 "tags": [
@@ -436,6 +696,53 @@
                 "responses": {
                     "200": {
                         "description": "\"ID созданной специальности\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]int64"
+                        }
+                    },
+                    "400": {
+                        "description": "ошибка разбора JSON или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/specialities/addPointStat/{universityId}/{specialityId}": {
+            "post": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Добавление статистики по баллам для специальности и университета.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.AddPointStat",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "specialityId",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "JSON с данными о статистике по баллам",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PointStat"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"ID добавленной статистики\"",
                         "schema": {
                             "$ref": "#/definitions/map[string]int64"
                         }
@@ -597,7 +904,48 @@
                 }
             }
         },
-        "/specialities/search": {
+        "/specialities/pointstatsbyparams/{universityId}/{specialityId}": {
+            "get": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Получение статистики по баллам для специальности и университета.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.GetPointStatsByUniversityAndSpeciality",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "specialityId",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Список статистики по баллам\"",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.PointStat"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/specialities/search_by_name": {
             "get": {
                 "tags": [
                     "specialities"
@@ -1173,6 +1521,86 @@
                 }
             }
         },
+        "/universities/assign_services/{universityId}": {
+            "post": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Добавление нескольких сервисов к университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AddServicesToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Массив ID сервисов",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "format": "int64",
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Сервисы успешно добавлены к университету\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/universities/assign_specialities/{universityId}": {
+            "post": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Добавление нескольких специальностей к университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AddSpecialitiesToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Массив ID специальностей",
+                        "required": true,
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "format": "int64",
+                                "type": "integer"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Специальности успешно добавлены к университету\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
+                    }
+                }
+            }
+        },
         "/universities/assign_speciality/{universityId}/{specialityId}": {
             "post": {
                 "tags": [
@@ -1243,7 +1671,7 @@
                 }
             }
         },
-        "/universities/searchfilter": {
+        "/universities/search": {
             "get": {
                 "tags": [
                     "universities"
@@ -1267,18 +1695,6 @@
                     },
                     {
                         "in": "query",
-                        "name": "has_military_dept",
-                        "description": "Наличие военной кафедры",
-                        "type": "boolean"
-                    },
-                    {
-                        "in": "query",
-                        "name": "has_dormitory",
-                        "description": "Наличие общежития",
-                        "type": "boolean"
-                    },
-                    {
-                        "in": "query",
                         "name": "city_id",
                         "description": "ID города",
                         "type": "integer",
@@ -1288,6 +1704,12 @@
                         "in": "query",
                         "name": "speciality_ids",
                         "description": "Список специальностей в JSON формате, должны передавать массив с id специальнотей",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "service_ids",
+                        "description": "Список сервисов в JSON формате, должны передавать массив с id сервисов",
                         "type": "string"
                     },
                     {
@@ -1309,48 +1731,39 @@
                         "name": "sort",
                         "description": "Sort parameter (avg_fee_asc or avg_fee_desc)",
                         "type": "string"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "\"Список найденных университетов\"",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.University"
-                            }
-                        }
                     },
-                    "400": {
-                        "description": "{string} string \"400 ошибка поиска или другая ошибка\""
-                    }
-                }
-            }
-        },
-        "/universities/searchname": {
-            "get": {
-                "tags": [
-                    "universities"
-                ],
-                "description": "Поиск университетов по имени.\n\u003cbr\u003e",
-                "operationId": "UniversityController.SearchUniversities",
-                "parameters": [
                     {
                         "in": "query",
                         "name": "name",
-                        "description": "Имя университета для поиска",
-                        "required": true,
+                        "description": "Название университета или его часть",
                         "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "study_format",
+                        "description": "Формат обучения (full_time, part_time, etc.)",
+                        "type": "string"
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "description": "Номер страницы",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "query",
+                        "name": "per_page",
+                        "description": "Количество элементов на одной странице",
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "\"Список найденных университетов\"",
+                        "description": "\"Список найденных университетов с информацией о пагинации\"",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.University"
-                            }
+                            "$ref": "#/definitions/models.SearchResult"
                         }
                     },
                     "400": {
@@ -1450,6 +1863,10 @@
         }
     },
     "definitions": {
+        "Service": {
+            "title": "Service",
+            "type": "object"
+        },
         "map[string]int": {
             "title": "map[string]int",
             "type": "object"
@@ -1473,6 +1890,12 @@
                 "Name": {
                     "type": "string"
                 },
+                "NameKz": {
+                    "type": "string"
+                },
+                "NameRu": {
+                    "type": "string"
+                },
                 "Universities": {
                     "type": "array",
                     "items": {
@@ -1482,6 +1905,46 @@
                 "UpdatedAt": {
                     "type": "string",
                     "format": "datetime"
+                }
+            }
+        },
+        "models.PointStat": {
+            "title": "PointStat",
+            "type": "object",
+            "properties": {
+                "AnnualGrants": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "CreatedAt": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MinGrantScore": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "MinScore": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Speciality": {
+                    "$ref": "#/definitions/models.Speciality"
+                },
+                "University": {
+                    "$ref": "#/definitions/models.University"
+                },
+                "UpdatedAt": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "Year": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -1524,14 +1987,56 @@
                 }
             }
         },
+        "models.SearchResult": {
+            "title": "SearchResult",
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "total_count": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "total_pages": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "universities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.University"
+                    }
+                }
+            }
+        },
+        "models.Service": {
+            "title": "Service",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ImageUrl": {
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Universities": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.University"
+                    }
+                }
+            }
+        },
         "models.Speciality": {
             "title": "Speciality",
             "type": "object",
             "properties": {
-                "AnnualGrants": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "Code": {
                     "type": "string"
                 },
@@ -1546,16 +2051,14 @@
                     "type": "integer",
                     "format": "int64"
                 },
-                "MaxScore": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "MinScore": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "Name": {
                     "type": "string"
+                },
+                "PointStats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PointStat"
+                    }
                 },
                 "SubjectPair": {
                     "$ref": "#/definitions/models.SubjectPair"
@@ -1588,6 +2091,12 @@
                     "format": "int64"
                 },
                 "Name": {
+                    "type": "string"
+                },
+                "NameKz": {
+                    "type": "string"
+                },
+                "NameRu": {
                     "type": "string"
                 },
                 "UpdatedAt": {
@@ -1633,12 +2142,24 @@
                 "Abbreviation": {
                     "type": "string"
                 },
+                "AbbreviationKz": {
+                    "type": "string"
+                },
+                "AbbreviationRu": {
+                    "type": "string"
+                },
                 "Address": {
+                    "type": "string"
+                },
+                "AddressLink": {
                     "type": "string"
                 },
                 "AverageFee": {
                     "type": "integer",
                     "format": "int64"
+                },
+                "CallCenterNumber": {
+                    "type": "string"
                 },
                 "City": {
                     "$ref": "#/definitions/models.City"
@@ -1655,12 +2176,6 @@
                 },
                 "Description": {
                     "type": "string"
-                },
-                "HasDormitory": {
-                    "type": "boolean"
-                },
-                "HasMilitaryDept": {
-                    "type": "boolean"
                 },
                 "Id": {
                     "type": "integer",
@@ -1679,8 +2194,20 @@
                         "type": "string"
                     }
                 },
+                "PointStats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.PointStat"
+                    }
+                },
                 "ProfileImageUrl": {
                     "type": "string"
+                },
+                "Services": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Service"
+                    }
                 },
                 "SocialMediaList": {
                     "type": "array",
@@ -1694,10 +2221,25 @@
                         "$ref": "#/definitions/models.Speciality"
                     }
                 },
+                "StudyFormat": {
+                    "type": "string"
+                },
+                "StudyFormatKz": {
+                    "type": "string"
+                },
+                "StudyFormatRu": {
+                    "type": "string"
+                },
                 "UniversityCode": {
                     "type": "string"
                 },
                 "UniversityStatus": {
+                    "type": "string"
+                },
+                "UniversityStatusKz": {
+                    "type": "string"
+                },
+                "UniversityStatusRu": {
                     "type": "string"
                 },
                 "UpdatedAt": {
@@ -1706,41 +2248,8 @@
                 },
                 "Website": {
                     "type": "string"
-                }
-            }
-        },
-        "models.User": {
-            "title": "User",
-            "type": "object",
-            "properties": {
-                "CreatedAt": {
-                    "type": "string",
-                    "format": "datetime"
                 },
-                "FirstName": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "LastName": {
-                    "type": "string"
-                },
-                "Password": {
-                    "type": "string"
-                },
-                "ProfileImageURL": {
-                    "type": "string"
-                },
-                "Role": {
-                    "type": "string"
-                },
-                "UpdatedAt": {
-                    "type": "string",
-                    "format": "datetime"
-                },
-                "Username": {
+                "WhatsAppNumber": {
                     "type": "string"
                 }
             }
@@ -1766,6 +2275,10 @@
         {
             "name": "quotas",
             "description": "QuotaController обрабатывает запросы для работы с квотами.\n"
+        },
+        {
+            "name": "services",
+            "description": "ServiceController handles operations related to services\n"
         }
     ]
 }

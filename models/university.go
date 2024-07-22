@@ -55,6 +55,13 @@ type UniversitySearchResponse struct {
 	} `json:"hits"`
 }
 
+type SearchResult struct {
+	Universities []*University `json:"universities"`
+	Page         int           `json:"page"`
+	TotalPages   int           `json:"total_pages"`
+	TotalCount   int           `json:"total_count"`
+}
+
 func init() {
 	orm.RegisterModel(new(University))
 }
@@ -308,54 +315,7 @@ func AddServicesToUniversity(serviceIds []int, universityId int) error {
 	return nil
 }
 
-func SearchUniversitiesByName(prefix string) ([]University, error) {
-	var results []University
-
-	query := fmt.Sprintf(`{
-		"query": {
-			"query_string": {
-				"query": "%s*",
-				"fields": ["Name", "Abbreviation", "UniversityCode"]
-			}
-		}
-	}`, prefix)
-	res, err := conf.EsClient.Search(
-		conf.EsClient.Search.WithContext(context.Background()),
-		conf.EsClient.Search.WithIndex("universities"),
-		conf.EsClient.Search.WithBody(strings.NewReader(query)),
-		conf.EsClient.Search.WithTrackTotalHits(true),
-	)
-	if err != nil {
-		return results, err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return results, err
-		} else {
-			return results, fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
-	var sr UniversitySearchResponse
-	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
-		return results, err
-	}
-
-	for _, hit := range sr.Hits.Hits {
-		results = append(results, hit.Source)
-	}
-
-	return results, nil
-}
-
-func SearchUniversities(params map[string]interface{}) ([]*University, error) {
+func SearchUniversities(params map[string]interface{}) (*SearchResult, error) {
 	o := orm.NewOrm()
 	var universities []*University
 	_, err := o.QueryTable("university").All(&universities)
@@ -382,17 +342,10 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	/*
-		universities, err = filterByHasMilitaryDept(params, universities)
-		if err != nil {
-			return nil, err
-		}
-
-		universities, err = filterByHasDormitory(params, universities)
-		if err != nil {
-			return nil, err
-		}
-	*/
+	universities, err = filterUniversitiesByName(params, universities)
+	if err != nil {
+		return nil, err
+	}
 
 	universities, err = filterBySubjects(params, universities)
 	if err != nil {
@@ -429,8 +382,72 @@ func SearchUniversities(params map[string]interface{}) ([]*University, error) {
 		return nil, err
 	}
 
-	fmt.Printf("SearchUniversities: total universities after filtering: %d\n", len(universities))
-	return universities, nil
+	result, err := paginateUniversities(universities, params)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("SearchUniversities: total universities after filtering: %d\n", len(result.Universities))
+	return result, nil
+}
+
+func filterUniversitiesByName(params map[string]interface{}, universities []*University) ([]*University, error) {
+	var _ []University
+	prefix, ok := params["name"].(string)
+	if !ok || prefix == "" {
+		return universities, nil
+	}
+
+	query := fmt.Sprintf(`{
+        "query": {
+            "query_string": {
+                "query": "%s*",
+                "fields": ["Name", "Abbreviation", "UniversityCode"]
+            }
+        }
+    }`, prefix)
+	res, err := conf.EsClient.Search(
+		conf.EsClient.Search.WithContext(context.Background()),
+		conf.EsClient.Search.WithIndex("universities"),
+		conf.EsClient.Search.WithBody(strings.NewReader(query)),
+		conf.EsClient.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return universities, err
+	}
+	defer res.Body.Close()
+
+	if res.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
+			return universities, err
+		} else {
+			return universities, fmt.Errorf("[%s] %s: %s",
+				res.Status(),
+				e["error"].(map[string]interface{})["type"],
+				e["error"].(map[string]interface{})["reason"],
+			)
+		}
+	}
+
+	var sr UniversitySearchResponse
+	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
+		return universities, err
+	}
+
+	esUniversities := make(map[string]bool)
+	for _, hit := range sr.Hits.Hits {
+		esUniversities[hit.Source.Name] = true
+	}
+
+	var filteredUniversities []*University
+	for _, uni := range universities {
+		if esUniversities[uni.Name] {
+			filteredUniversities = append(filteredUniversities, uni)
+		}
+	}
+
+	return filteredUniversities, nil
 }
 
 func filterBySortOrder(params map[string]interface{}, universities []*University) ([]*University, error) {
@@ -643,4 +660,40 @@ func filterBySubjects(params map[string]interface{}, universities []*University)
 
 	fmt.Printf("filterBySubjects: filtered %d universities\n", len(filtered))
 	return filtered, nil
+}
+
+func paginateUniversities(universities []*University, params map[string]interface{}) (*SearchResult, error) {
+	totalCount := len(universities)
+
+	page := 1
+	if p, ok := params["page"].(int); ok && p > 0 {
+		page = p
+	}
+
+	perPage := 10
+	if pp, ok := params["per_page"].(int); ok && pp > 0 {
+		perPage = pp
+	}
+
+	totalPages := (totalCount + perPage - 1) / perPage
+
+	start := (page - 1) * perPage
+	end := start + perPage
+
+	if start >= totalCount {
+		universities = []*University{}
+	} else if end >= totalCount {
+		universities = universities[start:totalCount]
+	} else {
+		universities = universities[start:end]
+	}
+
+	result := &SearchResult{
+		Universities: universities,
+		Page:         page,
+		TotalPages:   totalPages,
+		TotalCount:   totalCount,
+	}
+
+	return result, nil
 }

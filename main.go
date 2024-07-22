@@ -55,7 +55,7 @@ func init() {
 }
 
 func main() {
-	// Инициализируем Elasticsearch клиент
+	//run with swagger: bee run -gendoc=true -downdoc=true
 	log.Println("Initializing Elasticsearch...")
 	conf.InitElasticsearch()
 	log.Println("Elasticsearch initialized.")
@@ -74,7 +74,9 @@ func main() {
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
 
-	//TODO : добавить фильтр по форме обучения
+	//TODO: совместить поиск в один (университеты)
+	//TODO : добавить пагинацию (специальности, универы)
+	//TODO: добавить поиск (специальности)
 	//TODO: мультиязычность
 
 	beego.Run()
