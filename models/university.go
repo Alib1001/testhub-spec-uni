@@ -55,7 +55,7 @@ type UniversitySearchResponse struct {
 	} `json:"hits"`
 }
 
-type SearchResult struct {
+type UniversitySearchResult struct {
 	Universities []*University `json:"universities"`
 	Page         int           `json:"page"`
 	TotalPages   int           `json:"total_pages"`
@@ -315,7 +315,7 @@ func AddServicesToUniversity(serviceIds []int, universityId int) error {
 	return nil
 }
 
-func SearchUniversities(params map[string]interface{}) (*SearchResult, error) {
+func SearchUniversities(params map[string]interface{}) (*UniversitySearchResult, error) {
 	o := orm.NewOrm()
 	var universities []*University
 	_, err := o.QueryTable("university").All(&universities)
@@ -662,7 +662,7 @@ func filterBySubjects(params map[string]interface{}, universities []*University)
 	return filtered, nil
 }
 
-func paginateUniversities(universities []*University, params map[string]interface{}) (*SearchResult, error) {
+func paginateUniversities(universities []*University, params map[string]interface{}) (*UniversitySearchResult, error) {
 	totalCount := len(universities)
 
 	page := 1
@@ -688,7 +688,7 @@ func paginateUniversities(universities []*University, params map[string]interfac
 		universities = universities[start:end]
 	}
 
-	result := &SearchResult{
+	result := &UniversitySearchResult{
 		Universities: universities,
 		Page:         page,
 		TotalPages:   totalPages,

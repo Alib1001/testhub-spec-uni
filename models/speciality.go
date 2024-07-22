@@ -25,6 +25,12 @@ type Speciality struct {
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 	PointStats   []*PointStat  `orm:"reverse(many)"`
 }
+type SpecialitySearchResult struct {
+	Specialities []*Speciality `json:"specialities"`
+	Page         int           `json:"page"`
+	TotalPages   int           `json:"total_pages"`
+	TotalCount   int           `json:"total_count"`
+}
 
 type SpecialitySearchResponse struct {
 	Hits struct {
@@ -146,8 +152,68 @@ func DeleteSpeciality(id int) error {
 	return err
 }
 
-func SearchSpecialitiesByName(prefix string) ([]Speciality, error) {
-	var results []Speciality
+func SearchSpecialities(params map[string]interface{}) (*SpecialitySearchResult, error) {
+	o := orm.NewOrm()
+	var specialities []*Speciality
+	_, err := o.QueryTable("speciality").All(&specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	// Применение фильтров
+	specialities, err = filterSpecialitiesBySubjectPair(params, specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	specialities, err = filterSpecialitiesInUniversity(params, specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	specialities, err = filterSpecialitiesByName(params, specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	totalCount := len(specialities)
+
+	page := 1
+	if p, ok := params["page"].(int); ok && p > 0 {
+		page = p
+	}
+
+	perPage := 10
+	if pp, ok := params["per_page"].(int); ok && pp > 0 {
+		perPage = pp
+	}
+
+	totalPages := (totalCount + perPage - 1) / perPage
+
+	start := (page - 1) * perPage
+	end := start + perPage
+
+	if start >= totalCount {
+		specialities = []*Speciality{}
+	} else if end >= totalCount {
+		specialities = specialities[start:totalCount]
+	} else {
+		specialities = specialities[start:end]
+	}
+
+	result := &SpecialitySearchResult{
+		Specialities: specialities,
+		Page:         page,
+		TotalPages:   totalPages,
+		TotalCount:   totalCount,
+	}
+
+	fmt.Printf("SearchSpecialities: total specialities after filtering: %d\n", len(specialities))
+	return result, nil
+}
+
+func SearchSpecialitiesByName(prefix string) ([]*Speciality, error) {
+	var results []*Speciality
 
 	query := fmt.Sprintf(`{
         "query": {
@@ -188,7 +254,7 @@ func SearchSpecialitiesByName(prefix string) ([]Speciality, error) {
 	}
 
 	for _, hit := range sr.Hits.Hits {
-		results = append(results, hit.Source)
+		results = append(results, &hit.Source)
 	}
 
 	return results, nil
@@ -216,27 +282,6 @@ func AssociateSpecialityWithSubjectPair(specialityId int, subjectPairId int) err
 		"subject_pair_id": subjectPairId,
 	})
 	return err
-}
-
-func GetAllSpecialitiesWithSubjectPairs() ([]*Speciality, error) {
-	o := orm.NewOrm()
-	var specialities []*Speciality
-	_, err := o.QueryTable("speciality").All(&specialities)
-	if err != nil {
-		return nil, err
-	}
-
-	// Загрузка связанных SubjectPairs для каждой специальности
-	for _, speciality := range specialities {
-		if speciality.SubjectPair != nil {
-			err := o.Read(speciality.SubjectPair)
-			if err != nil && err != orm.ErrNoRows {
-				return nil, err
-			}
-		}
-	}
-
-	return specialities, nil
 }
 
 func GetSubjectPairsBySpecialityId(specialityId int) ([]*SubjectPair, error) {
@@ -293,4 +338,32 @@ func GetSpecialitiesBySubjectPair(subject1Id, subject2Id int) ([]*Speciality, er
 	}
 
 	return specialities, nil
+}
+
+func filterSpecialitiesBySubjectPair(params map[string]interface{}, specialities []*Speciality) ([]*Speciality, error) {
+	subject1Id, ok1 := params["subject1_id"].(int)
+	subject2Id, ok2 := params["subject2_id"].(int)
+	if !ok1 || !ok2 {
+		return specialities, nil
+	}
+
+	return GetSpecialitiesBySubjectPair(subject1Id, subject2Id)
+}
+
+func filterSpecialitiesInUniversity(params map[string]interface{}, specialities []*Speciality) ([]*Speciality, error) {
+	universityId, ok := params["university_id"].(int)
+	if !ok {
+		return specialities, nil
+	}
+
+	return GetSpecialitiesInUniversity(universityId)
+}
+
+func filterSpecialitiesByName(params map[string]interface{}, specialities []*Speciality) ([]*Speciality, error) {
+	prefix, ok := params["name"].(string)
+	if !ok || prefix == "" {
+		return specialities, nil
+	}
+
+	return SearchSpecialitiesByName(prefix)
 }

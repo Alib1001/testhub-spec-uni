@@ -224,7 +224,7 @@ func (c *UniversityController) AddServicesToUniversity() {
 // @Param  study_format        query   string  false  "Формат обучения (full_time, part_time, etc.)"
 // @Param  page                query   int     false  "Номер страницы"
 // @Param  per_page            query   int     false  "Количество элементов на одной странице"
-// @Success 200 {object} models.SearchResult "Список найденных университетов с информацией о пагинации"
+// @Success 200 {object} models.UniversitySearchResult "Список найденных университетов с информацией о пагинации"
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]
 func (c *UniversityController) SearchUniversities() {

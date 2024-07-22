@@ -40,6 +40,7 @@ func (c *SpecialityController) SearchSpecialitiesByName() {
 // @router / [post]
 func (c *SpecialityController) Create() {
 	var speciality models.Speciality
+	_ = c.Ctx.Input.CopyBody(1024)
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -321,5 +322,54 @@ func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 	} else {
 		c.Data["json"] = pointStats
 	}
+	c.ServeJSON()
+}
+
+// SearchSpecialities performs a search with various filters and pagination.
+// @Title SearchSpecialities
+// @Description Perform a search for specialities using filters and pagination.
+// @Param	name	query	string	false	"Prefix of the speciality name to search for"
+// @Param	subject1_id	query	int	false	"ID of the first subject for filtering"
+// @Param	subject2_id	query	int	false	"ID of the second subject for filtering"
+// @Param	university_id	query	int	false	"ID of the university for filtering"
+// @Param	page	query	int	false	"Page number for pagination"
+// @Param	per_page	query	int	false	"Number of items per page"
+// @Success 200 {object} models.SpecialitySearchResult	"Search results with specialities"
+// @Failure 400 error searching or other error
+// @router /search [get]
+func (c *SpecialityController) SearchSpecialities() {
+	params := make(map[string]interface{})
+
+	if name := c.GetString("name"); name != "" {
+		params["name"] = name
+	}
+
+	if subject1Id, err := c.GetInt("subject1_id"); err == nil {
+		params["subject1_id"] = subject1Id
+	}
+
+	if subject2Id, err := c.GetInt("subject2_id"); err == nil {
+		params["subject2_id"] = subject2Id
+	}
+
+	if universityId, err := c.GetInt("university_id"); err == nil {
+		params["university_id"] = universityId
+	}
+
+	if page, err := c.GetInt("page"); err == nil {
+		params["page"] = page
+	}
+
+	if perPage, err := c.GetInt("per_page"); err == nil {
+		params["per_page"] = perPage
+	}
+
+	result, err := models.SearchSpecialities(params)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Data["json"] = result
 	c.ServeJSON()
 }

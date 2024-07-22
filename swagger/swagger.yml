@@ -3,7 +3,7 @@ info:
   title: Testhub universities  API
   description: |
     API for Testhub universities.
-  version: 1.0.0
+  version: 1.0.1
   contact:
     email: superalibek123@gmail.com
 basePath: /api
@@ -760,6 +760,51 @@ paths:
               $ref: '#/definitions/models.PointStat'
         "400":
           description: некорректный ID или другая ошибка
+  /specialities/search:
+    get:
+      tags:
+      - specialities
+      description: |-
+        Perform a search for specialities using filters and pagination.
+        <br>
+      operationId: SpecialityController.SearchSpecialities
+      parameters:
+      - in: query
+        name: name
+        description: Prefix of the speciality name to search for
+        type: string
+      - in: query
+        name: subject1_id
+        description: ID of the first subject for filtering
+        type: integer
+        format: int64
+      - in: query
+        name: subject2_id
+        description: ID of the second subject for filtering
+        type: integer
+        format: int64
+      - in: query
+        name: university_id
+        description: ID of the university for filtering
+        type: integer
+        format: int64
+      - in: query
+        name: page
+        description: Page number for pagination
+        type: integer
+        format: int64
+      - in: query
+        name: per_page
+        description: Number of items per page
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: '"Search results with specialities"'
+          schema:
+            $ref: '#/definitions/models.SpecialitySearchResult'
+        "400":
+          description: error searching or other error
   /specialities/search_by_name:
     get:
       tags:
@@ -1364,7 +1409,7 @@ paths:
         "200":
           description: '"Список найденных университетов с информацией о пагинации"'
           schema:
-            $ref: '#/definitions/models.SearchResult'
+            $ref: '#/definitions/models.UniversitySearchResult'
         "400":
           description: '{string} string "400 ошибка поиска или другая ошибка"'
 definitions:
@@ -1457,23 +1502,6 @@ definitions:
       UpdatedAt:
         type: string
         format: datetime
-  models.SearchResult:
-    title: SearchResult
-    type: object
-    properties:
-      page:
-        type: integer
-        format: int64
-      total_count:
-        type: integer
-        format: int64
-      total_pages:
-        type: integer
-        format: int64
-      universities:
-        type: array
-        items:
-          $ref: '#/definitions/models.University'
   models.Service:
     title: Service
     type: object
@@ -1520,6 +1548,23 @@ definitions:
         format: datetime
       VideoLink:
         type: string
+  models.SpecialitySearchResult:
+    title: SpecialitySearchResult
+    type: object
+    properties:
+      page:
+        type: integer
+        format: int64
+      specialities:
+        type: array
+        items:
+          $ref: '#/definitions/models.Speciality'
+      total_count:
+        type: integer
+        format: int64
+      total_pages:
+        type: integer
+        format: int64
   models.Subject:
     title: Subject
     type: object
@@ -1641,6 +1686,23 @@ definitions:
         type: string
       WhatsAppNumber:
         type: string
+  models.UniversitySearchResult:
+    title: UniversitySearchResult
+    type: object
+    properties:
+      page:
+        type: integer
+        format: int64
+      total_count:
+        type: integer
+        format: int64
+      total_pages:
+        type: integer
+        format: int64
+      universities:
+        type: array
+        items:
+          $ref: '#/definitions/models.University'
 tags:
 - name: subjects
   description: |

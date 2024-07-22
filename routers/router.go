@@ -1,4 +1,4 @@
-// @APIVersion 1.0.0
+// @APIVersion 1.0.1
 // @Title Testhub universities  API
 // @Description API for Testhub universities.
 // @Contact superalibek123@gmail.com
@@ -42,7 +42,7 @@ func init() {
 			beego.NSRouter("/", &controllers.SpecialityController{}, "get:GetAll"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "delete:Delete"),
-			beego.NSRouter("/search", &controllers.SpecialityController{}, "get:SearchSpecialitiesByName"),
+			beego.NSRouter("/search", &controllers.SpecialityController{}, "get:SearchSpecialities"),
 			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetByUniversity"),
 			beego.NSRouter("/bysubjects/:subject1_id/:subject2_id", &controllers.SpecialityController{}, "get:GetSpecialitiesBySubjectPair"),
 			beego.NSRouter("/associatepair/:speciality_id/:subject_pair_id", &controllers.SpecialityController{}, "put:AssociateSpecialityWithSubjectPair"),
