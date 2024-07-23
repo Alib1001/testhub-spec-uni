@@ -160,7 +160,6 @@ func SearchSpecialities(params map[string]interface{}) (*SpecialitySearchResult,
 		return nil, err
 	}
 
-	// Применение фильтров
 	specialities, err = filterSpecialitiesBySubjectPair(params, specialities)
 	if err != nil {
 		return nil, err
@@ -176,39 +175,13 @@ func SearchSpecialities(params map[string]interface{}) (*SpecialitySearchResult,
 		return nil, err
 	}
 
-	totalCount := len(specialities)
-
-	page := 1
-	if p, ok := params["page"].(int); ok && p > 0 {
-		page = p
+	// Пагинация
+	result, err := paginateSpecialities(specialities, params)
+	if err != nil {
+		return nil, err
 	}
 
-	perPage := 10
-	if pp, ok := params["per_page"].(int); ok && pp > 0 {
-		perPage = pp
-	}
-
-	totalPages := (totalCount + perPage - 1) / perPage
-
-	start := (page - 1) * perPage
-	end := start + perPage
-
-	if start >= totalCount {
-		specialities = []*Speciality{}
-	} else if end >= totalCount {
-		specialities = specialities[start:totalCount]
-	} else {
-		specialities = specialities[start:end]
-	}
-
-	result := &SpecialitySearchResult{
-		Specialities: specialities,
-		Page:         page,
-		TotalPages:   totalPages,
-		TotalCount:   totalCount,
-	}
-
-	fmt.Printf("SearchSpecialities: total specialities after filtering: %d\n", len(specialities))
+	fmt.Printf("SearchSpecialities: total specialities after filtering: %d\n", len(result.Specialities))
 	return result, nil
 }
 
@@ -366,4 +339,39 @@ func filterSpecialitiesByName(params map[string]interface{}, specialities []*Spe
 	}
 
 	return SearchSpecialitiesByName(prefix)
+}
+func paginateSpecialities(specialities []*Speciality, params map[string]interface{}) (*SpecialitySearchResult, error) {
+	totalCount := len(specialities)
+
+	page := 1
+	if p, ok := params["page"].(int); ok && p > 0 {
+		page = p
+	}
+
+	perPage := 10
+	if pp, ok := params["per_page"].(int); ok && pp > 0 {
+		perPage = pp
+	}
+
+	totalPages := (totalCount + perPage - 1) / perPage
+
+	start := (page - 1) * perPage
+	end := start + perPage
+
+	if start >= totalCount {
+		specialities = []*Speciality{}
+	} else if end >= totalCount {
+		specialities = specialities[start:totalCount]
+	} else {
+		specialities = specialities[start:end]
+	}
+
+	result := &SpecialitySearchResult{
+		Specialities: specialities,
+		Page:         page,
+		TotalPages:   totalPages,
+		TotalCount:   totalCount,
+	}
+
+	return result, nil
 }
