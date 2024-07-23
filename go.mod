@@ -2,28 +2,21 @@ module testhub-spec-uni
 
 go 1.22
 
-require github.com/beego/beego/v2 v2.2.1
+require github.com/beego/beego/v2 v2.2.2
 
 require (
 	github.com/elastic/go-elasticsearch v0.0.0
 	github.com/lib/pq v1.10.5
 	github.com/smartystreets/goconvey v1.8.1
-	github.com/swaggo/swag v1.16.3
 )
 
 require (
-	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/go-openapi/jsonpointer v0.21.0 // indirect
-	github.com/go-openapi/jsonreference v0.21.0 // indirect
-	github.com/go-openapi/spec v0.21.0 // indirect
-	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
-	golang.org/x/tools v0.22.0 // indirect
 )
 
 require (
@@ -42,6 +35,6 @@ require (
 	golang.org/x/net v0.26.0 // indirect
 	golang.org/x/sys v0.21.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
