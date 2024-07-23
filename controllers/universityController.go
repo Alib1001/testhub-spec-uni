@@ -142,7 +142,7 @@ func (c *UniversityController) AssignCityToUniversity() {
 // @Param	specialityId		path	int	true	"ID специальности"
 // @Success 200 string	"Специальность успешно добавлена к университету"
 // @Failure 400 некорректные ID или другая ошибка
-// @router /assign_speciality/:universityId/:specialityId [post]
+// @router /universityId/:specialityId [post]
 func (c *UniversityController) AddSpecialityToUniversity() {
 	universityId, _ := c.GetInt(":universityId")
 	specialityId, _ := c.GetInt(":specialityId")
@@ -163,7 +163,7 @@ func (c *UniversityController) AddSpecialityToUniversity() {
 // @Param	body				body	[]int			true	"Массив ID специальностей"
 // @Success 200 string	"Специальности успешно добавлены к университету"
 // @Failure 400 некорректные ID или другая ошибка
-// @router /assign_specialities/:universityId [post]
+// @router /assignspecialities/:universityId [post]
 func (c *UniversityController) AddSpecialitiesToUniversity() {
 	universityId, _ := c.GetInt(":universityId")
 	_ = c.Ctx.Input.CopyBody(512)
@@ -190,7 +190,7 @@ func (c *UniversityController) AddSpecialitiesToUniversity() {
 // @Param	body				body	[]int			true	"Массив ID сервисов"
 // @Success 200 string	"Сервисы успешно добавлены к университету"
 // @Failure 400 некорректные ID или другая ошибка
-// @router /assign_services/:universityId [post]
+// @router /assignserv/:universityId [post]
 func (c *UniversityController) AddServicesToUniversity() {
 	universityId, _ := c.GetInt(":universityId")
 	var serviceIds []int

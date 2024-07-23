@@ -1584,7 +1584,42 @@
                 }
             }
         },
-        "/universities/assign_services/{universityId}": {
+        "/universities/assigncity/{universityId}/{cityId}": {
+            "put": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Назначение города университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AssignCityToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "cityId",
+                        "description": "ID города",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Город успешно назначен\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/universities/assignserv/{universityId}": {
             "post": {
                 "tags": [
                     "universities"
@@ -1624,7 +1659,7 @@
                 }
             }
         },
-        "/universities/assign_specialities/{universityId}": {
+        "/universities/assignspecialities/{universityId}": {
             "post": {
                 "tags": [
                     "universities"
@@ -1657,76 +1692,6 @@
                 "responses": {
                     "200": {
                         "description": "string\t\"Специальности успешно добавлены к университету\""
-                    },
-                    "400": {
-                        "description": "некорректные ID или другая ошибка"
-                    }
-                }
-            }
-        },
-        "/universities/assign_speciality/{universityId}/{specialityId}": {
-            "post": {
-                "tags": [
-                    "universities"
-                ],
-                "description": "Добавление специальности к университету.\n\u003cbr\u003e",
-                "operationId": "UniversityController.AddSpecialityToUniversity",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "universityId",
-                        "description": "ID университета",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    {
-                        "in": "path",
-                        "name": "specialityId",
-                        "description": "ID специальности",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "string\t\"Специальность успешно добавлена к университету\""
-                    },
-                    "400": {
-                        "description": "некорректные ID или другая ошибка"
-                    }
-                }
-            }
-        },
-        "/universities/assigncity/{universityId}/{cityId}": {
-            "put": {
-                "tags": [
-                    "universities"
-                ],
-                "description": "Назначение города университету.\n\u003cbr\u003e",
-                "operationId": "UniversityController.AssignCityToUniversity",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "universityId",
-                        "description": "ID университета",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    {
-                        "in": "path",
-                        "name": "cityId",
-                        "description": "ID города",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "string\t\"Город успешно назначен\""
                     },
                     "400": {
                         "description": "некорректные ID или другая ошибка"
@@ -1831,6 +1796,41 @@
                     },
                     "400": {
                         "description": "{string} string \"400 ошибка поиска или другая ошибка\""
+                    }
+                }
+            }
+        },
+        "/universities/universityId/{specialityId}": {
+            "post": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Добавление специальности к университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AddSpecialityToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "specialityId",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Специальность успешно добавлена к университету\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
                     }
                 }
             }

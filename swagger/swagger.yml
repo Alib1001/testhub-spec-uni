@@ -1229,7 +1229,33 @@ paths:
           description: "string\t\"Удаление успешно выполнено\""
         "400":
           description: некорректный ID или другая ошибка
-  /universities/assign_services/{universityId}:
+  /universities/assigncity/{universityId}/{cityId}:
+    put:
+      tags:
+      - universities
+      description: |-
+        Назначение города университету.
+        <br>
+      operationId: UniversityController.AssignCityToUniversity
+      parameters:
+      - in: path
+        name: universityId
+        description: ID университета
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: cityId
+        description: ID города
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: "string\t\"Город успешно назначен\""
+        "400":
+          description: некорректные ID или другая ошибка
+  /universities/assignserv/{universityId}:
     post:
       tags:
       - universities
@@ -1258,7 +1284,7 @@ paths:
           description: "string\t\"Сервисы успешно добавлены к университету\""
         "400":
           description: некорректные ID или другая ошибка
-  /universities/assign_specialities/{universityId}:
+  /universities/assignspecialities/{universityId}:
     post:
       tags:
       - universities
@@ -1285,58 +1311,6 @@ paths:
       responses:
         "200":
           description: "string\t\"Специальности успешно добавлены к университету\""
-        "400":
-          description: некорректные ID или другая ошибка
-  /universities/assign_speciality/{universityId}/{specialityId}:
-    post:
-      tags:
-      - universities
-      description: |-
-        Добавление специальности к университету.
-        <br>
-      operationId: UniversityController.AddSpecialityToUniversity
-      parameters:
-      - in: path
-        name: universityId
-        description: ID университета
-        required: true
-        type: integer
-        format: int64
-      - in: path
-        name: specialityId
-        description: ID специальности
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: "string\t\"Специальность успешно добавлена к университету\""
-        "400":
-          description: некорректные ID или другая ошибка
-  /universities/assigncity/{universityId}/{cityId}:
-    put:
-      tags:
-      - universities
-      description: |-
-        Назначение города университету.
-        <br>
-      operationId: UniversityController.AssignCityToUniversity
-      parameters:
-      - in: path
-        name: universityId
-        description: ID университета
-        required: true
-        type: integer
-        format: int64
-      - in: path
-        name: cityId
-        description: ID города
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: "string\t\"Город успешно назначен\""
         "400":
           description: некорректные ID или другая ошибка
   /universities/search:
@@ -1412,6 +1386,32 @@ paths:
             $ref: '#/definitions/models.UniversitySearchResult'
         "400":
           description: '{string} string "400 ошибка поиска или другая ошибка"'
+  /universities/universityId/{specialityId}:
+    post:
+      tags:
+      - universities
+      description: |-
+        Добавление специальности к университету.
+        <br>
+      operationId: UniversityController.AddSpecialityToUniversity
+      parameters:
+      - in: path
+        name: universityId
+        description: ID университета
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: specialityId
+        description: ID специальности
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: "string\t\"Специальность успешно добавлена к университету\""
+        "400":
+          description: некорректные ID или другая ошибка
 definitions:
   Service:
     title: Service
