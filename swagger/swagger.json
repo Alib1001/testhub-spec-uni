@@ -543,7 +543,7 @@
                 "operationId": "ServiceController.GetServicesByUniversityId",
                 "parameters": [
                     {
-                        "in": "query",
+                        "in": "path",
                         "name": "universityId",
                         "description": "University ID",
                         "required": true,
@@ -1659,6 +1659,41 @@
                 }
             }
         },
+        "/universities/assignspec/{universityId}/{specialityId}": {
+            "post": {
+                "tags": [
+                    "universities"
+                ],
+                "description": "Добавление специальности к университету.\n\u003cbr\u003e",
+                "operationId": "UniversityController.AddSpecialityToUniversity",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "universityId",
+                        "description": "ID университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "specialityId",
+                        "description": "ID специальности",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "string\t\"Специальность успешно добавлена к университету\""
+                    },
+                    "400": {
+                        "description": "некорректные ID или другая ошибка"
+                    }
+                }
+            }
+        },
         "/universities/assignspecialities/{universityId}": {
             "post": {
                 "tags": [
@@ -1800,41 +1835,6 @@
                 }
             }
         },
-        "/universities/universityId/{specialityId}": {
-            "post": {
-                "tags": [
-                    "universities"
-                ],
-                "description": "Добавление специальности к университету.\n\u003cbr\u003e",
-                "operationId": "UniversityController.AddSpecialityToUniversity",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "universityId",
-                        "description": "ID университета",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    {
-                        "in": "path",
-                        "name": "specialityId",
-                        "description": "ID специальности",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "string\t\"Специальность успешно добавлена к университету\""
-                    },
-                    "400": {
-                        "description": "некорректные ID или другая ошибка"
-                    }
-                }
-            }
-        },
         "/universities/{id}": {
             "get": {
                 "tags": [
@@ -1891,10 +1891,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "string\t\"Обновление успешно выполнено\""
+                        "description": "{string} \"Обновление успешно выполнено\""
                     },
                     "400": {
-                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
+                        "description": "{string} \"Некорректный ID, ошибка разбора JSON или другая ошибка\""
                     }
                 }
             },

@@ -49,7 +49,7 @@ func init() {
 		user, password, host, port, dbName, schema)
 
 	orm.RegisterDataBase("default", driverName, dataSource)
-	orm.RunSyncdb("default", false, true)
+	//orm.RunSyncdb("default", false, true)
 	fmt.Println(driverName)
 	conf.InitElasticsearch()
 }

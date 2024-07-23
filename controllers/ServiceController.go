@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"testhub-spec-uni/models"
@@ -54,13 +55,14 @@ func (c *ServiceController) GetServiceById() {
 // GetServicesByUniversityId retrieves services associated with a university by its ID
 // @Title GetServicesByUniversityId
 // @Description Retrieve services associated with a university by its ID
-// @Param   universityId     query    int   true        "University ID"
+// @Param   universityId     path    int   true        "University ID"
 // @Success 200 {object}  []Service
 // @Failure 400 Invalid university ID
 // @router /getbyuni/:universityId [get]
 func (c *ServiceController) GetServicesByUniversityId() {
 	universityIdStr := c.GetString(":universityId")
 	universityId, err := strconv.Atoi(universityIdStr)
+	fmt.Println(universityId)
 	if err != nil {
 		c.CustomAbort(http.StatusBadRequest, "Invalid university ID")
 	}

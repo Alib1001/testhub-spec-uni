@@ -21,9 +21,9 @@ type UniversityController struct {
 // @Failure 400 оsaшибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *UniversityController) Create() {
-	var university models.University
+	requestBody := c.Ctx.Input.CopyBody(2048)
 
-	requestBody := c.Ctx.Input.CopyBody(1024)
+	var university models.University
 
 	err := json.Unmarshal(requestBody, &university)
 	if err != nil {
@@ -80,20 +80,41 @@ func (c *UniversityController) GetAll() {
 // @Description Обновление информации о университете по ID.
 // @Param	id		path	int	true	"ID университета для обновления информации"
 // @Param	body	body	models.University	true	"JSON с обновленными данными о университете"
-// @Success 200 string	"Обновление успешно выполнено"
-// @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
+// @Success 200 {string} "Обновление успешно выполнено"
+// @Failure 400 {string} "Некорректный ID, ошибка разбора JSON или другая ошибка"
 // @router /:id [put]
 func (c *UniversityController) Update() {
-	id, _ := c.GetInt(":id")
-	var university models.University
-	json.Unmarshal(c.Ctx.Input.RequestBody, &university)
-	university.Id = id
-	err := models.UpdateUniversity(&university)
-	if err == nil {
-		c.Data["json"] = "Update successful"
-	} else {
-		c.Data["json"] = err.Error()
+	// Получение ID из URL-параметра
+	id, err := c.GetInt(":id")
+	requestBody := c.Ctx.Input.CopyBody(2048)
+	if err != nil {
+		c.Data["json"] = "Некорректный ID"
+		c.ServeJSON()
+		return
 	}
+
+	// Чтение и разбор JSON тела запроса
+	var university models.University
+	err = json.Unmarshal(requestBody, &university)
+	if err != nil {
+		c.Data["json"] = "Ошибка разбора JSON: " + err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	// Установка ID университета
+	university.Id = id
+
+	// Обновление информации о университете
+	err = models.UpdateUniversityFields(&university)
+	if err != nil {
+		c.Data["json"] = "Ошибка обновления: " + err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	// Успешное обновление
+	c.Data["json"] = "Обновление успешно выполнено"
 	c.ServeJSON()
 }
 
@@ -142,7 +163,7 @@ func (c *UniversityController) AssignCityToUniversity() {
 // @Param	specialityId		path	int	true	"ID специальности"
 // @Success 200 string	"Специальность успешно добавлена к университету"
 // @Failure 400 некорректные ID или другая ошибка
-// @router /universityId/:specialityId [post]
+// @router /assignspec/:universityId/:specialityId [post]
 func (c *UniversityController) AddSpecialityToUniversity() {
 	universityId, _ := c.GetInt(":universityId")
 	specialityId, _ := c.GetInt(":specialityId")
@@ -193,6 +214,7 @@ func (c *UniversityController) AddSpecialitiesToUniversity() {
 // @router /assignserv/:universityId [post]
 func (c *UniversityController) AddServicesToUniversity() {
 	universityId, _ := c.GetInt(":universityId")
+	_ = c.Ctx.Input.CopyBody(512)
 	var serviceIds []int
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &serviceIds); err != nil {
 		c.Data["json"] = err.Error()

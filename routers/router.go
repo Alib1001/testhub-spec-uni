@@ -63,7 +63,7 @@ func init() {
 			beego.NSRouter("/assigncity/:universityId/:cityId", &controllers.UniversityController{}, "put:AssignCityToUniversity"),
 			beego.NSRouter("/assignspec/:universityId/:specialityId", &controllers.UniversityController{}, "post:AddSpecialityToUniversity"),
 			beego.NSRouter("/assignspecialities/:universityId", &controllers.UniversityController{}, "post:AddSpecialitiesToUniversity"),
-			beego.NSRouter("/assignservices/:universityId", &controllers.UniversityController{}, "post:AddServicesToUniversity"),
+			beego.NSRouter("/assignserv/:universityId", &controllers.UniversityController{}, "post:AddServicesToUniversity"),
 			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
 		),
 

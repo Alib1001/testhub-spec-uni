@@ -108,15 +108,90 @@ func GetAllUniversities() ([]*University, error) {
 	return universities, err
 }
 
-func UpdateUniversity(university *University) error {
+func UpdateUniversityFields(university *University) error {
 	o := orm.NewOrm()
-	_, err := o.Update(university)
-	if err != nil {
-		return err
+	existingUniversity := &University{Id: university.Id}
+
+	// Check if the university exists
+	if err := o.Read(existingUniversity); err != nil {
+		return fmt.Errorf("university with ID %d not found: %v", university.Id, err)
 	}
 
-	err = IndexUniversity(university)
-	if err != nil {
+	// Prepare fields to be updated
+	updateFields := []string{}
+
+	// Check and add non-zero fields to update list
+	if university.UniversityCode != "" {
+		updateFields = append(updateFields, "UniversityCode")
+	}
+	if university.Name != "" {
+		updateFields = append(updateFields, "Name")
+	}
+	if university.Abbreviation != "" {
+		updateFields = append(updateFields, "Abbreviation")
+	}
+	if university.AbbreviationRu != "" {
+		updateFields = append(updateFields, "AbbreviationRu")
+	}
+	if university.AbbreviationKz != "" {
+		updateFields = append(updateFields, "AbbreviationKz")
+	}
+	if university.UniversityStatus != "" {
+		updateFields = append(updateFields, "UniversityStatus")
+	}
+	if university.UniversityStatusRu != "" {
+		updateFields = append(updateFields, "UniversityStatusRu")
+	}
+	if university.UniversityStatusKz != "" {
+		updateFields = append(updateFields, "UniversityStatusKz")
+	}
+	if university.Address != "" {
+		updateFields = append(updateFields, "Address")
+	}
+	if university.Website != "" {
+		updateFields = append(updateFields, "Website")
+	}
+	if university.AverageFee != 0 {
+		updateFields = append(updateFields, "AverageFee")
+	}
+	if university.ProfileImageUrl != "" {
+		updateFields = append(updateFields, "ProfileImageUrl")
+	}
+	if university.MinEntryScore != 0 {
+		updateFields = append(updateFields, "MinEntryScore")
+	}
+	if university.Description != "" {
+		updateFields = append(updateFields, "Description")
+	}
+	if university.CallCenterNumber != "" {
+		updateFields = append(updateFields, "CallCenterNumber")
+	}
+	if university.WhatsAppNumber != "" {
+		updateFields = append(updateFields, "WhatsAppNumber")
+	}
+	if university.StudyFormat != "" {
+		updateFields = append(updateFields, "StudyFormat")
+	}
+	if university.StudyFormatRu != "" {
+		updateFields = append(updateFields, "StudyFormatRu")
+	}
+	if university.StudyFormatKz != "" {
+		updateFields = append(updateFields, "StudyFormatKz")
+	}
+	if university.AddressLink != "" {
+		updateFields = append(updateFields, "AddressLink")
+	}
+
+	// Update only the fields that have been set
+	if len(updateFields) > 0 {
+		_, err := o.Update(university, updateFields...)
+		if err != nil {
+			return fmt.Errorf("failed to update university fields: %v", err)
+		}
+	}
+
+	// Update the index in Elasticsearch
+	if err := IndexUniversity(university); err != nil {
 		return fmt.Errorf("university updated but failed to re-index in Elasticsearch: %v", err)
 	}
 
