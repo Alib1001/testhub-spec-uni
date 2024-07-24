@@ -14,23 +14,6 @@ type SpecialityController struct {
 	beego.Controller
 }
 
-// SearchSpecialitiesByName searches for specialities by name prefix using Elasticsearch.
-// @Title SearchSpecialitiesByName
-// @Description Search for specialities by name prefix.
-// @Param	prefix	query	string	true	"Prefix of the speciality name to search for"
-// @Success 200 {array} models.Speciality	"List of specialities"
-// @Failure 400 error searching or other error
-// @router /search_by_name [get]
-func (c *SpecialityController) SearchSpecialitiesByName() {
-	prefix := c.GetString("prefix")
-	if specialities, err := models.SearchSpecialitiesByName(prefix); err == nil {
-		c.Data["json"] = specialities
-	} else {
-		c.Data["json"] = err.Error()
-	}
-	c.ServeJSON()
-}
-
 // Create добавляет новую специальность в базу данных.
 // @Title Create
 // @Description Создание новой специальности.

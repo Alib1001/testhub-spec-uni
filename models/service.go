@@ -1,14 +1,8 @@
 package models
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
-	"testhub-spec-uni/conf"
-
 	"github.com/astaxie/beego/orm"
-	"github.com/elastic/go-elasticsearch/esapi"
 )
 
 type Service struct {
@@ -29,12 +23,6 @@ func AddService(service *Service) (int64, error) {
 		return 0, err
 	}
 	service.Id = int(id)
-
-	err = IndexService(service)
-	if err != nil {
-		return id, fmt.Errorf("service added but failed to index in Elasticsearch: %v", err)
-	}
-
 	return id, nil
 }
 
@@ -50,11 +38,6 @@ func UpdateService(service *Service) error {
 	_, err := o.Update(service)
 	if err != nil {
 		return err
-	}
-
-	err = IndexService(service)
-	if err != nil {
-		return fmt.Errorf("service updated but failed to index in Elasticsearch: %v", err)
 	}
 
 	return nil
@@ -126,94 +109,16 @@ func AddServiceToUniversity(serviceId, universityId int) error {
 	return nil
 }
 
-// IndexService indexes a service in Elasticsearch
-func IndexService(service *Service) error {
-	// Convert service to JSON
-	data, err := json.Marshal(service)
-	if err != nil {
-		return err
-	}
-
-	// Create Elasticsearch index request
-	req := esapi.IndexRequest{
-		Index:      "services",
-		DocumentID: fmt.Sprintf("%d", service.Id),
-		Body:       strings.NewReader(string(data)),
-		Refresh:    "true",
-	}
-
-	// Execute the request
-	res, err := req.Do(context.Background(), conf.EsClient)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	// Handle response
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return fmt.Errorf("error parsing the response body: %s", err)
-		}
-		return fmt.Errorf("[%s] %s: %s",
-			res.Status(),
-			e["error"].(map[string]interface{})["type"],
-			e["error"].(map[string]interface{})["reason"],
-		)
-	}
-
-	return nil
-}
-
-// SearchServicesByName searches for services by name in Elasticsearch
 func SearchServicesByName(prefix string) ([]Service, error) {
 	var results []Service
 
-	query := fmt.Sprintf(`{
-        "query": {
-            "query_string": {
-                "query": "%s*",
-                "fields": ["Name"]
-            }
-        }
-    }`, prefix)
-	res, err := conf.EsClient.Search(
-		conf.EsClient.Search.WithContext(context.Background()),
-		conf.EsClient.Search.WithIndex("services"),
-		conf.EsClient.Search.WithBody(strings.NewReader(query)),
-		conf.EsClient.Search.WithTrackTotalHits(true),
-	)
+	o := orm.NewOrm()
+	query := "SELECT * FROM service WHERE name LIKE ?"
+	searchPattern := fmt.Sprintf("%s%%", prefix)
+
+	_, err := o.Raw(query, searchPattern).QueryRows(&results)
 	if err != nil {
 		return results, err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return results, err
-		} else {
-			return results, fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
-	var sr struct {
-		Hits struct {
-			Hits []struct {
-				Source Service `json:"_source"`
-			} `json:"hits"`
-		} `json:"hits"`
-	}
-	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
-		return results, err
-	}
-
-	for _, hit := range sr.Hits.Hits {
-		results = append(results, hit.Source)
 	}
 
 	return results, nil

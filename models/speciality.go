@@ -1,16 +1,10 @@
 package models
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
-	"testhub-spec-uni/conf"
 	"time"
 
 	"github.com/astaxie/beego/orm"
-	"github.com/elastic/go-elasticsearch/esapi"
 )
 
 type Speciality struct {
@@ -32,14 +26,6 @@ type SpecialitySearchResult struct {
 	TotalCount   int           `json:"total_count"`
 }
 
-type SpecialitySearchResponse struct {
-	Hits struct {
-		Hits []struct {
-			Source Speciality `json:"_source"`
-		} `json:"hits"`
-	} `json:"hits"`
-}
-
 func init() {
 	orm.RegisterModel(new(Speciality))
 }
@@ -53,47 +39,8 @@ func AddSpeciality(speciality *Speciality) (int64, error) {
 	}
 
 	speciality.Id = int(id)
-	err = IndexSpeciality(speciality)
-	if err != nil {
-		return id, fmt.Errorf("Speciality added, but failed index in ElasticSearch")
-	}
 
 	return id, err
-}
-
-func IndexSpeciality(speciality *Speciality) error {
-	data, err := json.Marshal(speciality)
-	if err != nil {
-		return err
-	}
-
-	req := esapi.IndexRequest{
-		Index:      "specialities",
-		DocumentID: fmt.Sprintf("%d", speciality.Id),
-		Body:       bytes.NewReader(data),
-		Refresh:    "true",
-	}
-
-	res, err := req.Do(context.Background(), conf.EsClient)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return fmt.Errorf("error parsing the response body: %s", err)
-		} else {
-			return fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
-	return nil
 }
 
 func GetSpecialityById(id int) (*Speciality, error) {
@@ -183,54 +130,6 @@ func SearchSpecialities(params map[string]interface{}) (*SpecialitySearchResult,
 
 	fmt.Printf("SearchSpecialities: total specialities after filtering: %d\n", len(result.Specialities))
 	return result, nil
-}
-
-func SearchSpecialitiesByName(prefix string) ([]*Speciality, error) {
-	var results []*Speciality
-
-	query := fmt.Sprintf(`{
-        "query": {
-            "query_string": {
-                "query": "%s*",
-                "fields": ["Name"]
-            }
-        }
-    }`, prefix)
-
-	res, err := conf.EsClient.Search(
-		conf.EsClient.Search.WithContext(context.Background()),
-		conf.EsClient.Search.WithIndex("specialities"),
-		conf.EsClient.Search.WithBody(strings.NewReader(query)),
-		conf.EsClient.Search.WithTrackTotalHits(true),
-	)
-	if err != nil {
-		return results, err
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return results, err
-		} else {
-			return results, fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
-	}
-
-	var sr SpecialitySearchResponse
-	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
-		return results, err
-	}
-
-	for _, hit := range sr.Hits.Hits {
-		results = append(results, &hit.Source)
-	}
-
-	return results, nil
 }
 
 func GetSpecialitiesInUniversity(universityId int) ([]*Speciality, error) {
@@ -338,8 +237,30 @@ func filterSpecialitiesByName(params map[string]interface{}, specialities []*Spe
 		return specialities, nil
 	}
 
-	return SearchSpecialitiesByName(prefix)
+	var results []*Speciality
+	o := orm.NewOrm()
+	query := "SELECT * FROM speciality WHERE name LIKE ?"
+	searchPattern := fmt.Sprintf("%s%%", prefix)
+	_, err := o.Raw(query, searchPattern).QueryRows(&results)
+	if err != nil {
+		return nil, err
+	}
+
+	resultMap := make(map[int]*Speciality)
+	for _, speciality := range results {
+		resultMap[speciality.Id] = speciality
+	}
+
+	var filteredSpecialities []*Speciality
+	for _, speciality := range specialities {
+		if _, found := resultMap[speciality.Id]; found {
+			filteredSpecialities = append(filteredSpecialities, speciality)
+		}
+	}
+
+	return filteredSpecialities, nil
 }
+
 func paginateSpecialities(specialities []*Speciality, params map[string]interface{}) (*SpecialitySearchResult, error) {
 	totalCount := len(specialities)
 

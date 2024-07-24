@@ -3,10 +3,7 @@ version: '3.8'
 services:
   app:
     build: .
-    depends_on:
-      - elasticsearch
     environment:
-      ES_HOSTS: http://elasticsearch:9200
       DB_DRIVER: postgres
       DB_USER: course_dev
       DB_PASSWORD: course_dev
@@ -15,23 +12,3 @@ services:
       DB_NAME: course_dev
     ports:
       - "8085:8085"
-    networks:
-      - es-net
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-    networks:
-      - es-net
-
-volumes:
-  esdata:
-
-networks:
-  es-net:

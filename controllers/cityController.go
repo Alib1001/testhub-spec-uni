@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"log"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -34,10 +33,6 @@ func (c *CityController) Create() {
 	id, err := models.AddCity(&city)
 	if err == nil {
 		city.Id = int(id)
-		if err := models.IndexCity(&city); err != nil {
-			log.Printf("Failed to index city: %v", err)
-		}
-
 		c.Data["json"] = map[string]int64{"id": id}
 	} else {
 		c.Data["json"] = err.Error()

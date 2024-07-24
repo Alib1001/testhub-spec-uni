@@ -1,17 +1,12 @@
 package models
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
-	"testhub-spec-uni/conf"
 	"time"
 
 	"github.com/astaxie/beego/orm"
-	"github.com/elastic/go-elasticsearch/esapi"
 )
 
 type University struct {
@@ -47,14 +42,6 @@ type University struct {
 	AddressLink        string        `orm:"size(256)"`
 }
 
-type UniversitySearchResponse struct {
-	Hits struct {
-		Hits []struct {
-			Source University `json:"_source"`
-		} `json:"hits"`
-	} `json:"hits"`
-}
-
 type UniversitySearchResult struct {
 	Universities []*University `json:"universities"`
 	Page         int           `json:"page"`
@@ -73,11 +60,6 @@ func AddUniversity(university *University) (int64, error) {
 		return 0, err
 	}
 	university.Id = int(id)
-
-	err = IndexUniversity(university)
-	if err != nil {
-		return id, fmt.Errorf("university added but failed to index in Elasticsearch: %v", err)
-	}
 
 	return id, nil
 }
@@ -182,17 +164,11 @@ func UpdateUniversityFields(university *University) error {
 		updateFields = append(updateFields, "AddressLink")
 	}
 
-	// Update only the fields that have been set
 	if len(updateFields) > 0 {
 		_, err := o.Update(university, updateFields...)
 		if err != nil {
 			return fmt.Errorf("failed to update university fields: %v", err)
 		}
-	}
-
-	// Update the index in Elasticsearch
-	if err := IndexUniversity(university); err != nil {
-		return fmt.Errorf("university updated but failed to re-index in Elasticsearch: %v", err)
 	}
 
 	return nil
@@ -258,58 +234,6 @@ func AddSpecialityToUniversity(specialityId, universityId int) error {
 
 	o.LoadRelated(university, "Specialities")
 	fmt.Printf("Specialities for university %d: %v\n", universityId, university.Specialities)
-
-	return nil
-}
-
-func IndexUniversity(university *University) error {
-	// Convert university to JSON
-	data, err := json.Marshal(university)
-	if err != nil {
-		return err
-	}
-
-	// Include speciality and service IDs in the indexed data
-	dataMap := make(map[string]interface{})
-	if err := json.Unmarshal(data, &dataMap); err != nil {
-		return err
-	}
-	dataMap["speciality_ids"] = getSpecialityIDs(university)
-	dataMap["service_ids"] = getServiceIDs(university)
-
-	// Convert back to JSON after updating
-	updatedData, err := json.Marshal(dataMap)
-	if err != nil {
-		return err
-	}
-
-	// Create Elasticsearch index request
-	req := esapi.IndexRequest{
-		Index:      "universities",
-		DocumentID: fmt.Sprintf("%d", university.Id),
-		Body:       strings.NewReader(string(updatedData)),
-		Refresh:    "true",
-	}
-
-	// Execute the request
-	res, err := req.Do(context.Background(), conf.EsClient)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	// Handle response
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return fmt.Errorf("error parsing the response body: %s", err)
-		}
-		return fmt.Errorf("[%s] %s: %s",
-			res.Status(),
-			e["error"].(map[string]interface{})["type"],
-			e["error"].(map[string]interface{})["reason"],
-		)
-	}
 
 	return nil
 }
@@ -467,57 +391,36 @@ func SearchUniversities(params map[string]interface{}) (*UniversitySearchResult,
 }
 
 func filterUniversitiesByName(params map[string]interface{}, universities []*University) ([]*University, error) {
-	var _ []University
 	prefix, ok := params["name"].(string)
 	if !ok || prefix == "" {
 		return universities, nil
 	}
 
-	query := fmt.Sprintf(`{
-        "query": {
-            "query_string": {
-                "query": "%s*",
-                "fields": ["Name", "Abbreviation", "UniversityCode"]
-            }
-        }
-    }`, prefix)
-	res, err := conf.EsClient.Search(
-		conf.EsClient.Search.WithContext(context.Background()),
-		conf.EsClient.Search.WithIndex("universities"),
-		conf.EsClient.Search.WithBody(strings.NewReader(query)),
-		conf.EsClient.Search.WithTrackTotalHits(true),
-	)
+	o := orm.NewOrm()
+	searchPattern := fmt.Sprintf("%%%s%%", prefix)
+
+	var matchingUniversities []*University
+	_, err := o.Raw(`
+		SELECT * 
+		FROM university 
+		WHERE name LIKE ? 
+		OR abbreviation LIKE ? 
+		OR university_code LIKE ?
+	`, searchPattern, searchPattern, searchPattern).QueryRows(&matchingUniversities)
 	if err != nil {
 		return universities, err
 	}
-	defer res.Body.Close()
 
-	if res.IsError() {
-		var e map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&e); err != nil {
-			return universities, err
-		} else {
-			return universities, fmt.Errorf("[%s] %s: %s",
-				res.Status(),
-				e["error"].(map[string]interface{})["type"],
-				e["error"].(map[string]interface{})["reason"],
-			)
-		}
+	// Create a map for quick lookup
+	matchingUniversityMap := make(map[int]*University)
+	for _, uni := range matchingUniversities {
+		matchingUniversityMap[uni.Id] = uni
 	}
 
-	var sr UniversitySearchResponse
-	if err := json.NewDecoder(res.Body).Decode(&sr); err != nil {
-		return universities, err
-	}
-
-	esUniversities := make(map[string]bool)
-	for _, hit := range sr.Hits.Hits {
-		esUniversities[hit.Source.Name] = true
-	}
-
+	// Filter the original list of universities
 	var filteredUniversities []*University
 	for _, uni := range universities {
-		if esUniversities[uni.Name] {
+		if _, exists := matchingUniversityMap[uni.Id]; exists {
 			filteredUniversities = append(filteredUniversities, uni)
 		}
 	}
