@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"testhub-spec-uni/conf" // добавим этот импорт
 	"testhub-spec-uni/controllers"
 	_ "testhub-spec-uni/routers"
 
@@ -51,14 +50,10 @@ func init() {
 	orm.RegisterDataBase("default", driverName, dataSource)
 	//orm.RunSyncdb("default", false, true)
 	fmt.Println(driverName)
-	conf.InitElasticsearch()
 }
 
 func main() {
 	//run with swagger: bee run -gendoc=true -downdoc=true
-	log.Println("Initializing Elasticsearch...")
-	conf.InitElasticsearch()
-	log.Println("Elasticsearch initialized.")
 
 	// Configure directory where Swagger UI files are located
 	web.BConfig.WebConfig.DirectoryIndex = true
@@ -74,9 +69,8 @@ func main() {
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
 
-	//TODO: совместить поиск в один (университеты)
-	//TODO : добавить пагинацию (специальности, универы)
-	//TODO: добавить поиск (специальности)
+	//TODO: переписать поиск
+	//TODO: проверить все запросы в специальностях
 	//TODO: мультиязычность
 
 	beego.Run()
