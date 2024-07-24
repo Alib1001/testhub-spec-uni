@@ -16,6 +16,13 @@ type City struct {
 	UpdatedAt    time.Time     `orm:"auto_now;type(datetime)"`
 }
 
+type CityResponse struct {
+	Id        int       `json:"Id"`
+	Name      string    `json:"Name"`
+	CreatedAt time.Time `json:"CreatedAt"`
+	UpdatedAt time.Time `json:"UpdatedAt"`
+}
+
 func init() {
 	orm.RegisterModel(new(City))
 }
