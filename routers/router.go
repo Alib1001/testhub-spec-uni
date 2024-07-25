@@ -21,8 +21,8 @@ func init() {
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.SubjectController{}, "delete:Delete"),
 			beego.NSRouter("/secubjects/:firstSubjectId", &controllers.SubjectController{}, "get:GetAllowedSecondSubjects"),
+			beego.NSRouter("/search", &controllers.SubjectController{}, "get:SearchSubjectsByName"),
 		),
-
 		beego.NSNamespace("/subjectpair",
 			beego.NSInclude(&controllers.SubjectPairController{}),
 			beego.NSRouter("/add/:firstSubjectId/:secondSubjectId", &controllers.SubjectPairController{}, "post:Add"),

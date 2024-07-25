@@ -54,7 +54,6 @@ func init() {
 
 func main() {
 	//run with swagger: bee run -gendoc=true -downdoc=true
-
 	// Configure directory where Swagger UI files are located
 	web.BConfig.WebConfig.DirectoryIndex = true
 	web.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
@@ -69,9 +68,8 @@ func main() {
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
 
-	//TODO:check put запрос service
-	//TODO: проверить все запросы в специальностях
 	//TODO: мультиязычность
+	//TODO: проверить все запросы в специальностях
 
 	beego.Run()
 }
