@@ -8,8 +8,16 @@ import (
 type Service struct {
 	Id           int           `orm:"auto"`
 	Name         string        `orm:"size(128)"`
+	NameRu       string        `orm:"size(128)"`
+	NameKz       string        `orm:"size(128)"`
 	ImageUrl     string        `orm:"size(256)"`
 	Universities []*University `orm:"reverse(many)"`
+}
+
+type ServiceResponse struct {
+	Id       int    `json:"Id"`
+	Name     string `json:"Name"`
+	ImageUrl string `json:"ImageUrl"`
 }
 
 func init() {
@@ -32,57 +40,140 @@ func DeleteService(id int) error {
 	return err
 }
 
-// UpdateService updates the details of an existing service in the database
-func UpdateService(service *Service) error {
+func UpdateService(service *Service, fields ...string) error {
 	o := orm.NewOrm()
-	_, err := o.Update(service)
+	_, err := o.Update(service, fields...)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-// GetServiceById retrieves a service by its ID from the database
-func GetServiceById(id int) (*Service, error) {
+func GetServiceById(id int, language string) (*ServiceResponse, error) {
 	o := orm.NewOrm()
 	service := &Service{Id: id}
 	err := o.Read(service)
-	return service, err
+	if err != nil {
+		return nil, err
+	}
+
+	name := service.Name
+	switch language {
+	case "ru":
+		name = service.NameRu
+	case "kz":
+		name = service.NameKz
+	}
+
+	return &ServiceResponse{
+		Id:       service.Id,
+		Name:     name,
+		ImageUrl: service.ImageUrl,
+	}, nil
 }
 
-// GetAllServices retrieves all services from the database
-func GetAllServices() ([]*Service, error) {
+func GetAllServices(language string) ([]*ServiceResponse, error) {
 	o := orm.NewOrm()
 	var services []*Service
 	_, err := o.QueryTable("service").All(&services)
-	return services, err
+	if err != nil {
+		return nil, err
+	}
+
+	var serviceResponses []*ServiceResponse
+	for _, service := range services {
+		name := service.Name
+		switch language {
+		case "ru":
+			name = service.NameRu
+		case "kz":
+			name = service.NameKz
+		}
+		serviceResponses = append(serviceResponses, &ServiceResponse{
+			Id:       service.Id,
+			Name:     name,
+			ImageUrl: service.ImageUrl,
+		})
+	}
+
+	return serviceResponses, nil
 }
 
-// GetServicesByUniversityId retrieves services associated with a university by its ID
-func GetServicesByUniversityId(universityId int) ([]*Service, error) {
-	o := orm.NewOrm()
+func SearchServicesByName(prefix, language string) ([]ServiceResponse, error) {
+	var results []Service
+	var field string
 
-	// Create a university object to read by its ID
+	switch language {
+	case "ru":
+		field = "name_ru"
+	case "kz":
+		field = "name_kz"
+	default:
+		field = "name"
+	}
+
+	o := orm.NewOrm()
+	query := fmt.Sprintf("SELECT * FROM service WHERE %s LIKE ?", field)
+	searchPattern := fmt.Sprintf("%s%%", prefix)
+
+	_, err := o.Raw(query, searchPattern).QueryRows(&results)
+	if err != nil {
+		return nil, err
+	}
+
+	var serviceResponses []ServiceResponse
+	for _, service := range results {
+		name := service.Name
+		switch language {
+		case "ru":
+			name = service.NameRu
+		case "kz":
+			name = service.NameKz
+		}
+		serviceResponses = append(serviceResponses, ServiceResponse{
+			Id:       service.Id,
+			Name:     name,
+			ImageUrl: service.ImageUrl,
+		})
+	}
+
+	return serviceResponses, nil
+}
+
+func GetServicesByUniversityId(universityId int, language string) ([]*ServiceResponse, error) {
+	o := orm.NewOrm()
 	university := &University{Id: universityId}
 	if err := o.Read(university); err != nil {
 		return nil, err
 	}
 
-	// Load related services for the university
 	var services []*Service
 	_, err := o.QueryTable("service").Filter("Universities__University__Id", universityId).All(&services)
 	if err != nil {
 		return nil, err
 	}
 
-	return services, nil
+	var serviceResponses []*ServiceResponse
+	for _, service := range services {
+		name := service.Name
+		switch language {
+		case "ru":
+			name = service.NameRu
+		case "kz":
+			name = service.NameKz
+		}
+		serviceResponses = append(serviceResponses, &ServiceResponse{
+			Id:       service.Id,
+			Name:     name,
+			ImageUrl: service.ImageUrl,
+		})
+	}
+
+	return serviceResponses, nil
 }
 
-// AddServiceToUniversity binds a service to a university by their IDs
 func AddServiceToUniversity(serviceId, universityId int) error {
 	o := orm.NewOrm()
-
 	service := &Service{Id: serviceId}
 	if err := o.Read(service); err != nil {
 		return err
@@ -107,19 +198,4 @@ func AddServiceToUniversity(serviceId, universityId int) error {
 	fmt.Printf("Services for university %d: %v\n", universityId, university.Services)
 
 	return nil
-}
-
-func SearchServicesByName(prefix string) ([]Service, error) {
-	var results []Service
-
-	o := orm.NewOrm()
-	query := "SELECT * FROM service WHERE name LIKE ?"
-	searchPattern := fmt.Sprintf("%s%%", prefix)
-
-	_, err := o.Raw(query, searchPattern).QueryRows(&results)
-	if err != nil {
-		return results, err
-	}
-
-	return results, nil
 }

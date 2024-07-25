@@ -69,7 +69,7 @@ func main() {
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
 
-	//TODO: переписать поиск
+	//TODO:check put запрос service
 	//TODO: проверить все запросы в специальностях
 	//TODO: мультиязычность
 
