@@ -10,8 +10,8 @@ import (
 type Subject struct {
 	Id        int       `orm:"auto"`
 	Name      string    `orm:"size(128)"`
-	NameKz    string    `orm:"size(128)"`
 	NameRu    string    `orm:"size(128)"`
+	NameKz    string    `orm:"size(128)"`
 	CreatedAt time.Time `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt time.Time `orm:"auto_now;type(datetime)"`
 }
@@ -20,36 +20,87 @@ func init() {
 	orm.RegisterModel(new(Subject))
 }
 
+type SubjectResponse struct {
+	Id   int    `json:"Id"`
+	Name string `json:"Name"`
+}
+
 func AddSubject(subject *Subject) (int64, error) {
 	o := orm.NewOrm()
 	id, err := o.Insert(subject)
-
 	if err != nil {
 		return 0, err
 	}
-
 	subject.Id = int(id)
-
-	return id, err
+	return id, nil
 }
 
-func GetSubjectById(id int) (*Subject, error) {
+func GetSubjectById(id int, language string) (*SubjectResponse, error) {
 	o := orm.NewOrm()
 	subject := &Subject{Id: id}
 	err := o.Read(subject)
-	return subject, err
+	if err != nil {
+		return nil, err
+	}
+
+	name := subject.Name
+	switch language {
+	case "ru":
+		name = subject.NameRu
+	case "kz":
+		name = subject.NameKz
+	}
+
+	return &SubjectResponse{
+		Id:   subject.Id,
+		Name: name,
+	}, nil
 }
 
-func GetAllSubjects() ([]*Subject, error) {
+func GetAllSubjects(language string) ([]*SubjectResponse, error) {
 	o := orm.NewOrm()
 	var subjects []*Subject
 	_, err := o.QueryTable("subject").All(&subjects)
-	return subjects, err
+	if err != nil {
+		return nil, err
+	}
+
+	var subjectResponses []*SubjectResponse
+	for _, subject := range subjects {
+		name := subject.Name
+		switch language {
+		case "ru":
+			name = subject.NameRu
+		case "kz":
+			name = subject.NameKz
+		}
+		subjectResponses = append(subjectResponses, &SubjectResponse{
+			Id:   subject.Id,
+			Name: name,
+		})
+	}
+
+	return subjectResponses, nil
 }
 
 func UpdateSubject(subject *Subject) error {
 	o := orm.NewOrm()
-	_, err := o.Update(subject)
+	existingSubject := Subject{Id: subject.Id}
+	if err := o.Read(&existingSubject); err != nil {
+		return err
+	}
+
+	if subject.Name != "" {
+		existingSubject.Name = subject.Name
+	}
+	if subject.NameRu != "" {
+		existingSubject.NameRu = subject.NameRu
+	}
+	if subject.NameKz != "" {
+		existingSubject.NameKz = subject.NameKz
+	}
+
+	_, err := o.Update(&existingSubject)
 	return err
 }
 
@@ -59,25 +110,44 @@ func DeleteSubject(id int) error {
 	return err
 }
 
-func SearchSubjectsByName(prefix string) ([]Subject, error) {
+func SearchSubjectsByName(prefix, language string) ([]SubjectResponse, error) {
 	var results []Subject
+	var field string
 
-	o := orm.NewOrm()
-	searchPattern := fmt.Sprintf("%%%s%%", prefix)
-
-	_, err := o.Raw(`
-		SELECT * 
-		FROM subject 
-		WHERE name LIKE ? 
-		OR name_kz LIKE ? 
-		OR name_ru LIKE ?
-	`, searchPattern, searchPattern, searchPattern).QueryRows(&results)
-
-	if err != nil {
-		return results, err
+	switch language {
+	case "ru":
+		field = "name_ru"
+	case "kz":
+		field = "name_kz"
+	default:
+		field = "name"
 	}
 
-	return results, nil
+	o := orm.NewOrm()
+	query := fmt.Sprintf("SELECT * FROM subject WHERE %s LIKE ?", field)
+	searchPattern := fmt.Sprintf("%%%s%%", prefix)
+
+	_, err := o.Raw(query, searchPattern).QueryRows(&results)
+	if err != nil {
+		return nil, err
+	}
+
+	var subjectResponses []SubjectResponse
+	for _, subject := range results {
+		name := subject.Name
+		switch language {
+		case "ru":
+			name = subject.NameRu
+		case "kz":
+			name = subject.NameKz
+		}
+		subjectResponses = append(subjectResponses, SubjectResponse{
+			Id:   subject.Id,
+			Name: name,
+		})
+	}
+
+	return subjectResponses, nil
 }
 
 func GetAllowedSecondSubjects(subject1Id int) ([]*Subject, error) {
