@@ -2374,12 +2374,6 @@
                 "Abbreviation": {
                     "type": "string"
                 },
-                "AbbreviationKz": {
-                    "type": "string"
-                },
-                "AbbreviationRu": {
-                    "type": "string"
-                },
                 "Address": {
                     "type": "string"
                 },
@@ -2409,12 +2403,6 @@
                 "Description": {
                     "type": "string"
                 },
-                "DescriptionKz": {
-                    "type": "string"
-                },
-                "DescriptionRu": {
-                    "type": "string"
-                },
                 "Id": {
                     "type": "integer",
                     "format": "int64"
@@ -2424,12 +2412,6 @@
                     "format": "int64"
                 },
                 "Name": {
-                    "type": "string"
-                },
-                "NameKz": {
-                    "type": "string"
-                },
-                "NameRu": {
                     "type": "string"
                 },
                 "PhotosUrlList": {
@@ -2468,22 +2450,7 @@
                 "StudyFormat": {
                     "type": "string"
                 },
-                "StudyFormatKz": {
-                    "type": "string"
-                },
-                "StudyFormatRu": {
-                    "type": "string"
-                },
                 "UniversityCode": {
-                    "type": "string"
-                },
-                "UniversityStatus": {
-                    "type": "string"
-                },
-                "UniversityStatusKz": {
-                    "type": "string"
-                },
-                "UniversityStatusRu": {
                     "type": "string"
                 },
                 "UpdatedAt": {

@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"testhub-spec-uni/models"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -50,7 +51,12 @@ func (c *UniversityController) Create() {
 // @router /:id [get]
 func (c *UniversityController) Get() {
 	id, _ := c.GetInt(":id")
-	university, err := models.GetUniversityById(id)
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
+	university, err := models.GetUniversityById(id, language)
 	if err == nil {
 		c.Data["json"] = university
 	} else {
@@ -66,7 +72,12 @@ func (c *UniversityController) Get() {
 // @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *UniversityController) GetAll() {
-	universities, err := models.GetAllUniversities()
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
+	universities, err := models.GetAllUniversities(language)
 	if err == nil {
 		c.Data["json"] = universities
 	} else {
@@ -250,8 +261,12 @@ func (c *UniversityController) AddServicesToUniversity() {
 // @Failure 400 {string} string "400 ошибка поиска или другая ошибка"
 // @router /search [get]
 func (c *UniversityController) SearchUniversities() {
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
 	params := make(map[string]interface{})
-
 	if minScore, err := c.GetInt("min_score"); err == nil {
 		params["min_score"] = minScore
 	}
@@ -307,7 +322,7 @@ func (c *UniversityController) SearchUniversities() {
 
 	log.Printf("Received parameters map: %+v", params)
 
-	result, err := models.SearchUniversities(params)
+	result, err := models.SearchUniversities(params, language)
 	if err == nil {
 		c.Data["json"] = result
 	} else {
