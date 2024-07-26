@@ -47,7 +47,9 @@ func (c *SpecialityController) Create() {
 // @router /:id [get]
 func (c *SpecialityController) Get() {
 	id, _ := c.GetInt(":id")
-	if speciality, err := models.GetSpecialityById(id); err == nil {
+	lang := c.Ctx.Input.Header("lang")
+
+	if speciality, err := models.GetSpecialityById(id, lang); err == nil {
 		c.Data["json"] = speciality
 	} else {
 		c.Data["json"] = err.Error()
@@ -62,7 +64,9 @@ func (c *SpecialityController) Get() {
 // @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *SpecialityController) GetAll() {
-	if specialities, err := models.GetAllSpecialities(); err == nil {
+	lang := c.Ctx.Input.Header("lang")
+
+	if specialities, err := models.GetAllSpecialities(lang); err == nil {
 		c.Data["json"] = specialities
 	} else {
 		c.Data["json"] = err.Error()
@@ -121,12 +125,13 @@ func (c *SpecialityController) Delete() {
 // @router /byuni/:universityId [get]
 func (c *SpecialityController) GetByUniversity() {
 	universityId, err := c.GetInt(":universityId")
+	lang := c.Ctx.Input.Header("lang")
 	if err != nil {
 		c.CustomAbort(400, "Invalid university ID")
 		return
 	}
 
-	specialities, err := models.GetSpecialitiesInUniversity(universityId)
+	specialities, err := models.GetSpecialitiesInUniversity(universityId, lang)
 	if err != nil {
 		c.CustomAbort(500, err.Error())
 		return
@@ -172,12 +177,14 @@ func (c *SpecialityController) AssociateSpecialityWithSubjectPair() {
 	c.ServeJSON()
 }
 
+// GetSubjectPairsBySpecialityId получает все пары предметов для заданной специальности.
 // @Title GetSubjectPairsBySpecialityId
-// @Description получает все пары предметов для заданной специальности
+// @Description Получение всех пар предметов для заданной специальности.
 // @Param	speciality_id		path 	int	true		"ID специальности"
-// @Success 200 {array} models.SubjectPair
-// @Failure 400 "Invalid input"
-// @Failure 404 "SubjectPairs not found"
+// @Param	lang	header	string	false	"Язык для фильтрации"
+// @Success 200 {array} models.SubjectPair	"Список пар предметов"
+// @Failure 400 "Некорректный ввод"
+// @Failure 404 "Пары предметов не найдены"
 // @router /byspec/:speciality_id [get]
 func (c *SpecialityController) GetSubjectPairsBySpecialityId() {
 	specialityIdStr := c.Ctx.Input.Param(":speciality_id")
@@ -186,7 +193,9 @@ func (c *SpecialityController) GetSubjectPairsBySpecialityId() {
 		c.CustomAbort(http.StatusBadRequest, "Invalid speciality_id")
 	}
 
-	subjectPairs, err := models.GetSubjectPairsBySpecialityId(specialityId)
+	lang := c.Ctx.Input.Header("lang")
+
+	subjectPairs, err := models.GetSubjectPairsBySpecialityId(specialityId, lang)
 	if err != nil {
 		c.CustomAbort(http.StatusInternalServerError, err.Error())
 	}
@@ -204,6 +213,8 @@ func (c *SpecialityController) GetSubjectPairsBySpecialityId() {
 // @Failure 404 "Speciality not found"
 // @router /bysubjects/:subject1_id/:subject2_id [get]
 func (c *SpecialityController) GetSpecialitiesBySubjectPair() {
+	lang := c.Ctx.Input.Header("lang")
+
 	subject1IdStr := c.Ctx.Input.Param(":subject1_id")
 	subject2IdStr := c.Ctx.Input.Param(":subject2_id")
 
@@ -216,7 +227,7 @@ func (c *SpecialityController) GetSpecialitiesBySubjectPair() {
 		c.CustomAbort(http.StatusBadRequest, "Invalid subject2_id")
 	}
 
-	speciality, err := models.GetSpecialitiesBySubjectPair(subject1Id, subject2Id)
+	speciality, err := models.GetSpecialitiesBySubjectPair(subject1Id, subject2Id, lang)
 	if err != nil {
 		c.CustomAbort(http.StatusInternalServerError, err.Error())
 	}
@@ -301,24 +312,25 @@ func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 	}
 
 	if len(pointStats) == 0 {
-		c.Data["json"] = []models.PointStat{} // Возвращаем пустой массив, если статистика не найдена
+		c.Data["json"] = []models.PointStat{}
 	} else {
 		c.Data["json"] = pointStats
 	}
 	c.ServeJSON()
 }
 
-// SearchSpecialities performs a search with various filters and pagination.
+// SearchSpecialities выполняет поиск с различными фильтрами и пагинацией.
 // @Title SearchSpecialities
-// @Description Perform a search for specialities using filters and pagination.
-// @Param	name	query	string	false	"Prefix of the speciality name to search for"
-// @Param	subject1_id	query	int	false	"ID of the first subject for filtering"
-// @Param	subject2_id	query	int	false	"ID of the second subject for filtering"
-// @Param	university_id	query	int	false	"ID of the university for filtering"
-// @Param	page	query	int	false	"Page number for pagination"
-// @Param	per_page	query	int	false	"Number of items per page"
-// @Success 200 {object} models.SpecialitySearchResult	"Search results with specialities"
-// @Failure 400 error searching or other error
+// @Description Выполнение поиска специальностей с использованием фильтров и пагинации.
+// @Param	name	query	string	false	"Префикс имени специальности для поиска"
+// @Param	subject1_id	query	int	false	"ID первого предмета для фильтрации"
+// @Param	subject2_id	query	int	false	"ID второго предмета для фильтрации"
+// @Param	university_id	query	int	false	"ID университета для фильтрации"
+// @Param	page	query	int	false	"Номер страницы для пагинации"
+// @Param	per_page	query	int	false	"Количество элементов на странице"
+// @Param	lang	header	string	false	"Язык для фильтрации"
+// @Success 200 {object} models.SpecialitySearchResult	"Результаты поиска со специальностями"
+// @Failure 400 "Ошибка поиска или другая ошибка"
 // @router /search [get]
 func (c *SpecialityController) SearchSpecialities() {
 	params := make(map[string]interface{})
@@ -347,7 +359,12 @@ func (c *SpecialityController) SearchSpecialities() {
 		params["per_page"] = perPage
 	}
 
-	result, err := models.SearchSpecialities(params)
+	lang := c.Ctx.Input.Header("lang")
+	if lang != "" {
+		params["lang"] = lang
+	}
+
+	result, err := models.SearchSpecialities(params, lang)
 	if err != nil {
 		c.CustomAbort(http.StatusInternalServerError, err.Error())
 		return

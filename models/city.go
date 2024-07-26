@@ -17,8 +17,9 @@ type City struct {
 }
 
 type CityResponse struct {
-	Id        int       `json:"Id"`
-	Name      string    `json:"Name"`
+	Id   int    `json:"Id"`
+	Name string `json:"Name"`
+
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
 }
