@@ -10,6 +10,8 @@ import (
 type Quota struct {
 	Id           int    `orm:"auto"`
 	QuotaType    string `orm:"size(64)"`
+	QuotaTypeRu  string `orm:"size(64)"`
+	QuotaTypeKz  string `orm:"size(64)"`
 	Count        int
 	MinScore     int
 	MaxScore     int
@@ -28,24 +30,51 @@ func AddQuota(quota *Quota) (int64, error) {
 	return id, err
 }
 
-func GetQuotaById(id int) (*Quota, error) {
+func GetQuotaById(id int, language string) (*Quota, error) {
 	o := orm.NewOrm()
 	quota := &Quota{Id: id}
 	err := o.Read(quota)
+	if err != nil {
+		return nil, err
+	}
+
+	switch language {
+	case "ru":
+		quota.QuotaType = quota.QuotaTypeRu
+	case "kz":
+		quota.QuotaType = quota.QuotaTypeKz
+	}
+
 	return quota, err
 }
 
-func GetAllQuotas() ([]*Quota, error) {
+func GetAllQuotas(language string) ([]*Quota, error) {
 	o := orm.NewOrm()
 	var quotas []*Quota
 	_, err := o.QueryTable("quota").All(&quotas)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, quota := range quotas {
+		switch language {
+		case "ru":
+			quota.QuotaType = quota.QuotaTypeRu
+		case "kz":
+			quota.QuotaType = quota.QuotaTypeKz
+		}
+	}
+
 	return quotas, err
 }
 
-func UpdateQuota(quota *Quota) error {
+func UpdateQuota(quota *Quota, fields ...string) error {
 	o := orm.NewOrm()
-	_, err := o.Update(quota)
-	return err
+	_, err := o.Update(quota, fields...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func DeleteQuota(id int) error {
@@ -53,6 +82,7 @@ func DeleteQuota(id int) error {
 	_, err := o.Delete(&Quota{Id: id})
 	return err
 }
+
 func AddSpecialityToQuota(specialityId, quotaId int) error {
 	o := orm.NewOrm()
 
@@ -75,26 +105,46 @@ func AddSpecialityToQuota(specialityId, quotaId int) error {
 	_, err := m2m.Add(speciality)
 	return err
 }
-func GetAllQuotasWithSpecialities() ([]*Quota, error) {
+
+func GetAllQuotasWithSpecialities(language string) ([]*Quota, error) {
 	o := orm.NewOrm()
 	var quotas []*Quota
 	_, err := o.QueryTable("quota").RelatedSel("Specialities").All(&quotas)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, quota := range quotas {
+		switch language {
+		case "ru":
+			quota.QuotaType = quota.QuotaTypeRu
+		case "kz":
+			quota.QuotaType = quota.QuotaTypeKz
+		}
+	}
+
 	return quotas, err
 }
-func GetQuotaWithSpecialitiesById(id int) (*Quota, error) {
+
+func GetQuotaWithSpecialitiesById(id int, language string) (*Quota, error) {
 	o := orm.NewOrm()
 	quota := &Quota{Id: id}
 
-	// Загрузка квоты по ID
 	err := o.Read(quota)
 	if err != nil {
 		return nil, err
 	}
 
-	// Предзагрузка списка специальностей для данной квоты
 	_, err = o.LoadRelated(quota, "Specialities")
 	if err != nil {
 		return nil, err
+	}
+
+	switch language {
+	case "ru":
+		quota.QuotaType = quota.QuotaTypeRu
+	case "kz":
+		quota.QuotaType = quota.QuotaTypeKz
 	}
 
 	return quota, nil

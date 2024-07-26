@@ -3,7 +3,7 @@ info:
   title: Testhub universities  API
   description: |
     API for Testhub universities.
-  version: 1.0.1
+  version: 1.0.2
   contact:
     email: superalibek123@gmail.com
 basePath: /api
@@ -18,7 +18,7 @@ paths:
       operationId: CityController.GetAll
       parameters:
       - in: header
-        name: Accept-Language
+        name: lang
         description: Язык для получения данных, 'ru' или 'kz'
         required: true
         type: string
@@ -68,7 +68,7 @@ paths:
         type: integer
         format: int64
       - in: header
-        name: Accept-Language
+        name: lang
         description: Язык для получения данных, 'ru' или 'kz'
         required: true
         type: string
@@ -121,7 +121,7 @@ paths:
         type: integer
         format: int64
       - in: header
-        name: Accept-Language
+        name: lang
         description: Язык для получения данных, 'ru' или 'kz'
         required: true
         type: string
@@ -147,7 +147,7 @@ paths:
         required: true
         type: string
       - in: header
-        name: Accept-Language
+        name: lang
         description: Язык для получения данных, 'ru' или 'kz'
         required: true
         type: string
@@ -157,7 +157,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.City'
+              $ref: '#/definitions/CityResponse'
         "400":
           description: '{string} string "400 ошибка поиска или другая ошибка"'
   /quotas/:
@@ -168,13 +168,19 @@ paths:
         Получение списка всех квот.
         <br>
       operationId: QuotaController.GetAll
+      parameters:
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: '"Список квот"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Quota'
+              $ref: '#/definitions/QuotaResponse'
         "400":
           description: '{string} string "400 ошибка получения списка или другая ошибка"'
     post:
@@ -204,6 +210,7 @@ paths:
       - quotas
       description: |-
         Получение информации о квоте по ID.
+        <br>Получение информации о квоте по ID.
         <br>
       operationId: QuotaController.Get
       parameters:
@@ -213,11 +220,27 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
+      - in: path
+        name: id
+        description: ID квоты для получения информации
+        required: true
+        type: integer
+        format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: '"Информация о квоте"'
           schema:
-            $ref: '#/definitions/models.Quota'
+            $ref: '#/definitions/QuotaResponse'
         "400":
           description: '{string} string "400 некорректный ID или другая ошибка"'
     put:
@@ -265,7 +288,7 @@ paths:
           description: string "Удаление успешно выполнено"
         "400":
           description: '{string} string "400 некорректный ID или другая ошибка"'
-  /quotas/{quota_id}/specialities/{speciality_id}:
+  /quotas/{quotaId}/specialities/{specialityId}:
     post:
       tags:
       - quotas
@@ -275,30 +298,30 @@ paths:
       operationId: QuotaController.AddSpecialityToQuota
       parameters:
       - in: path
-        name: quota_id
+        name: quotaId
         description: ID квоты
         required: true
         type: integer
         format: int64
       - in: path
-        name: speciality_id
+        name: specialityId
         description: ID специальности
         required: true
         type: integer
         format: int64
       responses:
         "200":
-          description: "string\t\"Специальность успешно добавлена к квоте\""
+          description: string "Добавление успешно выполнено"
         "400":
-          description: '{string} string "400 ошибка разбора JSON или другая ошибка"'
-  /quotas/all/{id}:
+          description: '{string} string "400 некорректный ID или другая ошибка"'
+  /quotas/with-specialities/{id}:
     get:
       tags:
       - quotas
       description: |-
-        Получение информации о квоте вместе с ассоциированными специальностями по ID.
+        Получение информации о квоте со специальностями по ID.
         <br>
-      operationId: QuotaController.GetQuotaWithSpecialities
+      operationId: QuotaController.GetWithSpecialitiesById
       parameters:
       - in: path
         name: id
@@ -306,13 +329,41 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
-          description: '"Информация о квоте вместе с специальностями"'
+          description: '"Информация о квоте со специальностями"'
           schema:
-            $ref: '#/definitions/models.Quota'
+            $ref: '#/definitions/QuotaResponse'
         "400":
           description: '{string} string "400 некорректный ID или другая ошибка"'
+  /quotasall/{id}:
+    get:
+      tags:
+      - quotas
+      description: |-
+        Получение списка всех квот со специальностями.
+        <br>
+      operationId: QuotaController.GetAllWithSpecialities
+      parameters:
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '"Список квот со специальностями"'
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/QuotaResponse'
+        "400":
+          description: '{string} string "400 ошибка получения списка или другая ошибка"'
   /services/:
     get:
       tags:
@@ -321,34 +372,21 @@ paths:
         Get all services
         <br>
       operationId: ServiceController.GetAllServices
+      parameters:
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: ""
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Service'
+              $ref: '#/definitions/models.ServiceResponse'
         "500":
           description: Internal server error
-    put:
-      tags:
-      - services
-      description: |-
-        Update an existing service
-        <br>
-      operationId: ServiceController.UpdateService
-      parameters:
-      - in: body
-        name: body
-        description: Service data
-        required: true
-        schema:
-          $ref: '#/definitions/models.Service'
-      responses:
-        "200":
-          description: '{string} update success!'
-        "400":
-          description: Invalid input
     post:
       tags:
       - services
@@ -383,13 +421,43 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: ""
           schema:
-            $ref: '#/definitions/models.Service'
+            $ref: '#/definitions/models.ServiceResponse'
         "404":
           description: Not found
+    put:
+      tags:
+      - services
+      description: |-
+        Update service information
+        <br>
+      operationId: ServiceController.UpdateService
+      parameters:
+      - in: path
+        name: id
+        description: Service ID
+        required: true
+        type: integer
+        format: int64
+      - in: body
+        name: body
+        description: Service data
+        required: true
+        schema:
+          $ref: '#/definitions/models.Service'
+      responses:
+        "200":
+          description: '{string} "Update successful"'
+        "400":
+          description: Invalid input
     delete:
       tags:
       - services
@@ -406,15 +474,15 @@ paths:
         format: int64
       responses:
         "200":
-          description: '{string} delete success!'
-        "404":
-          description: Not found
-  /services/bind/{serviceId}/{universityId}:
+          description: '{string} "Delete successful"'
+        "400":
+          description: Invalid service ID
+  /services/{serviceId}/university/{universityId}:
     post:
       tags:
       - services
       description: |-
-        Bind a service to a university
+        Add a service to a university
         <br>
       operationId: ServiceController.AddServiceToUniversity
       parameters:
@@ -432,33 +500,9 @@ paths:
         format: int64
       responses:
         "200":
-          description: '{string} bind success!'
+          description: '{string} "Add successful"'
         "400":
           description: Invalid input
-  /services/getbyuni/{universityId}:
-    get:
-      tags:
-      - services
-      description: |-
-        Retrieve services associated with a university by its ID
-        <br>
-      operationId: ServiceController.GetServicesByUniversityId
-      parameters:
-      - in: path
-        name: universityId
-        description: University ID
-        required: true
-        type: integer
-        format: int64
-      responses:
-        "200":
-          description: ""
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/Service'
-        "400":
-          description: Invalid university ID
   /services/search:
     get:
       tags:
@@ -473,13 +517,47 @@ paths:
         description: Prefix for service name
         required: true
         type: string
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: ""
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Service'
+              $ref: '#/definitions/models.ServiceResponse'
+        "400":
+          description: Invalid input
+  /services/university/{id}:
+    get:
+      tags:
+      - services
+      description: |-
+        Get services by university ID
+        <br>
+      operationId: ServiceController.GetServicesByUniversityId
+      parameters:
+      - in: path
+        name: id
+        description: University ID
+        required: true
+        type: integer
+        format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/models.ServiceResponse'
         "400":
           description: Invalid input
   /specialities/:
@@ -655,7 +733,7 @@ paths:
       tags:
       - specialities
       description: |-
-        получает все пары предметов для заданной специальности
+        Получение всех пар предметов для заданной специальности.
         <br>
       operationId: SpecialityController.GetSubjectPairsBySpecialityId
       parameters:
@@ -665,17 +743,21 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: header
+        name: lang
+        description: Язык для фильтрации
+        type: string
       responses:
         "200":
-          description: ""
+          description: '"Список пар предметов"'
           schema:
             type: array
             items:
               $ref: '#/definitions/models.SubjectPair'
         "400":
-          description: '"Invalid input"'
+          description: '"Некорректный ввод"'
         "404":
-          description: '"SubjectPairs not found"'
+          description: '"Пары предметов не найдены"'
   /specialities/bysubjects/{subject1_id}/{subject2_id}:
     get:
       tags:
@@ -765,69 +847,50 @@ paths:
       tags:
       - specialities
       description: |-
-        Perform a search for specialities using filters and pagination.
+        Выполнение поиска специальностей с использованием фильтров и пагинации.
         <br>
       operationId: SpecialityController.SearchSpecialities
       parameters:
       - in: query
         name: name
-        description: Prefix of the speciality name to search for
+        description: Префикс имени специальности для поиска
         type: string
       - in: query
         name: subject1_id
-        description: ID of the first subject for filtering
+        description: ID первого предмета для фильтрации
         type: integer
         format: int64
       - in: query
         name: subject2_id
-        description: ID of the second subject for filtering
+        description: ID второго предмета для фильтрации
         type: integer
         format: int64
       - in: query
         name: university_id
-        description: ID of the university for filtering
+        description: ID университета для фильтрации
         type: integer
         format: int64
       - in: query
         name: page
-        description: Page number for pagination
+        description: Номер страницы для пагинации
         type: integer
         format: int64
       - in: query
         name: per_page
-        description: Number of items per page
+        description: Количество элементов на странице
         type: integer
         format: int64
-      responses:
-        "200":
-          description: '"Search results with specialities"'
-          schema:
-            $ref: '#/definitions/models.SpecialitySearchResult'
-        "400":
-          description: error searching or other error
-  /specialities/search_by_name:
-    get:
-      tags:
-      - specialities
-      description: |-
-        Search for specialities by name prefix.
-        <br>
-      operationId: SpecialityController.SearchSpecialitiesByName
-      parameters:
-      - in: query
-        name: prefix
-        description: Prefix of the speciality name to search for
-        required: true
+      - in: header
+        name: lang
+        description: Язык для фильтрации
         type: string
       responses:
         "200":
-          description: '"List of specialities"'
+          description: '"Результаты поиска со специальностями"'
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/models.Speciality'
+            $ref: '#/definitions/models.SpecialitySearchResult'
         "400":
-          description: error searching or other error
+          description: '"Ошибка поиска или другая ошибка"'
   /subjectpair/:
     get:
       tags:
@@ -982,13 +1045,19 @@ paths:
         Получение списка всех предметов.
         <br>
       operationId: SubjectController.GetAll
+      parameters:
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: '"Список предметов"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Subject'
+              $ref: '#/definitions/models.SubjectResponse'
         "400":
           description: ошибка получения списка или другая ошибка
     post:
@@ -1027,11 +1096,16 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: '"Информация о предмете"'
           schema:
-            $ref: '#/definitions/models.Subject'
+            $ref: '#/definitions/models.SubjectResponse'
         "400":
           description: некорректный ID или другая ошибка
     put:
@@ -1092,15 +1166,20 @@ paths:
         description: Имя предмета для поиска
         required: true
         type: string
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: '"Список найденных предметов"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Subject'
+              $ref: '#/definitions/models.SubjectResponse'
         "400":
-          description: ошибка выполнения поиска
+          description: ошибка поиска или другая ошибка
   /subjects/secubjects/{firstSubjectId}:
     get:
       tags:
@@ -1116,13 +1195,18 @@ paths:
         required: true
         type: integer
         format: int64
+      - in: header
+        name: lang
+        description: Язык для получения данных, 'ru' или 'kz'
+        required: true
+        type: string
       responses:
         "200":
           description: '"Список предметов"'
           schema:
             type: array
             items:
-              $ref: '#/definitions/models.Subject'
+              $ref: '#/definitions/models.SubjectResponse'
         "400":
           description: ошибка получения списка или другая ошибка
   /universities/:
@@ -1414,8 +1498,11 @@ paths:
         "400":
           description: '{string} string "400 ошибка поиска или другая ошибка"'
 definitions:
-  Service:
-    title: Service
+  CityResponse:
+    title: CityResponse
+    type: object
+  QuotaResponse:
+    title: QuotaResponse
     type: object
   map[string]int:
     title: map[string]int
@@ -1496,6 +1583,10 @@ definitions:
         format: int64
       QuotaType:
         type: string
+      QuotaTypeKz:
+        type: string
+      QuotaTypeRu:
+        type: string
       Specialities:
         type: array
         items:
@@ -1514,6 +1605,25 @@ definitions:
         type: string
       Name:
         type: string
+      NameKz:
+        type: string
+      NameRu:
+        type: string
+      Universities:
+        type: array
+        items:
+          $ref: '#/definitions/models.University'
+  models.ServiceResponse:
+    title: ServiceResponse
+    type: object
+    properties:
+      Id:
+        type: integer
+        format: int64
+      ImageUrl:
+        type: string
+      Name:
+        type: string
       Universities:
         type: array
         items:
@@ -1522,32 +1632,32 @@ definitions:
     title: Speciality
     type: object
     properties:
-      Code:
+      code:
         type: string
-      CreatedAt:
+      created_at:
         type: string
         format: datetime
-      Description:
+      description:
         type: string
-      Id:
+      id:
         type: integer
         format: int64
-      Name:
+      name:
         type: string
-      PointStats:
+      point_stats:
         type: array
         items:
           $ref: '#/definitions/models.PointStat'
-      SubjectPair:
+      subject_pair:
         $ref: '#/definitions/models.SubjectPair'
-      Universities:
+      universities:
         type: array
         items:
           $ref: '#/definitions/models.University'
-      UpdatedAt:
+      updated_at:
         type: string
         format: datetime
-      VideoLink:
+      video_link:
         type: string
   models.SpecialitySearchResult:
     title: SpecialitySearchResult
@@ -1606,6 +1716,15 @@ definitions:
       UpdatedAt:
         type: string
         format: datetime
+  models.SubjectResponse:
+    title: SubjectResponse
+    type: object
+    properties:
+      Id:
+        type: integer
+        format: int64
+      Name:
+        type: string
   models.University:
     title: University
     type: object
@@ -1636,6 +1755,10 @@ definitions:
         format: datetime
       Description:
         type: string
+      DescriptionKz:
+        type: string
+      DescriptionRu:
+        type: string
       Id:
         type: integer
         format: int64
@@ -1643,6 +1766,10 @@ definitions:
         type: integer
         format: int64
       Name:
+        type: string
+      NameKz:
+        type: string
+      NameRu:
         type: string
       PhotosUrlList:
         type: array
@@ -1719,7 +1846,7 @@ tags:
     UniversityController обрабатывает запросы для работы с университетами.
 - name: quotas
   description: |
-    QuotaController обрабатывает запросы для работы с квотами.
+    QuotaController handles operations for Quota.
 - name: services
   description: |
     ServiceController handles operations related to services

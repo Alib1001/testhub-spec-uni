@@ -2,14 +2,40 @@ package controllers
 
 import (
 	"encoding/json"
+	"net/http"
 	"testhub-spec-uni/models"
+	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
 
-// QuotaController обрабатывает запросы для работы с квотами.
+// QuotaController handles operations for Quota.
 type QuotaController struct {
 	beego.Controller
+}
+
+type QuotaResponse struct {
+	Id           int    `json:"id"`
+	QuotaType    string `json:"quotaType"`
+	Count        int    `json:"count"`
+	MinScore     int    `json:"minScore"`
+	MaxScore     int    `json:"maxScore"`
+	Specialities []int  `json:"specialities"`
+	CreatedAt    string `json:"createdAt"`
+	UpdatedAt    string `json:"updatedAt"`
+}
+
+func ConvertTimeToString(t time.Time) string {
+	return t.Format(time.RFC3339) // или другой формат, который вам нужен
+}
+
+// ConvertSpecialities converts []*models.Speciality to []int.
+func ConvertSpecialities(specialities []*models.Speciality) []int {
+	result := make([]int, len(specialities))
+	for i, s := range specialities {
+		result[i] = s.Id
+	}
+	return result
 }
 
 // Create adds a new quota to the database.
@@ -44,16 +70,41 @@ func (c *QuotaController) Create() {
 // @Title Get
 // @Description Получение информации о квоте по ID.
 // @Param	id		path	int	true	"ID квоты для получения информации"
-// @Success 200 {object} models.Quota	"Информация о квоте"
+// @Param	lang	header	string	true	"Язык для получения данных, 'ru' или 'kz'"
+// @Success 200 {object} QuotaResponse	"Информация о квоте"
+// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
+// @router /:id [get]
+// Get returns information about a quota by its ID.
+// @Title Get
+// @Description Получение информации о квоте по ID.
+// @Param	id		path	int	true	"ID квоты для получения информации"
+// @Param	lang	header	string	true	"Язык для получения данных, 'ru' или 'kz'"
+// @Success 200 {object} QuotaResponse	"Информация о квоте"
 // @Failure 400 {string} string "400 некорректный ID или другая ошибка"
 // @router /:id [get]
 func (c *QuotaController) Get() {
 	id, _ := c.GetInt(":id")
-	quota, err := models.GetQuotaById(id)
-	if err == nil {
-		c.Data["json"] = quota
-	} else {
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
+
+	quota, err := models.GetQuotaById(id, language)
+	if err != nil {
 		c.Data["json"] = err.Error()
+	} else {
+		response := QuotaResponse{
+			Id:           quota.Id,
+			QuotaType:    quota.QuotaType,
+			Count:        quota.Count,
+			MinScore:     quota.MinScore,
+			MaxScore:     quota.MaxScore,
+			Specialities: ConvertSpecialities(quota.Specialities),
+			CreatedAt:    ConvertTimeToString(quota.CreatedAt),
+			UpdatedAt:    ConvertTimeToString(quota.UpdatedAt),
+		}
+		c.Data["json"] = response
 	}
 	c.ServeJSON()
 }
@@ -61,15 +112,35 @@ func (c *QuotaController) Get() {
 // GetAll returns a list of all quotas.
 // @Title GetAll
 // @Description Получение списка всех квот.
-// @Success 200 {array} models.Quota	"Список квот"
+// @Param	lang	header	string	true	"Язык для получения данных, 'ru' или 'kz'"
+// @Success 200 {array} QuotaResponse	"Список квот"
 // @Failure 400 {string} string "400 ошибка получения списка или другая ошибка"
 // @router / [get]
 func (c *QuotaController) GetAll() {
-	quotas, err := models.GetAllQuotas()
-	if err == nil {
-		c.Data["json"] = quotas
-	} else {
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
+
+	quotas, err := models.GetAllQuotas(language)
+	if err != nil {
 		c.Data["json"] = err.Error()
+	} else {
+		response := make([]QuotaResponse, len(quotas))
+		for i, quota := range quotas {
+			response[i] = QuotaResponse{
+				Id:           quota.Id,
+				QuotaType:    quota.QuotaType,
+				Count:        quota.Count,
+				MinScore:     quota.MinScore,
+				MaxScore:     quota.MaxScore,
+				Specialities: ConvertSpecialities(quota.Specialities),
+				CreatedAt:    ConvertTimeToString(quota.CreatedAt),
+				UpdatedAt:    ConvertTimeToString(quota.UpdatedAt),
+			}
+		}
+		c.Data["json"] = response
 	}
 	c.ServeJSON()
 }
@@ -87,7 +158,6 @@ func (c *QuotaController) Update() {
 	id, _ := c.GetInt(":id")
 	var quota models.Quota
 
-	// Проверка десериализации JSON
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &quota); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -95,7 +165,20 @@ func (c *QuotaController) Update() {
 	}
 
 	quota.Id = id
-	if err := models.UpdateQuota(&quota); err == nil {
+
+	var updatedFields map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &updatedFields); err != nil {
+		c.Data["json"] = "Invalid input: " + err.Error()
+		c.ServeJSON()
+		return
+	}
+
+	fields := make([]string, 0, len(updatedFields))
+	for field := range updatedFields {
+		fields = append(fields, field)
+	}
+
+	if err := models.UpdateQuota(&quota, fields...); err == nil {
 		c.Data["json"] = "Update successful"
 	} else {
 		c.Data["json"] = err.Error()
@@ -121,53 +204,94 @@ func (c *QuotaController) Delete() {
 	c.ServeJSON()
 }
 
-// AddSpecialityToQuota adds a speciality to a quota by their respective IDs.
+// AddSpecialityToQuota adds a speciality to a quota by their IDs.
 // @Title AddSpecialityToQuota
 // @Description Добавление специальности к квоте по их ID.
-// @Param	quota_id	path	int	true	"ID квоты"
-// @Param	speciality_id	path	int	true	"ID специальности"
-// @Success 200 string	"Специальность успешно добавлена к квоте"
-// @Failure 400 {string} string "400 ошибка разбора JSON или другая ошибка"
-// @router /:quota_id/specialities/:speciality_id [post]
+// @Param	quotaId		path	int	true	"ID квоты"
+// @Param	specialityId	path	int	true	"ID специальности"
+// @Success 200 string "Добавление успешно выполнено"
+// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
+// @router /:quotaId/specialities/:specialityId [post]
 func (c *QuotaController) AddSpecialityToQuota() {
-	quotaId, err1 := c.GetInt(":quota_id")
-	specialityId, err2 := c.GetInt(":speciality_id")
-
-	if err1 != nil || err2 != nil {
-		c.Data["json"] = "quota_id and speciality_id must be integers"
-		c.ServeJSON()
-		return
-	}
+	quotaId, _ := c.GetInt(":quotaId")
+	specialityId, _ := c.GetInt(":specialityId")
 
 	err := models.AddSpecialityToQuota(specialityId, quotaId)
 	if err == nil {
-		c.Data["json"] = "Speciality added to quota successfully"
+		c.Data["json"] = "Add speciality to quota successful"
 	} else {
 		c.Data["json"] = err.Error()
 	}
 	c.ServeJSON()
 }
 
-// GetQuotaWithSpecialities retrieves information about a quota including its associated specialities by ID.
-// @Title GetQuotaWithSpecialities
-// @Description Получение информации о квоте вместе с ассоциированными специальностями по ID.
-// @Param	id		path	int	true	"ID квоты для получения информации"
-// @Success 200 {object} models.Quota "Информация о квоте вместе с специальностями"
-// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
-// @router /all/:id [get]
+// GetQuotaWithSpecialities returns a list of all quotas with their associated specialities.
+// @Title GetAllWithSpecialities
+// @Description Получение списка всех квот со специальностями.
+// @Param	lang	header	string	true	"Язык для получения данных, 'ru' или 'kz'"
+// @Success 200 {array} QuotaResponse	"Список квот со специальностями"
+// @Failure 400 {string} string "400 ошибка получения списка или другая ошибка"
+// @router all/:id [get]
 func (c *QuotaController) GetQuotaWithSpecialities() {
-	id, err := c.GetInt(":id")
-	if err != nil {
-		c.Data["json"] = "Invalid ID"
-		c.ServeJSON()
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
 		return
 	}
 
-	quota, err := models.GetQuotaWithSpecialitiesById(id)
+	quotas, err := models.GetAllQuotasWithSpecialities(language)
 	if err != nil {
 		c.Data["json"] = err.Error()
 	} else {
-		c.Data["json"] = quota
+		response := make([]QuotaResponse, len(quotas))
+		for i, quota := range quotas {
+			response[i] = QuotaResponse{
+				Id:           quota.Id,
+				QuotaType:    quota.QuotaType,
+				Count:        quota.Count,
+				MinScore:     quota.MinScore,
+				MaxScore:     quota.MaxScore,
+				Specialities: ConvertSpecialities(quota.Specialities),
+				CreatedAt:    ConvertTimeToString(quota.CreatedAt),
+				UpdatedAt:    ConvertTimeToString(quota.UpdatedAt),
+			}
+		}
+		c.Data["json"] = response
+	}
+	c.ServeJSON()
+}
+
+// GetWithSpecialitiesById returns information about a quota with its associated specialities by its ID.
+// @Title GetWithSpecialitiesById
+// @Description Получение информации о квоте со специальностями по ID.
+// @Param	id		path	int	true	"ID квоты для получения информации"
+// @Param	lang	header	string	true	"Язык для получения данных, 'ru' или 'kz'"
+// @Success 200 {object} QuotaResponse	"Информация о квоте со специальностями"
+// @Failure 400 {string} string "400 некорректный ID или другая ошибка"
+// @router /with-specialities/:id [get]
+func (c *QuotaController) GetWithSpecialitiesById() {
+	id, _ := c.GetInt(":id")
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
+
+	quota, err := models.GetQuotaWithSpecialitiesById(id, language)
+	if err != nil {
+		c.Data["json"] = err.Error()
+	} else {
+		response := QuotaResponse{
+			Id:           quota.Id,
+			QuotaType:    quota.QuotaType,
+			Count:        quota.Count,
+			MinScore:     quota.MinScore,
+			MaxScore:     quota.MaxScore,
+			Specialities: ConvertSpecialities(quota.Specialities),
+			CreatedAt:    ConvertTimeToString(quota.CreatedAt),
+			UpdatedAt:    ConvertTimeToString(quota.UpdatedAt),
+		}
+		c.Data["json"] = response
 	}
 	c.ServeJSON()
 }

@@ -13,6 +13,8 @@ type University struct {
 	Id                 int      `orm:"auto"`
 	UniversityCode     string   `orm:"size(64)"`
 	Name               string   `orm:"size(128)"`
+	NameRu             string   `orm:"size(128)"`
+	NameKz             string   `orm:"size(128)"`
 	Abbreviation       string   `orm:"size(64)"`
 	AbbreviationRu     string   `orm:"size(64)"`
 	AbbreviationKz     string   `orm:"size(64)"`
@@ -28,6 +30,8 @@ type University struct {
 	MinEntryScore      int
 	PhotosUrlList      []string      `orm:"-"`
 	Description        string        `orm:"type(text)"`
+	DescriptionRu      string        `orm:"type(text)"`
+	DescriptionKz      string        `orm:"type(text)"`
 	Specialities       []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
 	Services           []*Service    `orm:"rel(m2m);rel_table(university_service)"`
 	PointStats         []*PointStat  `orm:"reverse(many)"`
@@ -40,6 +44,33 @@ type University struct {
 	StudyFormatRu      string        `orm:"size(64)"`
 	StudyFormatKz      string        `orm:"size(64)"`
 	AddressLink        string        `orm:"size(256)"`
+}
+
+type UniversityResponse struct {
+	Id               int           `json:"Id"`
+	UniversityCode   string        `json:"UniversityCode"`
+	Name             string        `json:"Name"`
+	Abbreviation     string        `json:"Abbreviation"`
+	UniversityStatus string        `json:"UniversityStatus"`
+	Address          string        `json:"Address"`
+	Website          string        `json:"Website"`
+	SocialMediaList  []string      `json:"SocialMediaList"`
+	ContactList      []string      `json:"ContactList"`
+	AverageFee       int           `json:"AverageFee"`
+	ProfileImageUrl  string        `json:"ProfileImageUrl"`
+	MinEntryScore    int           `json:"MinEntryScore"`
+	PhotosUrlList    []string      `json:"PhotosUrlList"`
+	Description      string        `json:"Description"`
+	Specialities     []*Speciality `json:"Specialities"`
+	Services         []*Service    `json:"Services"`
+	PointStats       []*PointStat  `json:"PointStats"`
+	City             *City         `json:"City"`
+	CreatedAt        time.Time     `json:"CreatedAt"`
+	UpdatedAt        time.Time     `json:"UpdatedAt"`
+	CallCenterNumber string        `json:"CallCenterNumber"`
+	WhatsAppNumber   string        `json:"WhatsAppNumber"`
+	StudyFormat      string        `json:"StudyFormat"`
+	AddressLink      string        `json:"AddressLink"`
 }
 
 type UniversitySearchResult struct {
@@ -72,7 +103,6 @@ func GetUniversityById(id int) (*University, error) {
 		return nil, err
 	}
 
-	// Load related specialities and services
 	if _, err := o.LoadRelated(university, "Specialities"); err != nil {
 		return nil, err
 	}

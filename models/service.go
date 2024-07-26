@@ -15,9 +15,10 @@ type Service struct {
 }
 
 type ServiceResponse struct {
-	Id       int    `json:"Id"`
-	Name     string `json:"Name"`
-	ImageUrl string `json:"ImageUrl"`
+	Id           int           `json:"Id"`
+	Name         string        `json:"Name"`
+	ImageUrl     string        `json:"ImageUrl"`
+	Universities []*University `json:"Universities"`
 }
 
 func init() {
@@ -57,6 +58,12 @@ func GetServiceById(id int, language string) (*ServiceResponse, error) {
 		return nil, err
 	}
 
+	// Load related universities
+	_, err = o.LoadRelated(service, "Universities")
+	if err != nil {
+		return nil, err
+	}
+
 	name := service.Name
 	switch language {
 	case "ru":
@@ -66,12 +73,12 @@ func GetServiceById(id int, language string) (*ServiceResponse, error) {
 	}
 
 	return &ServiceResponse{
-		Id:       service.Id,
-		Name:     name,
-		ImageUrl: service.ImageUrl,
+		Id:           service.Id,
+		Name:         name,
+		ImageUrl:     service.ImageUrl,
+		Universities: service.Universities,
 	}, nil
 }
-
 func GetAllServices(language string) ([]*ServiceResponse, error) {
 	o := orm.NewOrm()
 	var services []*Service
@@ -90,9 +97,10 @@ func GetAllServices(language string) ([]*ServiceResponse, error) {
 			name = service.NameKz
 		}
 		serviceResponses = append(serviceResponses, &ServiceResponse{
-			Id:       service.Id,
-			Name:     name,
-			ImageUrl: service.ImageUrl,
+			Id:           service.Id,
+			Name:         name,
+			ImageUrl:     service.ImageUrl,
+			Universities: service.Universities,
 		})
 	}
 
@@ -131,9 +139,10 @@ func SearchServicesByName(prefix, language string) ([]ServiceResponse, error) {
 			name = service.NameKz
 		}
 		serviceResponses = append(serviceResponses, ServiceResponse{
-			Id:       service.Id,
-			Name:     name,
-			ImageUrl: service.ImageUrl,
+			Id:           service.Id,
+			Name:         name,
+			ImageUrl:     service.ImageUrl,
+			Universities: service.Universities,
 		})
 	}
 
@@ -163,9 +172,10 @@ func GetServicesByUniversityId(universityId int, language string) ([]*ServiceRes
 			name = service.NameKz
 		}
 		serviceResponses = append(serviceResponses, &ServiceResponse{
-			Id:       service.Id,
-			Name:     name,
-			ImageUrl: service.ImageUrl,
+			Id:           service.Id,
+			Name:         name,
+			ImageUrl:     service.ImageUrl,
+			Universities: service.Universities,
 		})
 	}
 

@@ -61,15 +61,12 @@ func main() {
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
 
-	// Include controllers for Swagger docs generation
 	beego.Include(&controllers.SubjectController{})
 	beego.Include(&controllers.SpecialityController{})
 	beego.Include(&controllers.UniversityController{})
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
-
 	//TODO: мультиязычность
 	//TODO: проверить все запросы в специальностях
-
 	beego.Run()
 }
