@@ -13,14 +13,14 @@ type University struct {
 	Id                 int      `orm:"auto"`
 	UniversityCode     string   `orm:"size(64)"`
 	Name               string   `orm:"size(128)"`
-	NameRu             string   `orm:"size(128)"`
-	NameKz             string   `orm:"size(128)"`
+	NameRu             string   `orm:"size(128)" json:"-"`
+	NameKz             string   `orm:"size(128)" json:"-"`
 	Abbreviation       string   `orm:"size(64)"`
-	AbbreviationRu     string   `orm:"size(64)"`
-	AbbreviationKz     string   `orm:"size(64)"`
-	UniversityStatus   string   `orm:"size(64)"`
-	UniversityStatusRu string   `orm:"size(64)"`
-	UniversityStatusKz string   `orm:"size(64)"`
+	AbbreviationRu     string   `orm:"size(64)" json:"-"`
+	AbbreviationKz     string   `orm:"size(64)" json:"-"`
+	UniversityStatus   string   `orm:"size(64)" json:"-"`
+	UniversityStatusRu string   `orm:"size(64)" json:"-"`
+	UniversityStatusKz string   `orm:"size(64)" json:"-"`
 	Address            string   `orm:"size(256)"`
 	Website            string   `orm:"size(128)"`
 	SocialMediaList    []string `orm:"-"`
@@ -30,8 +30,8 @@ type University struct {
 	MinEntryScore      int
 	PhotosUrlList      []string      `orm:"-"`
 	Description        string        `orm:"type(text)"`
-	DescriptionRu      string        `orm:"type(text)"`
-	DescriptionKz      string        `orm:"type(text)"`
+	DescriptionRu      string        `orm:"type(text)" json:"-"`
+	DescriptionKz      string        `orm:"type(text)" json:"-"`
 	Specialities       []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
 	Services           []*Service    `orm:"rel(m2m);rel_table(university_service)"`
 	PointStats         []*PointStat  `orm:"reverse(many)"`
@@ -41,36 +41,9 @@ type University struct {
 	CallCenterNumber   string        `orm:"size(64)"`
 	WhatsAppNumber     string        `orm:"size(64)"`
 	StudyFormat        string        `orm:"size(64)"`
-	StudyFormatRu      string        `orm:"size(64)"`
-	StudyFormatKz      string        `orm:"size(64)"`
+	StudyFormatRu      string        `orm:"size(64)" json:"-"`
+	StudyFormatKz      string        `orm:"size(64)" json:"-"`
 	AddressLink        string        `orm:"size(256)"`
-}
-
-type UniversityResponse struct {
-	Id               int           `json:"Id"`
-	UniversityCode   string        `json:"UniversityCode"`
-	Name             string        `json:"Name"`
-	Abbreviation     string        `json:"Abbreviation"`
-	UniversityStatus string        `json:"UniversityStatus"`
-	Address          string        `json:"Address"`
-	Website          string        `json:"Website"`
-	SocialMediaList  []string      `json:"SocialMediaList"`
-	ContactList      []string      `json:"ContactList"`
-	AverageFee       int           `json:"AverageFee"`
-	ProfileImageUrl  string        `json:"ProfileImageUrl"`
-	MinEntryScore    int           `json:"MinEntryScore"`
-	PhotosUrlList    []string      `json:"PhotosUrlList"`
-	Description      string        `json:"Description"`
-	Specialities     []*Speciality `json:"Specialities"`
-	Services         []*Service    `json:"Services"`
-	PointStats       []*PointStat  `json:"PointStats"`
-	City             *City         `json:"City"`
-	CreatedAt        time.Time     `json:"CreatedAt"`
-	UpdatedAt        time.Time     `json:"UpdatedAt"`
-	CallCenterNumber string        `json:"CallCenterNumber"`
-	WhatsAppNumber   string        `json:"WhatsAppNumber"`
-	StudyFormat      string        `json:"StudyFormat"`
-	AddressLink      string        `json:"AddressLink"`
 }
 
 type UniversitySearchResult struct {
@@ -95,12 +68,21 @@ func AddUniversity(university *University) (int64, error) {
 	return id, nil
 }
 
-func GetUniversityById(id int) (*University, error) {
+func GetUniversityById(id int, language string) (*University, error) {
 	o := orm.NewOrm()
 	university := &University{Id: id}
 	err := o.Read(university)
 	if err != nil {
 		return nil, err
+	}
+
+	switch language {
+	case "ru":
+		university.Name = university.NameRu
+		university.Description = university.DescriptionRu
+	case "kz":
+		university.Name = university.NameKz
+		university.Description = university.DescriptionKz
 	}
 
 	if _, err := o.LoadRelated(university, "Specialities"); err != nil {
@@ -113,11 +95,29 @@ func GetUniversityById(id int) (*University, error) {
 	return university, nil
 }
 
-func GetAllUniversities() ([]*University, error) {
+func GetAllUniversities(language string) ([]*University, error) {
 	o := orm.NewOrm()
 	var universities []*University
 	_, err := o.QueryTable("university").All(&universities)
-	return universities, err
+	if err != nil {
+		return nil, err
+	}
+
+	for _, university := range universities {
+		switch language {
+		case "ru":
+			university.Name = university.NameRu
+			university.Description = university.DescriptionRu
+		case "kz":
+			university.Name = university.NameKz
+			university.Description = university.DescriptionKz
+		default:
+			university.Name = university.NameRu               // Or university.NameKz depending on your default language
+			university.Description = university.DescriptionRu // Or university.DescriptionKz depending on your default language
+		}
+	}
+
+	return universities, nil
 }
 
 func UpdateUniversityFields(university *University) error {
@@ -344,9 +344,10 @@ func AddServicesToUniversity(serviceIds []int, universityId int) error {
 	return nil
 }
 
-func SearchUniversities(params map[string]interface{}) (*UniversitySearchResult, error) {
+func SearchUniversities(params map[string]interface{}, language string) (*UniversitySearchResult, error) {
 	o := orm.NewOrm()
 	var universities []*University
+
 	_, err := o.QueryTable("university").All(&universities)
 	if err != nil {
 		return nil, err
@@ -414,6 +415,20 @@ func SearchUniversities(params map[string]interface{}) (*UniversitySearchResult,
 	result, err := paginateUniversities(universities, params)
 	if err != nil {
 		return nil, err
+	}
+
+	for _, university := range universities {
+		switch language {
+		case "ru":
+			university.Name = university.NameRu
+			university.Description = university.DescriptionRu
+		case "kz":
+			university.Name = university.NameKz
+			university.Description = university.DescriptionKz
+		default:
+			university.Name = university.NameRu               // Or university.NameKz depending on your default language
+			university.Description = university.DescriptionRu // Or university.DescriptionKz depending on your default language
+		}
 	}
 
 	fmt.Printf("SearchUniversities: total universities after filtering: %d\n", len(result.Universities))
