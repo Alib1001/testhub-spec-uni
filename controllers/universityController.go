@@ -1,12 +1,21 @@
 package controllers
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	beego "github.com/beego/beego/v2/server/web"
+	"github.com/go-playground/validator/v10"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"strconv"
 	"testhub-spec-uni/models"
 
-	beego "github.com/beego/beego/v2/server/web"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 // UniversityController обрабатывает запросы для работы с университетами.
@@ -14,32 +23,142 @@ type UniversityController struct {
 	beego.Controller
 }
 
-// Create добавляет новый университет в базу данных.
-// @Title Create
-// @Description Создание нового университета.
-// @Param	body	body	models.University	true	"JSON с данными о университете"
-// @Success 200 {object} map[string]int64	"ID созданного университета"
-// @Failure 400 оsaшибка разбора JSON или другая ошибка
-// @router / [post]
 func (c *UniversityController) Create() {
-	requestBody := c.Ctx.Input.CopyBody(2048)
-
-	var university models.University
-
-	err := json.Unmarshal(requestBody, &university)
+	err := c.Ctx.Request.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
-		c.Data["json"] = err.Error()
+		c.Data["json"] = map[string]string{"error": "Failed to parse form data: " + err.Error()}
+		c.Ctx.Output.SetStatus(400)
 		c.ServeJSON()
 		return
 	}
 
-	id, err := models.AddUniversity(&university)
-	if err == nil {
-		c.Data["json"] = map[string]int64{"id": id}
-	} else {
-		c.Data["json"] = err.Error()
+	var universityResponse models.AddUUniversityResponse
+
+	if err := c.ParseForm(&universityResponse); err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to parse form data: " + err.Error()}
+		c.Ctx.Output.SetStatus(400)
+		c.ServeJSON()
+		return
 	}
+
+	id, err := models.AddUniversity(&universityResponse)
+	if err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			errors := make(map[string]string)
+			for _, validationErr := range validationErrors {
+				errors[validationErr.Field()] = "Field validation error: " + validationErr.Tag()
+			}
+			c.Data["json"] = errors
+		} else {
+			c.Data["json"] = map[string]string{"error": "Validation failed: " + err.Error()}
+		}
+		c.Ctx.Output.SetStatus(400)
+		c.ServeJSON()
+		return
+	}
+
+	// Handle main image upload
+	file, header, err := c.GetFile("MainImageUrl")
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to get main image file: " + err.Error()}
+		c.Ctx.Output.SetStatus(400)
+		c.ServeJSON()
+		return
+	}
+	defer file.Close()
+
+	universityID := strconv.FormatInt(id, 10)
+	mainImagePath := fmt.Sprintf("Universities/%s/%s", universityID, header.Filename)
+
+	uploadedMainImageURL, err := uploadFileToCloud(mainImagePath, file)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to upload main image: " + err.Error()}
+		c.Ctx.Output.SetStatus(500)
+		c.ServeJSON()
+		return
+	}
+
+	err = models.UpdateUniversityImageURL(id, uploadedMainImageURL)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to update university main image URL: " + err.Error()}
+		c.Ctx.Output.SetStatus(500)
+		c.ServeJSON()
+		return
+	}
+
+	// Handle gallery images upload
+	galleryFiles := c.Ctx.Request.MultipartForm.File["Gallery"]
+	var galleryURLs []string
+
+	for _, galleryFileHeader := range galleryFiles {
+		galleryFile, err := galleryFileHeader.Open()
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "Failed to open gallery file: " + err.Error()}
+			c.Ctx.Output.SetStatus(400)
+			c.ServeJSON()
+			return
+		}
+		defer galleryFile.Close()
+
+		galleryFilePath := fmt.Sprintf("Universities/%s/Gallery/%s", universityID, galleryFileHeader.Filename)
+		uploadedGalleryURL, err := uploadFileToCloud(galleryFilePath, galleryFile)
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "Failed to upload gallery image: " + err.Error()}
+			c.Ctx.Output.SetStatus(500)
+			c.ServeJSON()
+			return
+		}
+
+		galleryURLs = append(galleryURLs, uploadedGalleryURL)
+	}
+
+	err = models.AddGalleryImages(id, galleryURLs)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to add gallery images: " + err.Error()}
+		c.Ctx.Output.SetStatus(500)
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]int64{"id": id}
+	c.Ctx.Output.SetStatus(200)
 	c.ServeJSON()
+}
+
+func uploadFileToCloud(filePath string, file multipart.File) (string, error) {
+	awsAccessKey, _ := beego.AppConfig.String("aws_access_key")
+	awsSecretKey, _ := beego.AppConfig.String("aws_secret_key")
+	bucket, _ := beego.AppConfig.String("bucket")
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:           aws.String("us-east-1"),
+		Credentials:      credentials.NewStaticCredentials(awsAccessKey, awsSecretKey, ""),
+		Endpoint:         aws.String("https://chi-sextans.object.pscloud.io"),
+		S3ForcePathStyle: aws.Bool(true),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create AWS session: %v", err)
+	}
+
+	uploader := s3.New(sess)
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := buf.ReadFrom(file); err != nil {
+		return "", fmt.Errorf("failed to read file: %v", err)
+	}
+
+	_, err = uploader.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filePath),
+		Body:   bytes.NewReader(buf.Bytes()),
+		ACL:    aws.String("public-read"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload file: %v", err)
+	}
+
+	fileURL := fmt.Sprintf("https://chi-sextans.object.pscloud.io/%s/%s", bucket, filePath)
+	return fileURL, nil
 }
 
 // Get возвращает информацию о университете по его ID.
@@ -56,7 +175,7 @@ func (c *UniversityController) Get() {
 		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
 		return
 	}
-	university, err := models.GetUniversityById(id, language)
+	university, err := models.GetUniversityById(id)
 	if err == nil {
 		c.Data["json"] = university
 	} else {

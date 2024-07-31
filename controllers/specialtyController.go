@@ -23,7 +23,7 @@ type SpecialityController struct {
 // @router / [post]
 func (c *SpecialityController) Create() {
 	var speciality models.Speciality
-	_ = c.Ctx.Input.CopyBody(1024)
+	_ = c.Ctx.Input.CopyBody(2048)
 	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
@@ -83,19 +83,39 @@ func (c *SpecialityController) GetAll() {
 // @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
 // @router /:id [put]
 func (c *SpecialityController) Update() {
-	id, _ := c.GetInt(":id")
-	var speciality models.Speciality
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
-		c.Data["json"] = err.Error()
-		c.ServeJSON()
+	idStr := c.Ctx.Input.Param(":id")
+	_ = c.Ctx.Input.CopyBody(1024)
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid speciality ID")
 		return
 	}
-	speciality.Id = id
-	if err := models.UpdateSpeciality(&speciality); err == nil {
-		c.Data["json"] = "Update successful"
-	} else {
-		c.Data["json"] = err.Error()
+
+	var speciality models.Speciality
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid input: "+err.Error())
+		return
 	}
+
+	speciality.Id = id
+
+	var updatedFields map[string]interface{}
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &updatedFields); err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid input: "+err.Error())
+		return
+	}
+
+	fields := make([]string, 0, len(updatedFields))
+	for field := range updatedFields {
+		fields = append(fields, field)
+	}
+
+	if err := models.UpdateSpeciality(&speciality, fields...); err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Data["json"] = "Update successful"
 	c.ServeJSON()
 }
 

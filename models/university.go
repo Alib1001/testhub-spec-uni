@@ -1,12 +1,14 @@
 package models
 
 import (
+	"errors"
 	"fmt"
+	"github.com/astaxie/beego/orm"
+	"github.com/go-playground/validator/v10"
+	_ "github.com/go-playground/validator/v10"
 	"sort"
 	"strconv"
 	"time"
-
-	"github.com/astaxie/beego/orm"
 )
 
 type University struct {
@@ -26,7 +28,7 @@ type University struct {
 	SocialMediaList    []string `orm:"-"`
 	ContactList        []string `orm:"-"`
 	AverageFee         int
-	ProfileImageUrl    string `orm:"size(256)"`
+	MainImageUrl       string `orm:"size(256)"`
 	MinEntryScore      int
 	PhotosUrlList      []string      `orm:"-"`
 	Description        string        `orm:"type(text)"`
@@ -41,9 +43,12 @@ type University struct {
 	CallCenterNumber   string        `orm:"size(64)"`
 	WhatsAppNumber     string        `orm:"size(64)"`
 	StudyFormat        string        `orm:"size(64)"`
-	StudyFormatRu      string        `orm:"size(64)" json:"-"`
-	StudyFormatKz      string        `orm:"size(64)" json:"-"`
+	StudyFormatRu      string        `orm:"size(64)"`
+	StudyFormatKz      string        `orm:"size(64)"`
 	AddressLink        string        `orm:"size(256)"`
+	Email              string        `orm:"size(64)"`
+	Rating             string        `orm:"size(64)"`
+	Gallery            []*Gallery    `orm:"reverse(many)"`
 }
 
 type UniversitySearchResult struct {
@@ -53,22 +58,174 @@ type UniversitySearchResult struct {
 	TotalCount   int           `json:"total_count"`
 }
 
+type GetAllUniversityResponse struct {
+	Id               int    `json:"Id"`
+	Name             string `json:"Name"`
+	ImageUrl         string `json:"ImageUrl"`
+	Address          string `json:"Address"`
+	UniversityCode   string `json:"UniversityCode"`
+	SpecialityCount  int    `json:"SpecialityCount"`
+	UniversityStatus string `json:"UniversityStatus"`
+	MinScore         int    `json:"MinScore"`
+	Rating           string `json:"Rating"`
+}
+type GetByIdUniversityResponse struct {
+	Id                 int        `json:"Id"`
+	NameRu             string     `json:"NameRu" validate:"required"`
+	NameKz             string     `json:"NameKz" validate:"required"`
+	UniversityStatusRu string     `json:"UniversityStatusRu" validate:"required"`
+	UniversityStatusKz string     `json:"UniversityStatusKz" validate:"required"`
+	Website            string     `json:"Website" validate:"required,url"`
+	CallCenterNumber   string     `json:"CallCenterNumber" validate:"required"`
+	WhatsAppNumber     string     `json:"WhatsAppNumber" validate:"required"`
+	Address            string     `json:"Address" validate:"required"`
+	UniversityCode     string     `json:"UniversityCode" validate:"required"`
+	StudyFormatRu      string     `json:"StudyFormatRu" validate:"required"`
+	StudyFormatKz      string     `json:"StudyFormatKz" validate:"required"`
+	AbbreviationRu     string     `json:"AbbreviationRu" validate:"required"`
+	AbbreviationKz     string     `json:"AbbreviationKz" validate:"required"`
+	MainImageUrl       string     `json:"MainImageUrl" validate:"required,url"`
+	AddressLink        string     `json:"AddressLink" validate:"required"`
+	DescriptionRu      string     `json:"DescriptionRu" validate:"required"`
+	DescriptionKz      string     `json:"DescriptionKz" validate:"required"`
+	Rating             string     `json:"Rating" validate:"required"`
+	Gallery            []*Gallery `json:"Gallery"`
+	Services           []*Service `json:"Services"`
+	City               *City      `json:"City" validate:"required"`
+}
+
+type AddUUniversityResponse struct {
+	Id                 int        `form:"Id"`
+	NameRu             string     `form:"NameRu" validate:"required"`
+	NameKz             string     `form:"NameKz" validate:"required"`
+	UniversityStatusRu string     `form:"UniversityStatusRu" validate:"required"`
+	UniversityStatusKz string     `form:"UniversityStatusKz" validate:"required"`
+	Website            string     `form:"Website" validate:"required,url"`
+	CallCenterNumber   string     `form:"CallCenterNumber" validate:"required"`
+	WhatsAppNumber     string     `form:"WhatsAppNumber" validate:"required"`
+	Address            string     `form:"Address" validate:"required"`
+	UniversityCode     string     `form:"UniversityCode" validate:"required"`
+	StudyFormatRu      string     `form:"StudyFormatRu" validate:"required"`
+	StudyFormatKz      string     `form:"StudyFormatKz" validate:"required"`
+	AbbreviationRu     string     `form:"AbbreviationRu" validate:"required"`
+	AbbreviationKz     string     `form:"AbbreviationKz" validate:"required"`
+	MainImageUrl       string     `form:"MainImageUrl"`
+	AddressLink        string     `form:"AddressLink" validate:"required"`
+	DescriptionRu      string     `form:"DescriptionRu" validate:"required"`
+	DescriptionKz      string     `form:"DescriptionKz" validate:"required"`
+	Rating             string     `form:"Rating" validate:"required"`
+	Gallery            []string   `form:"Gallery"`
+	Services           []*Service `form:"Services"`
+	CityId             int        `form:"CityId" validate:"required"`
+}
+
 func init() {
 	orm.RegisterModel(new(University))
 }
 
-func AddUniversity(university *University) (int64, error) {
-	o := orm.NewOrm()
-	id, err := o.Insert(university)
+func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
+	validate := validator.New()
+
+	err := validate.Struct(universityResponse)
 	if err != nil {
 		return 0, err
 	}
-	university.Id = int(id)
+
+	// Retrieve city based on CityId
+	var city City
+	o := orm.NewOrm()
+	err = o.QueryTable("city").Filter("Id", universityResponse.CityId).One(&city)
+	if err != nil {
+		return 0, err
+	}
+
+	dbUniversity := &University{
+		NameRu:             universityResponse.NameRu,
+		NameKz:             universityResponse.NameKz,
+		UniversityStatusRu: universityResponse.UniversityStatusRu,
+		UniversityStatusKz: universityResponse.UniversityStatusKz,
+		Website:            universityResponse.Website,
+		CallCenterNumber:   universityResponse.CallCenterNumber,
+		WhatsAppNumber:     universityResponse.WhatsAppNumber,
+		Address:            universityResponse.Address,
+		UniversityCode:     universityResponse.UniversityCode,
+		StudyFormatRu:      universityResponse.StudyFormatRu,
+		StudyFormatKz:      universityResponse.StudyFormatKz,
+		AbbreviationRu:     universityResponse.AbbreviationRu,
+		AbbreviationKz:     universityResponse.AbbreviationKz,
+		MainImageUrl:       universityResponse.MainImageUrl,
+		AddressLink:        universityResponse.AddressLink,
+		DescriptionRu:      universityResponse.DescriptionRu,
+		DescriptionKz:      universityResponse.DescriptionKz,
+		Rating:             universityResponse.Rating,
+		City:               &city,
+	}
+
+	id, err := o.Insert(dbUniversity)
+	if err != nil {
+		return 0, err
+	}
+	universityResponse.Id = int(id)
+
+	// Save gallery URLs
+	for _, galleryURL := range universityResponse.Gallery {
+		gallery := &Gallery{
+			University: dbUniversity,
+			PhotoUrl:   galleryURL,
+		}
+		_, err := o.Insert(gallery)
+		if err != nil {
+			return 0, err
+		}
+	}
 
 	return id, nil
 }
 
-func GetUniversityById(id int, language string) (*University, error) {
+func UpdateUniversityImageURL(id int64, imageURL string) error {
+	o := orm.NewOrm()
+
+	university := University{Id: int(id)} // Преобразуем id к типу int
+	if err := o.Read(&university); err != nil {
+		if err == orm.ErrNoRows {
+			return errors.New("university not found")
+		}
+		return err
+	}
+
+	university.MainImageUrl = imageURL
+	if _, err := o.Update(&university, "MainImageUrl"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AddGalleryImages(universityID int64, galleryURLs []string) error {
+	o := orm.NewOrm()
+	university := &University{Id: int(universityID)}
+
+	if err := o.Read(university); err != nil {
+		if err == orm.ErrNoRows {
+			return errors.New("university not found")
+		}
+		return err
+	}
+
+	for _, galleryURL := range galleryURLs {
+		gallery := &Gallery{
+			University: university,
+			PhotoUrl:   galleryURL,
+		}
+		if _, err := o.Insert(gallery); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func GetUniversityById(id int) (*GetByIdUniversityResponse, error) {
 	o := orm.NewOrm()
 	university := &University{Id: id}
 	err := o.Read(university)
@@ -76,26 +233,45 @@ func GetUniversityById(id int, language string) (*University, error) {
 		return nil, err
 	}
 
-	switch language {
-	case "ru":
-		university.Name = university.NameRu
-		university.Description = university.DescriptionRu
-	case "kz":
-		university.Name = university.NameKz
-		university.Description = university.DescriptionKz
-	}
-
-	if _, err := o.LoadRelated(university, "Specialities"); err != nil {
-		return nil, err
-	}
 	if _, err := o.LoadRelated(university, "Services"); err != nil {
 		return nil, err
 	}
+	if _, err := o.LoadRelated(university, "Gallery"); err != nil {
+		return nil, err
+	}
+	if _, err := o.LoadRelated(university, "City"); err != nil {
+		return nil, err
+	}
 
-	return university, nil
+	response := &GetByIdUniversityResponse{
+		Id:                 university.Id,
+		NameRu:             university.NameRu,
+		NameKz:             university.NameKz,
+		Address:            university.Address,
+		UniversityStatusRu: university.UniversityStatusRu,
+		UniversityStatusKz: university.UniversityStatusKz,
+		Website:            university.Website,
+		CallCenterNumber:   university.CallCenterNumber,
+		WhatsAppNumber:     university.WhatsAppNumber,
+		UniversityCode:     university.UniversityCode,
+		StudyFormatRu:      university.StudyFormatRu,
+		StudyFormatKz:      university.StudyFormatKz,
+		AbbreviationRu:     university.AbbreviationRu,
+		AbbreviationKz:     university.AbbreviationKz,
+		MainImageUrl:       university.MainImageUrl,
+		Gallery:            university.Gallery,
+		AddressLink:        university.AddressLink,
+		DescriptionRu:      university.DescriptionRu,
+		DescriptionKz:      university.DescriptionKz,
+		Rating:             university.Rating,
+		Services:           university.Services,
+		City:               university.City,
+	}
+
+	return response, nil
 }
 
-func GetAllUniversities(language string) ([]*University, error) {
+func GetAllUniversities(language string) ([]*GetAllUniversityResponse, error) {
 	o := orm.NewOrm()
 	var universities []*University
 	_, err := o.QueryTable("university").All(&universities)
@@ -103,21 +279,42 @@ func GetAllUniversities(language string) ([]*University, error) {
 		return nil, err
 	}
 
+	var responses []*GetAllUniversityResponse
 	for _, university := range universities {
 		switch language {
 		case "ru":
 			university.Name = university.NameRu
 			university.Description = university.DescriptionRu
+			university.UniversityStatus = university.UniversityStatusRu
 		case "kz":
 			university.Name = university.NameKz
 			university.Description = university.DescriptionKz
+			university.UniversityStatus = university.UniversityStatusKz
 		default:
-			university.Name = university.NameRu               // Or university.NameKz depending on your default language
-			university.Description = university.DescriptionRu // Or university.DescriptionKz depending on your default language
+			university.Name = university.NameKz
+			university.Description = university.DescriptionKz
 		}
+
+		if _, err := o.LoadRelated(university, "Specialities"); err != nil {
+			return nil, err
+		}
+
+		response := &GetAllUniversityResponse{
+			Id:               university.Id,
+			Name:             university.Name,
+			ImageUrl:         university.MainImageUrl,
+			Address:          university.Address,
+			UniversityCode:   university.UniversityCode,
+			SpecialityCount:  len(university.Specialities),
+			UniversityStatus: university.UniversityStatus,
+			MinScore:         university.MinEntryScore,
+			Rating:           university.Rating,
+		}
+
+		responses = append(responses, response)
 	}
 
-	return universities, nil
+	return responses, nil
 }
 
 func UpdateUniversityFields(university *University) error {
@@ -166,8 +363,8 @@ func UpdateUniversityFields(university *University) error {
 	if university.AverageFee != 0 {
 		updateFields = append(updateFields, "AverageFee")
 	}
-	if university.ProfileImageUrl != "" {
-		updateFields = append(updateFields, "ProfileImageUrl")
+	if university.MainImageUrl != "" {
+		updateFields = append(updateFields, "MainImageUrl")
 	}
 	if university.MinEntryScore != 0 {
 		updateFields = append(updateFields, "MinEntryScore")
@@ -642,16 +839,13 @@ func filterBySpecialityID(params map[string]interface{}, universities []*Univers
 func filterBySubjects(params map[string]interface{}, universities []*University) ([]*University, error) {
 	o := orm.NewOrm()
 
-	// Check if subject IDs are provided in params
 	firstSubjectId, firstOk := params["first_subject_id"].(int)
 	secondSubjectId, secondOk := params["second_subject_id"].(int)
 
-	// If both subject IDs are not provided, return original list of universities
 	if !firstOk && !secondOk {
 		return universities, nil
 	}
 
-	// Prepare query and arguments
 	query :=
 		`SELECT DISTINCT u.*
         FROM university u
