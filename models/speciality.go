@@ -18,7 +18,7 @@ type Speciality struct {
 	CreatedAt     time.Time     `orm:"auto_now_add;type(datetime)" json:"created_at"`
 	UpdatedAt     time.Time     `orm:"auto_now;type(datetime)" json:"updated_at"`
 	PointStats    []*PointStat  `orm:"reverse(many)" json:"point_stats,omitempty"`
-	NameRu        string        `orm:"size(128)" json:"-"`
+	NameRu        string        `orm:"size(128)" json:"NameRu"`
 	NameKz        string        `orm:"size(128)" json:"-"`
 	DescriptionRu string        `orm:"type(text)" json:"-"`
 	DescriptionKz string        `orm:"type(text)" json:"-"`
@@ -52,13 +52,11 @@ func GetSpecialityById(id int, language string) (*Speciality, error) {
 	o := orm.NewOrm()
 	var speciality Speciality
 
-	// Запрос на получение специальности по ID
 	err := o.Raw(`SELECT * FROM speciality WHERE id = ?`, id).QueryRow(&speciality)
 	if err != nil {
 		return nil, err
 	}
 
-	// Переназначение полей в зависимости от языка
 	switch language {
 	case "ru":
 		speciality.Name = speciality.NameRu
@@ -120,10 +118,13 @@ func GetAllSpecialities(language string) ([]*Speciality, error) {
 	return specialities, nil
 }
 
-func UpdateSpeciality(speciality *Speciality) error {
+func UpdateSpeciality(speciality *Speciality, fields ...string) error {
 	o := orm.NewOrm()
-	_, err := o.Update(speciality)
-	return err
+	_, err := o.Update(speciality, fields...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func DeleteSpeciality(id int) error {
