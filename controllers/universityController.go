@@ -6,10 +6,12 @@ import (
 	"fmt"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
+	_ "github.com/go-playground/validator/v10"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 	"testhub-spec-uni/models"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -23,6 +25,34 @@ type UniversityController struct {
 	beego.Controller
 }
 
+// Create
+// @Title CreateUniversity
+// @Description Создает новый университет с привязкой к сервисам и галерее изображений
+// @Param   NameRu            formData    string  true  "Название на русском языке"
+// @Param   NameKz            formData    string  true  "Название на казахском языке"
+// @Param   UniversityStatusRu formData   string  true  "Статус университета на русском языке"
+// @Param   UniversityStatusKz formData   string  true  "Статус университета на казахском языке"
+// @Param   Website           formData    string  true  "Вебсайт"
+// @Param   CallCenterNumber  formData    string  true  "Номер колл-центра"
+// @Param   WhatsAppNumber    formData    string  true  "Номер WhatsApp"
+// @Param   Address           formData    string  true  "Адрес"
+// @Param   UniversityCode    formData    string  true  "Код университета"
+// @Param   StudyFormatRu     formData    string  true  "Формат обучения на русском языке"
+// @Param   StudyFormatKz     formData    string  true  "Формат обучения на казахском языке"
+// @Param   AbbreviationRu    formData    string  true  "Аббревиатура на русском языке"
+// @Param   AbbreviationKz    formData    string  true  "Аббревиатура на казахском языке"
+// @Param   MainImageUrl      formData    file    true  "Главное изображение"
+// @Param   AddressLink       formData    string  true  "Ссылка на адрес"
+// @Param   DescriptionRu     formData    string  true  "Описание на русском языке"
+// @Param   DescriptionKz     formData    string  true  "Описание на казахском языке"
+// @Param   Rating            formData    string  true  "Рейтинг"
+// @Param   Gallery           formData    file    true  "Галерея изображений"
+// @Param   CityId            formData    int     true  "ID города"
+// @Param   ServiceIds        formData    string  true  "Список ID сервисов в формате [1,2,3]"
+// @Success 200 {int64} id "ID созданного университета"
+// @Failure 400 {object} map[string]string "Error message"
+// @Failure 500 {object} map[string]string "Error message"
+// @router /universities [post]
 func (c *UniversityController) Create() {
 	err := c.Ctx.Request.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
@@ -32,14 +62,52 @@ func (c *UniversityController) Create() {
 		return
 	}
 
-	var universityResponse models.AddUUniversityResponse
+	var partialResponse models.AddUniversityPartial
 
-	if err := c.ParseForm(&universityResponse); err != nil {
+	if err := c.ParseForm(&partialResponse); err != nil {
 		c.Data["json"] = map[string]string{"error": "Failed to parse form data: " + err.Error()}
 		c.Ctx.Output.SetStatus(400)
 		c.ServeJSON()
 		return
 	}
+
+	var universityResponse models.AddUUniversityResponse
+	serviceIdsStr := c.GetString("ServiceIds")
+	if serviceIdsStr != "" {
+		serviceIdsStr = strings.Trim(serviceIdsStr, "[]")
+		serviceIds := strings.Split(serviceIdsStr, ",")
+		for _, serviceID := range serviceIds {
+			id, err := strconv.Atoi(strings.TrimSpace(serviceID))
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": "Invalid service ID: " + serviceID}
+				c.Ctx.Output.SetStatus(400)
+				c.ServeJSON()
+				return
+			}
+			universityResponse.ServiceIds = append(universityResponse.ServiceIds, id)
+		}
+	}
+
+	universityResponse.NameRu = partialResponse.NameRu
+	universityResponse.NameKz = partialResponse.NameKz
+	universityResponse.UniversityStatusRu = partialResponse.UniversityStatusRu
+	universityResponse.UniversityStatusKz = partialResponse.UniversityStatusKz
+	universityResponse.Website = partialResponse.Website
+	universityResponse.CallCenterNumber = partialResponse.CallCenterNumber
+	universityResponse.WhatsAppNumber = partialResponse.WhatsAppNumber
+	universityResponse.Address = partialResponse.Address
+	universityResponse.UniversityCode = partialResponse.UniversityCode
+	universityResponse.StudyFormatRu = partialResponse.StudyFormatRu
+	universityResponse.StudyFormatKz = partialResponse.StudyFormatKz
+	universityResponse.AbbreviationRu = partialResponse.AbbreviationRu
+	universityResponse.AbbreviationKz = partialResponse.AbbreviationKz
+	universityResponse.MainImageUrl = partialResponse.MainImageUrl
+	universityResponse.AddressLink = partialResponse.AddressLink
+	universityResponse.DescriptionRu = partialResponse.DescriptionRu
+	universityResponse.DescriptionKz = partialResponse.DescriptionKz
+	universityResponse.Rating = partialResponse.Rating
+	universityResponse.Gallery = partialResponse.Gallery
+	universityResponse.CityId = partialResponse.CityId
 
 	id, err := models.AddUniversity(&universityResponse)
 	if err != nil {
@@ -57,7 +125,6 @@ func (c *UniversityController) Create() {
 		return
 	}
 
-	// Handle main image upload
 	file, header, err := c.GetFile("MainImageUrl")
 	if err != nil {
 		c.Data["json"] = map[string]string{"error": "Failed to get main image file: " + err.Error()}
@@ -86,7 +153,6 @@ func (c *UniversityController) Create() {
 		return
 	}
 
-	// Handle gallery images upload
 	galleryFiles := c.Ctx.Request.MultipartForm.File["Gallery"]
 	var galleryURLs []string
 
@@ -205,46 +271,224 @@ func (c *UniversityController) GetAll() {
 	c.ServeJSON()
 }
 
-// Update обновляет информацию о университете по его ID.
-// @Title Update
-// @Description Обновление информации о университете по ID.
-// @Param	id		path	int	true	"ID университета для обновления информации"
-// @Param	body	body	models.University	true	"JSON с обновленными данными о университете"
-// @Success 200 {string} "Обновление успешно выполнено"
-// @Failure 400 {string} "Некорректный ID, ошибка разбора JSON или другая ошибка"
-// @router /:id [put]
+// Update @Title Update
+// @Description Update the specified fields of a university
+// @Param NameRu formData string false "Russian name of the university"
+// @Param NameKz formData string false "Kazakh name of the university"
+// @Param UniversityStatusRu formData string false "Russian university status"
+// @Param UniversityStatusKz formData string false "Kazakh university status"
+// @Param Website formData string false "Website of the university"
+// @Param CallCenterNumber formData string false "Call center number"
+// @Param WhatsAppNumber formData string false "WhatsApp number"
+// @Param Address formData string false "Address of the university"
+// @Param UniversityCode formData string false "University code"
+// @Param StudyFormatRu formData string false "Russian study format"
+// @Param StudyFormatKz formData string false "Kazakh study format"
+// @Param AbbreviationRu formData string false "Russian abbreviation"
+// @Param AbbreviationKz formData string false "Kazakh abbreviation"
+// @Param AddressLink formData string false "Address link"
+// @Param DescriptionRu formData string false "Russian description"
+// @Param DescriptionKz formData string false "Kazakh description"
+// @Param Rating formData int false "Rating of the university"
+// @Param CityId formData int false "City ID"
+// @Param MainImageUrl formData file false "Main image of the university"
+// @Param Gallery formData file false "Gallery images of the university"
+// @Param ServiceIds formData string false "Comma-separated list of service IDs"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @router /universities/{id} [put]
 func (c *UniversityController) Update() {
-	// Получение ID из URL-параметра
-	id, err := c.GetInt(":id")
-	requestBody := c.Ctx.Input.CopyBody(2048)
+	universityId, uniIderr := c.GetInt(":id")
+	if uniIderr != nil {
+		c.CustomAbort(400, "Invalid university ID")
+		return
+	}
+
+	err := c.Ctx.Request.ParseMultipartForm(10 << 20) // 10 MB limit
 	if err != nil {
-		c.Data["json"] = "Некорректный ID"
+		c.Data["json"] = map[string]string{"error": "Failed to parse form data: " + err.Error()}
+		c.Ctx.Output.SetStatus(400)
 		c.ServeJSON()
 		return
 	}
 
-	// Чтение и разбор JSON тела запроса
-	var university models.University
-	err = json.Unmarshal(requestBody, &university)
-	if err != nil {
-		c.Data["json"] = "Ошибка разбора JSON: " + err.Error()
+	var partialResponse models.UpdateUniversityPartial
+	partialResponse.Id = universityId
+
+	if err := c.ParseForm(&partialResponse); err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to parse form data: " + err.Error()}
+		c.Ctx.Output.SetStatus(400)
 		c.ServeJSON()
 		return
 	}
 
-	// Установка ID университета
-	university.Id = id
-
-	// Обновление информации о университете
-	err = models.UpdateUniversityFields(&university)
-	if err != nil {
-		c.Data["json"] = "Ошибка обновления: " + err.Error()
+	if partialResponse.Id == 0 {
+		c.Data["json"] = map[string]string{"error": "Invalid university ID"}
+		c.Ctx.Output.SetStatus(400)
 		c.ServeJSON()
 		return
 	}
 
-	// Успешное обновление
-	c.Data["json"] = "Обновление успешно выполнено"
+	serviceIdsStr := c.GetString("ServiceIds")
+	var serviceIds []int
+	if serviceIdsStr != "" {
+		serviceIdsStr = strings.Trim(serviceIdsStr, "[]")
+		serviceIdsStrs := strings.Split(serviceIdsStr, ",")
+		for _, serviceIDStr := range serviceIdsStrs {
+			id, err := strconv.Atoi(strings.TrimSpace(serviceIDStr))
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": "Invalid service ID: " + serviceIDStr}
+				c.Ctx.Output.SetStatus(400)
+				c.ServeJSON()
+				return
+			}
+			serviceIds = append(serviceIds, id)
+		}
+	}
+
+	university, err := models.GetUniversityByID(universityId)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "University not found: " + err.Error()}
+		c.Ctx.Output.SetStatus(404)
+		c.ServeJSON()
+		return
+	}
+
+	// Update fields if they are provided
+	if partialResponse.NameRu != "" {
+		university.NameRu = partialResponse.NameRu
+	}
+	if partialResponse.NameKz != "" {
+		university.NameKz = partialResponse.NameKz
+	}
+	if partialResponse.UniversityStatusRu != "" {
+		university.UniversityStatusRu = partialResponse.UniversityStatusRu
+	}
+	if partialResponse.UniversityStatusKz != "" {
+		university.UniversityStatusKz = partialResponse.UniversityStatusKz
+	}
+	if partialResponse.Website != "" {
+		university.Website = partialResponse.Website
+	}
+	if partialResponse.CallCenterNumber != "" {
+		university.CallCenterNumber = partialResponse.CallCenterNumber
+	}
+	if partialResponse.WhatsAppNumber != "" {
+		university.WhatsAppNumber = partialResponse.WhatsAppNumber
+	}
+	if partialResponse.Address != "" {
+		university.Address = partialResponse.Address
+	}
+	if partialResponse.UniversityCode != "" {
+		university.UniversityCode = partialResponse.UniversityCode
+	}
+	if partialResponse.StudyFormatRu != "" {
+		university.StudyFormatRu = partialResponse.StudyFormatRu
+	}
+	if partialResponse.StudyFormatKz != "" {
+		university.StudyFormatKz = partialResponse.StudyFormatKz
+	}
+	if partialResponse.AbbreviationRu != "" {
+		university.AbbreviationRu = partialResponse.AbbreviationRu
+	}
+	if partialResponse.AbbreviationKz != "" {
+		university.AbbreviationKz = partialResponse.AbbreviationKz
+	}
+	if partialResponse.AddressLink != "" {
+		university.AddressLink = partialResponse.AddressLink
+	}
+	if partialResponse.DescriptionRu != "" {
+		university.DescriptionRu = partialResponse.DescriptionRu
+	}
+	if partialResponse.DescriptionKz != "" {
+		university.DescriptionKz = partialResponse.DescriptionKz
+	}
+	if partialResponse.Rating != "" {
+		university.Rating = partialResponse.Rating
+	}
+	if partialResponse.CityId != 0 {
+		university.City.Id = partialResponse.CityId
+	}
+
+	file, header, err := c.GetFile("MainImageUrl")
+	if err == nil {
+		defer file.Close()
+		mainImagePath := fmt.Sprintf("Universities/%d/%s", universityId, header.Filename)
+		uploadedMainImageURL, err := uploadFileToCloud(mainImagePath, file)
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "Failed to upload main image: " + err.Error()}
+			c.Ctx.Output.SetStatus(500)
+			c.ServeJSON()
+			return
+		}
+		university.MainImageUrl = uploadedMainImageURL
+	}
+
+	galleryFiles := c.Ctx.Request.MultipartForm.File["Gallery"]
+	var galleryURLs []string
+
+	for _, galleryFileHeader := range galleryFiles {
+		galleryFile, err := galleryFileHeader.Open()
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "Failed to open gallery file: " + err.Error()}
+			c.Ctx.Output.SetStatus(400)
+			c.ServeJSON()
+			return
+		}
+		defer galleryFile.Close()
+
+		galleryFilePath := fmt.Sprintf("Universities/%d/Gallery/%s", universityId, galleryFileHeader.Filename)
+		uploadedGalleryURL, err := uploadFileToCloud(galleryFilePath, galleryFile)
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "Failed to upload gallery image: " + err.Error()}
+			c.Ctx.Output.SetStatus(500)
+			c.ServeJSON()
+			return
+		}
+
+		galleryURLs = append(galleryURLs, uploadedGalleryURL)
+	}
+
+	err = models.UpdateUniversityGallery(universityId, galleryURLs)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to update gallery images: " + err.Error()}
+		c.Ctx.Output.SetStatus(500)
+		c.ServeJSON()
+		return
+	}
+
+	// Update the university record
+	if err := models.UpdateUniversity(university); err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to update university: " + err.Error()}
+		c.Ctx.Output.SetStatus(500)
+		c.ServeJSON()
+		return
+	}
+
+	// Update services
+	var services []*models.Service
+	for _, serviceID := range serviceIds {
+		service, err := models.GetServiceByID(serviceID)
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "Service not found: " + err.Error()}
+			c.Ctx.Output.SetStatus(404)
+			c.ServeJSON()
+			return
+		}
+		services = append(services, service)
+	}
+
+	if err := models.UpdateUniversityServices(universityId, services); err != nil {
+		c.Data["json"] = map[string]string{"error": "Failed to update university services: " + err.Error()}
+		c.Ctx.Output.SetStatus(500)
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]string{"status": "success"}
+	c.Ctx.Output.SetStatus(200)
 	c.ServeJSON()
 }
 

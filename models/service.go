@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"github.com/astaxie/beego/orm"
 )
@@ -79,6 +80,18 @@ func GetServiceById(id int, language string) (*ServiceResponse, error) {
 		Universities: service.Universities,
 	}, nil
 }
+func GetServiceByID(serviceID int) (*Service, error) {
+	o := orm.NewOrm()
+	service := &Service{Id: serviceID}
+	err := o.Read(service)
+	if err == orm.ErrNoRows {
+		return nil, errors.New("Service not found")
+	} else if err != nil {
+		return nil, err
+	}
+	return service, nil
+}
+
 func GetAllServices(language string) ([]*ServiceResponse, error) {
 	o := orm.NewOrm()
 	var services []*Service

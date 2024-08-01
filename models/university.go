@@ -4,6 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/astaxie/beego/orm"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-playground/validator/v10"
 	"sort"
@@ -34,9 +39,9 @@ type University struct {
 	Description        string        `orm:"type(text)"`
 	DescriptionRu      string        `orm:"type(text)" json:"-"`
 	DescriptionKz      string        `orm:"type(text)" json:"-"`
-	Specialities       []*Speciality `orm:"rel(m2m);rel_table(speciality_university)"`
-	Services           []*Service    `orm:"rel(m2m);rel_table(university_service)"`
-	PointStats         []*PointStat  `orm:"reverse(many)"`
+	Specialities       []*Speciality `orm:"rel(m2m);rel_table(speciality_university);on_delete(cascade)"`
+	Services           []*Service    `orm:"rel(m2m);rel_table(university_service);on_delete(cascade)"`
+	PointStats         []*PointStat  `orm:"reverse(many);on_delete(cascade)"`
 	City               *City         `orm:"rel(fk)"`
 	CreatedAt          time.Time     `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt          time.Time     `orm:"auto_now;type(datetime)"`
@@ -48,7 +53,7 @@ type University struct {
 	AddressLink        string        `orm:"size(256)"`
 	Email              string        `orm:"size(64)"`
 	Rating             string        `orm:"size(64)"`
-	Gallery            []*Gallery    `orm:"reverse(many)"`
+	Gallery            []*Gallery    `orm:"reverse(many);on_delete(cascade)"`
 }
 
 type UniversitySearchResult struct {
@@ -70,59 +75,130 @@ type GetAllUniversityResponse struct {
 	Rating           string `json:"Rating"`
 }
 type GetByIdUniversityResponse struct {
-	Id                 int        `json:"Id"`
-	NameRu             string     `json:"NameRu" validate:"required"`
-	NameKz             string     `json:"NameKz" validate:"required"`
-	UniversityStatusRu string     `json:"UniversityStatusRu" validate:"required"`
-	UniversityStatusKz string     `json:"UniversityStatusKz" validate:"required"`
-	Website            string     `json:"Website" validate:"required,url"`
-	CallCenterNumber   string     `json:"CallCenterNumber" validate:"required"`
-	WhatsAppNumber     string     `json:"WhatsAppNumber" validate:"required"`
-	Address            string     `json:"Address" validate:"required"`
-	UniversityCode     string     `json:"UniversityCode" validate:"required"`
-	StudyFormatRu      string     `json:"StudyFormatRu" validate:"required"`
-	StudyFormatKz      string     `json:"StudyFormatKz" validate:"required"`
-	AbbreviationRu     string     `json:"AbbreviationRu" validate:"required"`
-	AbbreviationKz     string     `json:"AbbreviationKz" validate:"required"`
-	MainImageUrl       string     `json:"MainImageUrl" validate:"required,url"`
-	AddressLink        string     `json:"AddressLink" validate:"required"`
-	DescriptionRu      string     `json:"DescriptionRu" validate:"required"`
-	DescriptionKz      string     `json:"DescriptionKz" validate:"required"`
-	Rating             string     `json:"Rating" validate:"required"`
-	Gallery            []*Gallery `json:"Gallery"`
-	Services           []*Service `json:"Services"`
-	City               *City      `json:"City" validate:"required"`
+	Id                 int                `json:"Id"`
+	NameRu             string             `json:"NameRu" validate:"required"`
+	NameKz             string             `json:"NameKz" validate:"required"`
+	UniversityStatusRu string             `json:"UniversityStatusRu" validate:"required"`
+	UniversityStatusKz string             `json:"UniversityStatusKz" validate:"required"`
+	Website            string             `json:"Website" validate:"required,url"`
+	CallCenterNumber   string             `json:"CallCenterNumber" validate:"required"`
+	WhatsAppNumber     string             `json:"WhatsAppNumber" validate:"required"`
+	Address            string             `json:"Address" validate:"required"`
+	UniversityCode     string             `json:"UniversityCode" validate:"required"`
+	StudyFormatRu      string             `json:"StudyFormatRu" validate:"required"`
+	StudyFormatKz      string             `json:"StudyFormatKz" validate:"required"`
+	AbbreviationRu     string             `json:"AbbreviationRu" validate:"required"`
+	AbbreviationKz     string             `json:"AbbreviationKz" validate:"required"`
+	MainImageUrl       string             `json:"MainImageUrl" validate:"required,url"`
+	AddressLink        string             `json:"AddressLink" validate:"required"`
+	DescriptionRu      string             `json:"DescriptionRu" validate:"required"`
+	DescriptionKz      string             `json:"DescriptionKz" validate:"required"`
+	Rating             string             `json:"Rating" validate:"required"`
+	Gallery            []*GalleryResponse `json:"Gallery"`
+	Services           []*Service         `json:"Services"`
+	City               *City              `json:"City" validate:"required"`
 }
 
 type AddUUniversityResponse struct {
-	Id                 int        `form:"Id"`
-	NameRu             string     `form:"NameRu" validate:"required"`
-	NameKz             string     `form:"NameKz" validate:"required"`
-	UniversityStatusRu string     `form:"UniversityStatusRu" validate:"required"`
-	UniversityStatusKz string     `form:"UniversityStatusKz" validate:"required"`
-	Website            string     `form:"Website" validate:"required,url"`
-	CallCenterNumber   string     `form:"CallCenterNumber" validate:"required"`
-	WhatsAppNumber     string     `form:"WhatsAppNumber" validate:"required"`
-	Address            string     `form:"Address" validate:"required"`
-	UniversityCode     string     `form:"UniversityCode" validate:"required"`
-	StudyFormatRu      string     `form:"StudyFormatRu" validate:"required"`
-	StudyFormatKz      string     `form:"StudyFormatKz" validate:"required"`
-	AbbreviationRu     string     `form:"AbbreviationRu" validate:"required"`
-	AbbreviationKz     string     `form:"AbbreviationKz" validate:"required"`
-	MainImageUrl       string     `form:"MainImageUrl"`
-	AddressLink        string     `form:"AddressLink" validate:"required"`
-	DescriptionRu      string     `form:"DescriptionRu" validate:"required"`
-	DescriptionKz      string     `form:"DescriptionKz" validate:"required"`
-	Rating             string     `form:"Rating" validate:"required"`
-	Gallery            []string   `form:"Gallery"`
-	Services           []*Service `form:"Services"`
-	CityId             int        `form:"CityId" validate:"required"`
+	Id                 int      `form:"Id"`
+	NameRu             string   `form:"NameRu" validate:"required"`
+	NameKz             string   `form:"NameKz" validate:"required"`
+	UniversityStatusRu string   `form:"UniversityStatusRu" validate:"required"`
+	UniversityStatusKz string   `form:"UniversityStatusKz" validate:"required"`
+	Website            string   `form:"Website" validate:"required,url"`
+	CallCenterNumber   string   `form:"CallCenterNumber" validate:"required"`
+	WhatsAppNumber     string   `form:"WhatsAppNumber" validate:"required"`
+	Address            string   `form:"Address" validate:"required"`
+	UniversityCode     string   `form:"UniversityCode" validate:"required"`
+	StudyFormatRu      string   `form:"StudyFormatRu" validate:"required"`
+	StudyFormatKz      string   `form:"StudyFormatKz" validate:"required"`
+	AbbreviationRu     string   `form:"AbbreviationRu" validate:"required"`
+	AbbreviationKz     string   `form:"AbbreviationKz" validate:"required"`
+	MainImageUrl       string   `form:"MainImageUrl"`
+	AddressLink        string   `form:"AddressLink" validate:"required"`
+	DescriptionRu      string   `form:"DescriptionRu" validate:"required"`
+	DescriptionKz      string   `form:"DescriptionKz" validate:"required"`
+	Rating             string   `form:"Rating" validate:"required"`
+	Gallery            []string `form:"Gallery"`
+	ServiceIds         []int    `form:"ServiceIds"`
+	CityId             int      `form:"CityId" validate:"required"`
+}
+
+type AddUniversityPartial struct {
+	NameRu             string   `form:"NameRu" validate:"required"`
+	NameKz             string   `form:"NameKz" validate:"required"`
+	UniversityStatusRu string   `form:"UniversityStatusRu" validate:"required"`
+	UniversityStatusKz string   `form:"UniversityStatusKz" validate:"required"`
+	Website            string   `form:"Website" validate:"required,url"`
+	CallCenterNumber   string   `form:"CallCenterNumber" validate:"required"`
+	WhatsAppNumber     string   `form:"WhatsAppNumber" validate:"required"`
+	Address            string   `form:"Address" validate:"required"`
+	UniversityCode     string   `form:"UniversityCode" validate:"required"`
+	StudyFormatRu      string   `form:"StudyFormatRu" validate:"required"`
+	StudyFormatKz      string   `form:"StudyFormatKz" validate:"required"`
+	AbbreviationRu     string   `form:"AbbreviationRu" validate:"required"`
+	AbbreviationKz     string   `form:"AbbreviationKz" validate:"required"`
+	MainImageUrl       string   `form:"MainImageUrl"`
+	AddressLink        string   `form:"AddressLink" validate:"required"`
+	DescriptionRu      string   `form:"DescriptionRu" validate:"required"`
+	DescriptionKz      string   `form:"DescriptionKz" validate:"required"`
+	Rating             string   `form:"Rating" validate:"required"`
+	Gallery            []string `form:"Gallery"`
+	CityId             int      `form:"CityId" validate:"required"`
+}
+
+type UpdateUniversityResponse struct {
+	Id                 int      `form:"Id"`
+	NameRu             string   `form:"NameRu"`
+	NameKz             string   `form:"NameKz"`
+	UniversityStatusRu string   `form:"UniversityStatusRu"`
+	UniversityStatusKz string   `form:"UniversityStatusKz"`
+	Website            string   `form:"Website"`
+	CallCenterNumber   string   `form:"CallCenterNumber"`
+	WhatsAppNumber     string   `form:"WhatsAppNumber"`
+	Address            string   `form:"Address"`
+	UniversityCode     string   `form:"UniversityCode"`
+	StudyFormatRu      string   `form:"StudyFormatRu"`
+	StudyFormatKz      string   `form:"StudyFormatKz"`
+	AbbreviationRu     string   `form:"AbbreviationRu"`
+	AbbreviationKz     string   `form:"AbbreviationKz"`
+	MainImageUrl       string   `form:"MainImageUrl"`
+	AddressLink        string   `form:"AddressLink"`
+	DescriptionRu      string   `form:"DescriptionRu"`
+	DescriptionKz      string   `form:"DescriptionKz"`
+	Rating             string   `form:"Rating"`
+	Gallery            []string `form:"Gallery"`
+	ServiceIds         []int    `form:"ServiceIds"`
+	CityId             int      `form:"CityId"`
+}
+
+type UpdateUniversityPartial struct {
+	Id                 int      `form:"Id"`
+	NameRu             string   `form:"NameRu"`
+	NameKz             string   `form:"NameKz"`
+	UniversityStatusRu string   `form:"UniversityStatusRu"`
+	UniversityStatusKz string   `form:"UniversityStatusKz"`
+	Website            string   `form:"Website"`
+	CallCenterNumber   string   `form:"CallCenterNumber"`
+	WhatsAppNumber     string   `form:"WhatsAppNumber"`
+	Address            string   `form:"Address"`
+	UniversityCode     string   `form:"UniversityCode"`
+	StudyFormatRu      string   `form:"StudyFormatRu"`
+	StudyFormatKz      string   `form:"StudyFormatKz"`
+	AbbreviationRu     string   `form:"AbbreviationRu"`
+	AbbreviationKz     string   `form:"AbbreviationKz"`
+	MainImageUrl       string   `form:"MainImageUrl"`
+	AddressLink        string   `form:"AddressLink"`
+	DescriptionRu      string   `form:"DescriptionRu"`
+	DescriptionKz      string   `form:"DescriptionKz"`
+	Rating             string   `form:"Rating"`
+	Gallery            []string `form:"Gallery"`
+	CityId             int      `form:"CityId"`
 }
 
 func init() {
 	orm.RegisterModel(new(University))
 }
-
 func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 	validate := validator.New()
 
@@ -131,7 +207,6 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 		return 0, err
 	}
 
-	// Retrieve city based on CityId
 	var city City
 	o := orm.NewOrm()
 	err = o.QueryTable("city").Filter("Id", universityResponse.CityId).One(&city)
@@ -167,7 +242,6 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 	}
 	universityResponse.Id = int(id)
 
-	// Save gallery URLs
 	for _, galleryURL := range universityResponse.Gallery {
 		gallery := &Gallery{
 			University: dbUniversity,
@@ -179,7 +253,26 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 		}
 	}
 
+	// Add services to the university
+	for _, serviceID := range universityResponse.ServiceIds {
+		service := &Service{Id: serviceID}
+		m2m := o.QueryM2M(dbUniversity, "Services")
+		_, err := m2m.Add(service)
+		if err != nil {
+			return 0, err
+		}
+	}
+
 	return id, nil
+}
+
+func CheckServiceExists(serviceID int) error {
+	o := orm.NewOrm()
+	var service Service
+	if err := o.QueryTable("service").Filter("Id", serviceID).One(&service); err != nil {
+		return err
+	}
+	return nil
 }
 
 func UpdateUniversityImageURL(id int64, imageURL string) error {
@@ -243,6 +336,14 @@ func GetUniversityById(id int) (*GetByIdUniversityResponse, error) {
 		return nil, err
 	}
 
+	var galleryResponses []*GalleryResponse
+	for _, gallery := range university.Gallery {
+		galleryResponses = append(galleryResponses, &GalleryResponse{
+			Id:       gallery.Id,
+			PhotoUrl: gallery.PhotoUrl,
+		})
+	}
+
 	response := &GetByIdUniversityResponse{
 		Id:                 university.Id,
 		NameRu:             university.NameRu,
@@ -259,7 +360,7 @@ func GetUniversityById(id int) (*GetByIdUniversityResponse, error) {
 		AbbreviationRu:     university.AbbreviationRu,
 		AbbreviationKz:     university.AbbreviationKz,
 		MainImageUrl:       university.MainImageUrl,
-		Gallery:            university.Gallery,
+		Gallery:            galleryResponses,
 		AddressLink:        university.AddressLink,
 		DescriptionRu:      university.DescriptionRu,
 		DescriptionKz:      university.DescriptionKz,
@@ -317,94 +418,134 @@ func GetAllUniversities(language string) ([]*GetAllUniversityResponse, error) {
 	return responses, nil
 }
 
-func UpdateUniversityFields(university *University) error {
+func GetUniversityByID(id int) (*University, error) {
+	var university University
+	if err := orm.NewOrm().QueryTable("university").Filter("id", id).RelatedSel().One(&university); err != nil {
+		return nil, err
+	}
+	return &university, nil
+}
+
+func UpdateUniversity(university *University) error {
+	_, err := orm.NewOrm().Update(university)
+	return err
+}
+
+func UpdateUniversityGallery(universityID int, galleryURLs []string) error {
 	o := orm.NewOrm()
-	existingUniversity := &University{Id: university.Id}
 
-	// Check if the university exists
-	if err := o.Read(existingUniversity); err != nil {
-		return fmt.Errorf("university with ID %d not found: %v", university.Id, err)
-	}
-
-	// Prepare fields to be updated
-	updateFields := []string{}
-
-	// Check and add non-zero fields to update list
-	if university.UniversityCode != "" {
-		updateFields = append(updateFields, "UniversityCode")
-	}
-	if university.Name != "" {
-		updateFields = append(updateFields, "Name")
-	}
-	if university.Abbreviation != "" {
-		updateFields = append(updateFields, "Abbreviation")
-	}
-	if university.AbbreviationRu != "" {
-		updateFields = append(updateFields, "AbbreviationRu")
-	}
-	if university.AbbreviationKz != "" {
-		updateFields = append(updateFields, "AbbreviationKz")
-	}
-	if university.UniversityStatus != "" {
-		updateFields = append(updateFields, "UniversityStatus")
-	}
-	if university.UniversityStatusRu != "" {
-		updateFields = append(updateFields, "UniversityStatusRu")
-	}
-	if university.UniversityStatusKz != "" {
-		updateFields = append(updateFields, "UniversityStatusKz")
-	}
-	if university.Address != "" {
-		updateFields = append(updateFields, "Address")
-	}
-	if university.Website != "" {
-		updateFields = append(updateFields, "Website")
-	}
-	if university.AverageFee != 0 {
-		updateFields = append(updateFields, "AverageFee")
-	}
-	if university.MainImageUrl != "" {
-		updateFields = append(updateFields, "MainImageUrl")
-	}
-	if university.MinEntryScore != 0 {
-		updateFields = append(updateFields, "MinEntryScore")
-	}
-	if university.Description != "" {
-		updateFields = append(updateFields, "Description")
-	}
-	if university.CallCenterNumber != "" {
-		updateFields = append(updateFields, "CallCenterNumber")
-	}
-	if university.WhatsAppNumber != "" {
-		updateFields = append(updateFields, "WhatsAppNumber")
-	}
-	if university.StudyFormat != "" {
-		updateFields = append(updateFields, "StudyFormat")
-	}
-	if university.StudyFormatRu != "" {
-		updateFields = append(updateFields, "StudyFormatRu")
-	}
-	if university.StudyFormatKz != "" {
-		updateFields = append(updateFields, "StudyFormatKz")
-	}
-	if university.AddressLink != "" {
-		updateFields = append(updateFields, "AddressLink")
+	// Delete old gallery images
+	if _, err := o.QueryTable("gallery").Filter("university_id", universityID).Delete(); err != nil {
+		return err
 	}
 
-	if len(updateFields) > 0 {
-		_, err := o.Update(university, updateFields...)
-		if err != nil {
-			return fmt.Errorf("failed to update university fields: %v", err)
+	// Insert new gallery images
+	for _, url := range galleryURLs {
+		gallery := &Gallery{
+			University: &University{Id: universityID},
+			PhotoUrl:   url,
+		}
+		if _, err := o.Insert(gallery); err != nil {
+			return err
 		}
 	}
-
 	return nil
 }
 
 func DeleteUniversity(id int) error {
 	o := orm.NewOrm()
-	_, err := o.Delete(&University{Id: id})
+	err := o.Begin()
+	if err != nil {
+		fmt.Println("Failed to start transaction:", err)
+		return err
+	}
+
+	university := University{Id: id}
+	if err := o.Read(&university); err != nil {
+		o.Rollback()
+		fmt.Println("Failed to read university:", err)
+		return err
+	}
+
+	if university.MainImageUrl != "" {
+		fmt.Println("Deleting main image from cloud:", university.MainImageUrl)
+		err = deleteFileFromCloud(university.MainImageUrl)
+		if err != nil {
+			o.Rollback()
+			fmt.Println("Failed to delete main image from cloud:", err)
+			return err
+		}
+	}
+
+	var galleries []*Gallery
+	_, err = o.QueryTable("gallery").Filter("university_id", id).All(&galleries)
+	if err != nil {
+		o.Rollback() // Rollback transaction on error
+		fmt.Println("Failed to fetch galleries:", err)
+		return err
+	}
+
+	for _, gallery := range galleries {
+		if gallery.PhotoUrl != "" {
+			fmt.Println("Deleting gallery image from cloud:", gallery.PhotoUrl)
+			err = deleteFileFromCloud(gallery.PhotoUrl)
+			if err != nil {
+				o.Rollback() // Rollback transaction on error
+				fmt.Println("Failed to delete gallery image from cloud:", err)
+				return err
+			}
+		}
+	}
+
+	// Delete the university
+	_, err = o.Delete(&university)
+	if err != nil {
+		o.Rollback() // Rollback transaction on error
+		fmt.Println("Failed to delete university:", err)
+		return err
+	}
+
+	err = o.Commit() // Commit transaction
+	if err != nil {
+		fmt.Println("Failed to commit transaction:", err)
+	}
 	return err
+}
+
+func deleteFileFromCloud(filePath string) error {
+	awsAccessKey, _ := beego.AppConfig.String("aws_access_key")
+	awsSecretKey, _ := beego.AppConfig.String("aws_secret_key")
+	bucket, _ := beego.AppConfig.String("bucket")
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:           aws.String("us-east-1"),
+		Credentials:      credentials.NewStaticCredentials(awsAccessKey, awsSecretKey, ""),
+		Endpoint:         aws.String("https://chi-sextans.object.pscloud.io"),
+		S3ForcePathStyle: aws.Bool(true),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create AWS session: %v", err)
+	}
+
+	svc := s3.New(sess)
+
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete file: %v", err)
+	}
+
+	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filePath),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to wait for file deletion: %v", err)
+	}
+
+	return nil
 }
 
 func GetUniversitiesInCity(cityId int) ([]*University, error) {
@@ -913,4 +1054,47 @@ func paginateUniversities(universities []*University, params map[string]interfac
 	}
 
 	return result, nil
+}
+func UpdateUniversityServices(universityID int, services []*Service) error {
+	o := orm.NewOrm()
+
+	// Begin a transaction
+	err := o.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = o.Raw("DELETE FROM university_service WHERE university_id = ?", universityID).Exec()
+	if err != nil {
+		o.Rollback()
+		return err
+	}
+
+	if len(services) > 0 {
+		query := "INSERT INTO university_service (university_id, service_id) VALUES "
+		values := make([]interface{}, 0)
+
+		for i, service := range services {
+			if i > 0 {
+				query += ", "
+			}
+			query += "(?, ?)"
+			values = append(values, universityID, service.Id)
+		}
+
+		_, err = o.Raw(query, values...).Exec()
+		if err != nil {
+			o.Rollback()
+			return err
+		}
+	}
+
+	// Commit transaction
+	err = o.Commit()
+	if err != nil {
+		o.Rollback()
+		return err
+	}
+
+	return nil
 }
