@@ -17,11 +17,16 @@ type City struct {
 }
 
 type CityResponse struct {
-	Id   int    `json:"Id"`
-	Name string `json:"Name"`
-
+	Id        int       `json:"Id"`
+	Name      string    `json:"Name"`
 	CreatedAt time.Time `json:"CreatedAt"`
 	UpdatedAt time.Time `json:"UpdatedAt"`
+}
+
+type CityResponseById struct {
+	Id     int    `json:"Id"`
+	NameRu string `json:"NameRu"`
+	NameKz string `json:"NameKz"`
 }
 
 func init() {

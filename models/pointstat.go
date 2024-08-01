@@ -13,7 +13,7 @@ type PointStat struct {
 	MinGrantScore int
 	Year          int
 	Speciality    *Speciality `orm:"rel(fk)"`
-	University    *University `orm:"rel(fk)"`
+	University    *University `orm:"rel(fk);on_delete(cascade)"`
 	CreatedAt     time.Time   `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt     time.Time   `orm:"auto_now;type(datetime)"`
 }
