@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/astaxie/beego/orm"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-playground/validator/v10"
@@ -691,5 +692,55 @@ func (c *UniversityController) SearchUniversities() {
 	} else {
 		c.Data["json"] = err.Error()
 	}
+	c.ServeJSON()
+}
+
+// DeleteSpecialityFromUniversity
+// @Title DeleteSpecialityFromUniversity
+// @Description удаляет взаимосвязь между университетом и специальностью
+// @Param   university_id    path    int     true        "ID университета"
+// @Param   speciality_id    path    int     true        "ID специальности"
+// @Success 200 {string} "Success"
+// @Failure 400 {string} "Invalid input"
+// @Failure 404 {string} "Not Found"
+// @router /deletespec/:universityId/:speciality_id [delete]
+func (c *UniversityController) DeleteSpecialityFromUniversity() {
+	universityIDStr := c.Ctx.Input.Param(":university_id")
+	specialityIDStr := c.Ctx.Input.Param(":speciality_id")
+
+	universityID, err := strconv.Atoi(universityIDStr)
+	if err != nil {
+		fmt.Println(universityID)
+		c.CustomAbort(http.StatusBadRequest, "Invalid university ID")
+		return
+	}
+
+	specialityID, err := strconv.Atoi(specialityIDStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid speciality ID")
+		return
+	}
+
+	o := orm.NewOrm()
+
+	sql := `DELETE FROM speciality_university WHERE university_id = ? AND speciality_id = ?`
+	res, err := o.Raw(sql, universityID, specialityID).Exec()
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	num, err := res.RowsAffected()
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if num == 0 {
+		c.CustomAbort(http.StatusNotFound, "No relation found between university and speciality")
+		return
+	}
+
+	c.Data["json"] = "Success"
 	c.ServeJSON()
 }

@@ -65,6 +65,7 @@ func init() {
 			beego.NSRouter("/assignspecialities/:universityId", &controllers.UniversityController{}, "post:AddSpecialitiesToUniversity"),
 			beego.NSRouter("/assignserv/:universityId", &controllers.UniversityController{}, "post:AddServicesToUniversity"),
 			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
+			beego.NSRouter("/deletespec/:university_id/:speciality_id", &controllers.UniversityController{}, "delete:DeleteSpecialityFromUniversity"),
 		),
 
 		beego.NSNamespace("/cities",

@@ -19,9 +19,9 @@ type Speciality struct {
 	UpdatedAt     time.Time     `orm:"auto_now;type(datetime)" json:"updated_at"`
 	PointStats    []*PointStat  `orm:"reverse(many)" json:"point_stats,omitempty"`
 	NameRu        string        `orm:"size(128)" json:"NameRu"`
-	NameKz        string        `orm:"size(128)" json:"-"`
-	DescriptionRu string        `orm:"type(text)" json:"-"`
-	DescriptionKz string        `orm:"type(text)" json:"-"`
+	NameKz        string        `orm:"size(128)" json:"NameKz"`
+	DescriptionRu string        `orm:"type(text)" json:"DescriptionRu"`
+	DescriptionKz string        `orm:"type(text)" json:"DescriptionKz"`
 }
 
 type SpecialitySearchResult struct {
@@ -66,7 +66,6 @@ func GetSpecialityById(id int, language string) (*Speciality, error) {
 		speciality.Description = speciality.DescriptionKz
 	}
 
-	// Запрос на получение связанных данных SubjectPair, если есть
 	if speciality.SubjectPair != nil {
 		var subjectPair SubjectPair
 		err = o.Raw(`SELECT * FROM subject_pair WHERE id = ?`, speciality.SubjectPair.Id).QueryRow(&subjectPair)
@@ -76,7 +75,6 @@ func GetSpecialityById(id int, language string) (*Speciality, error) {
 		speciality.SubjectPair = &subjectPair
 	}
 
-	// Запрос на получение связанных записей из таблицы point_stat
 	var pointStats []*PointStat
 	_, err = o.Raw(`SELECT * FROM point_stat WHERE speciality_id = ?`, id).QueryRows(&pointStats)
 	if err != nil && err != orm.ErrNoRows {
@@ -95,7 +93,6 @@ func GetAllSpecialities(language string) ([]*Speciality, error) {
 		return nil, err
 	}
 
-	// Загрузка связанных SubjectPair для каждой специальности
 	for _, speciality := range specialities {
 		if speciality.SubjectPair != nil {
 			err := o.Read(speciality.SubjectPair)
@@ -104,7 +101,6 @@ func GetAllSpecialities(language string) ([]*Speciality, error) {
 			}
 		}
 
-		// Переназначение полей в зависимости от языка
 		switch language {
 		case "ru":
 			speciality.Name = speciality.NameRu

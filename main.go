@@ -68,5 +68,6 @@ func main() {
 	beego.Include(&controllers.QuotaController{})
 	//TODO: мультиязычность
 	//TODO: проверить все запросы в специальностях
+	//TODO: добавить метод для удаления
 	beego.Run()
 }
