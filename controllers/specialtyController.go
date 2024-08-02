@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/go-playground/validator/v10"
 	"net/http"
 	"strconv"
 	"testhub-spec-uni/models"
@@ -22,15 +24,29 @@ type SpecialityController struct {
 // @Failure 400 ошибка разбора JSON или другая ошибка
 // @router / [post]
 func (c *SpecialityController) Create() {
-	var speciality models.Speciality
-	_ = c.Ctx.Input.CopyBody(2048)
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
+	var data models.AddSpecialityResponse
+
+	if err := c.ParseForm(&data); err != nil {
 		c.Data["json"] = err.Error()
 		c.ServeJSON()
 		return
 	}
 
-	if id, err := models.AddSpeciality(&speciality); err == nil {
+	// Validate form data
+	validate := validator.New()
+	if err := validate.Struct(&data); err != nil {
+		validationErrors := err.(validator.ValidationErrors)
+		errMap := make(map[string]string)
+		for _, err := range validationErrors {
+			errMap[err.Field()] = fmt.Sprintf("Validation failed on the '%s' tag", err.Tag())
+		}
+		c.Data["json"] = errMap
+		c.ServeJSON()
+		return
+	}
+
+	// Create speciality
+	if id, err := models.AddSpecialityFromFormData(&data); err == nil {
 		c.Data["json"] = map[string]int64{"id": id}
 	} else {
 		c.Data["json"] = err.Error()
@@ -145,10 +161,14 @@ func (c *SpecialityController) Delete() {
 // @router /byuni/:universityId [get]
 func (c *SpecialityController) GetByUniversity() {
 	universityId, err := c.GetInt(":universityId")
-	lang := c.Ctx.Input.Header("lang")
 	if err != nil {
 		c.CustomAbort(400, "Invalid university ID")
 		return
+	}
+
+	lang := c.Ctx.Input.Header("lang")
+	if lang == "" {
+		lang = "ru" // Установим язык по умолчанию
 	}
 
 	specialities, err := models.GetSpecialitiesInUniversity(universityId, lang)
@@ -158,7 +178,7 @@ func (c *SpecialityController) GetByUniversity() {
 	}
 
 	if len(specialities) == 0 {
-		c.Data["json"] = []models.Speciality{}
+		c.Data["json"] = []models.GetSpecialityResponse{}
 	} else {
 		c.Data["json"] = specialities
 	}
@@ -291,7 +311,6 @@ func (c *SpecialityController) AddPointStat() {
 		return
 	}
 
-	// Устанавливаем ID университета и специальности из параметров запроса
 	pointStat.University = &models.University{Id: universityId}
 	pointStat.Speciality = &models.Speciality{Id: specialityId}
 

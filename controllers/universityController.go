@@ -7,7 +7,6 @@ import (
 	"github.com/astaxie/beego/orm"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
-	_ "github.com/go-playground/validator/v10"
 	"log"
 	"mime/multipart"
 	"net/http"
