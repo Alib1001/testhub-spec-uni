@@ -26,10 +26,9 @@ type QuotaResponse struct {
 }
 
 func ConvertTimeToString(t time.Time) string {
-	return t.Format(time.RFC3339) // или другой формат, который вам нужен
+	return t.Format(time.RFC3339)
 }
 
-// ConvertSpecialities converts []*models.Speciality to []int.
 func ConvertSpecialities(specialities []*models.Speciality) []int {
 	result := make([]int, len(specialities))
 	for i, s := range specialities {

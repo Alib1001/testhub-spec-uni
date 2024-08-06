@@ -9,7 +9,7 @@ import (
 
 type PointStat struct {
 	Id            int `orm:"auto"`
-	AnnualGrants  int
+	GrantCount    int
 	MinScore      int
 	MinGrantScore int
 	Year          int
@@ -23,7 +23,7 @@ type PointStat struct {
 
 type AddPointStatResponse struct {
 	Id            int `form:"Id"`
-	AnnualGrants  int `form:"AnnualGrants" validate:"required"`
+	AnnualGrants  int `form:"GrantCount" validate:"required"`
 	MinScore      int `form:"MinScore" validate:"required"`
 	MinGrantScore int `form:"MinGrantScore" validate:"required"`
 	Year          int `form:"Year" validate:"required"`
@@ -37,7 +37,6 @@ func init() {
 func AddPointStat(universityId, specialityId int, pointStat *PointStat) (int64, error) {
 	o := orm.NewOrm()
 
-	// Check if PointStat with the same year already exists for the given university and speciality
 	exists := o.QueryTable("point_stat").Filter("University__Id", universityId).Filter("Speciality__Id", specialityId).Filter("Year", pointStat.Year).Exist()
 	if exists {
 		return 0, fmt.Errorf("PointStat with year %d already exists for the given university and speciality", pointStat.Year)
