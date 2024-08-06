@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	ns := beego.NewNamespace("/api",
+	adminNS := beego.NewNamespace("/api",
 		beego.NSNamespace("/subjects",
 			beego.NSInclude(&controllers.SubjectController{}),
 			beego.NSRouter("/", &controllers.SubjectController{}, "post:Create"),
@@ -43,7 +43,7 @@ func init() {
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.SpecialityController{}, "delete:Delete"),
 			beego.NSRouter("/search", &controllers.SpecialityController{}, "get:SearchSpecialities"),
-			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetByUniversity"),
+			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetByUniversityForAdmin"),
 			beego.NSRouter("/bysubjects/:subject1_id/:subject2_id", &controllers.SpecialityController{}, "get:GetSpecialitiesBySubjectPair"),
 			beego.NSRouter("/associatepair/:speciality_id/:subject_pair_id", &controllers.SpecialityController{}, "put:AssociateSpecialityWithSubjectPair"),
 			beego.NSRouter("/byspec/:speciality_id", &controllers.SpecialityController{}, "get:GetSubjectPairsBySpecialityId"),
@@ -56,8 +56,8 @@ func init() {
 		beego.NSNamespace("/universities",
 			beego.NSInclude(&controllers.UniversityController{}),
 			beego.NSRouter("/", &controllers.UniversityController{}, "post:Create"),
-			beego.NSRouter("/:id", &controllers.UniversityController{}, "get:Get"),
-			beego.NSRouter("/", &controllers.UniversityController{}, "get:GetAll"),
+			beego.NSRouter("/:id", &controllers.UniversityController{}, "get:GetForAdmin"),
+			beego.NSRouter("/", &controllers.UniversityController{}, "get:GetAllForAdmin"),
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "put:Update"),
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "delete:Delete"),
 			beego.NSRouter("/assigncity/:universityId/:cityId", &controllers.UniversityController{}, "put:AssignCityToUniversity"),
@@ -114,5 +114,63 @@ func init() {
 		**/
 	)
 
-	beego.AddNamespace(ns)
+	userNS := beego.NewNamespace("/user",
+		beego.NSNamespace("/subjects",
+			beego.NSInclude(&controllers.SubjectController{}),
+			beego.NSRouter("/:id", &controllers.SubjectController{}, "get:Get"),
+			beego.NSRouter("/", &controllers.SubjectController{}, "get:GetAll"),
+			beego.NSRouter("/secubjects/:firstSubjectId", &controllers.SubjectController{}, "get:GetAllowedSecondSubjects"),
+			beego.NSRouter("/search", &controllers.SubjectController{}, "get:SearchSubjectsByName"),
+		),
+		beego.NSNamespace("/subjectpairs",
+			beego.NSInclude(&controllers.SubjectPairController{}),
+			beego.NSRouter("/:id", &controllers.SubjectPairController{}, "get:Get"),
+			beego.NSRouter("/", &controllers.SubjectPairController{}, "get:GetAll"),
+			beego.NSRouter("/get/:firstSubjectId/:secondSubjectId", &controllers.SubjectPairController{}, "get:GetBySubjectIds"),
+		),
+
+		beego.NSNamespace("/specialities",
+			beego.NSInclude(&controllers.SpecialityController{}),
+			beego.NSRouter("/:id", &controllers.SpecialityController{}, "get:Get"),
+			beego.NSRouter("/", &controllers.SpecialityController{}, "get:GetAll"),
+			beego.NSRouter("/search", &controllers.SpecialityController{}, "get:SearchSpecialities"),
+			beego.NSRouter("/byuni/:universityId", &controllers.SpecialityController{}, "get:GetByUniversity"),
+			beego.NSRouter("/bysubjects/:subject1_id/:subject2_id", &controllers.SpecialityController{}, "get:GetSpecialitiesBySubjectPair"),
+			beego.NSRouter("/byspec/:speciality_id", &controllers.SpecialityController{}, "get:GetSubjectPairsBySpecialityId"),
+			beego.NSRouter("/pointstatsbyparams/:universityId/:specialityId", &controllers.SpecialityController{}, "get:GetPointStatsByUniversityAndSpeciality"),
+		),
+		beego.NSNamespace("/universities",
+			beego.NSInclude(&controllers.UniversityController{}),
+			beego.NSRouter("/:id", &controllers.UniversityController{}, "get:GetForAdmin"),
+			beego.NSRouter("/", &controllers.UniversityController{}, "get:GetAllForAdmin"),
+			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
+		),
+
+		beego.NSNamespace("/cities",
+			beego.NSInclude(&controllers.CityController{}),
+			beego.NSRouter("/:id", &controllers.CityController{}, "get:Get"),
+			beego.NSRouter("/", &controllers.CityController{}, "get:GetAll"),
+			beego.NSRouter("/info/:id", &controllers.CityController{}, "get:GetWithUniversities"),
+			beego.NSRouter("/search", &controllers.CityController{}, "get:SearchCities"),
+		),
+
+		beego.NSNamespace("/quotas",
+			beego.NSInclude(&controllers.QuotaController{}),
+			beego.NSRouter("/:id", &controllers.QuotaController{}, "get:Get"),
+			beego.NSRouter("/", &controllers.QuotaController{}, "get:GetAll"),
+			beego.NSRouter("/all/:id", &controllers.QuotaController{}, "get:GetQuotaWithSpecialities"),
+			beego.NSRouter("/:quota_id/specialities/:speciality_id", &controllers.QuotaController{}, "post:AddSpecialityToQuota"),
+		),
+		beego.NSNamespace("/services",
+			beego.NSInclude(&controllers.ServiceController{}),
+			beego.NSRouter("/search", &controllers.ServiceController{}, "get:SearchServices"),
+			beego.NSRouter("/", &controllers.ServiceController{}, "post:AddService"),
+			beego.NSRouter("/", &controllers.ServiceController{}, "get:GetAllServices"),
+			beego.NSRouter("/:id", &controllers.ServiceController{}, "get:GetServiceById"),
+			beego.NSRouter("/getbyuni/:universityId", &controllers.ServiceController{}, "get:GetServicesByUniversityId"),
+		),
+	)
+
+	beego.AddNamespace(adminNS)
+	beego.AddNamespace(userNS)
 }

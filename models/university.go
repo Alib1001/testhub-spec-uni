@@ -74,7 +74,21 @@ type GetAllUniversityResponse struct {
 	MinScore         int    `json:"MinScore"`
 	Rating           string `json:"Rating"`
 }
-type GetByIdUniversityResponse struct {
+
+type GetAllUniversityForAdminResponse struct {
+	Id                 int    `json:"Id"`
+	NameRu             string `json:"NameRu"`
+	NameKz             string `json:"NameKz"`
+	ImageUrl           string `json:"ImageUrl"`
+	Address            string `json:"Address"`
+	UniversityCode     string `json:"UniversityCode"`
+	SpecialityCount    int    `json:"SpecialityCount"`
+	UniversityStatusRu string `json:"UniversityStatusRu"`
+	UniversityStatusKz string `json:"UniversityStatusKz"`
+	MinScore           int    `json:"MinScore"`
+	Rating             string `json:"Rating"`
+}
+type GetByIdUniversityResponseForAdmin struct {
 	Id                 int                `json:"Id"`
 	NameRu             string             `json:"NameRu" validate:"required"`
 	NameKz             string             `json:"NameKz" validate:"required"`
@@ -266,15 +280,6 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 	return id, nil
 }
 
-func CheckServiceExists(serviceID int) error {
-	o := orm.NewOrm()
-	var service Service
-	if err := o.QueryTable("service").Filter("Id", serviceID).One(&service); err != nil {
-		return err
-	}
-	return nil
-}
-
 func UpdateUniversityImageURL(id int64, imageURL string) error {
 	o := orm.NewOrm()
 
@@ -318,7 +323,7 @@ func AddGalleryImages(universityID int64, galleryURLs []string) error {
 	return nil
 }
 
-func GetUniversityById(id int) (*GetByIdUniversityResponse, error) {
+func GetUniversityByIdForAdmin(id int) (*GetByIdUniversityResponseForAdmin, error) {
 	o := orm.NewOrm()
 	university := &University{Id: id}
 	err := o.Read(university)
@@ -344,7 +349,7 @@ func GetUniversityById(id int) (*GetByIdUniversityResponse, error) {
 		})
 	}
 
-	response := &GetByIdUniversityResponse{
+	response := &GetByIdUniversityResponseForAdmin{
 		Id:                 university.Id,
 		NameRu:             university.NameRu,
 		NameKz:             university.NameKz,
@@ -410,6 +415,40 @@ func GetAllUniversities(language string) ([]*GetAllUniversityResponse, error) {
 			UniversityStatus: university.UniversityStatus,
 			MinScore:         university.MinEntryScore,
 			Rating:           university.Rating,
+		}
+
+		responses = append(responses, response)
+	}
+
+	return responses, nil
+}
+
+func GetAllUniversitiesForAdmin() ([]*GetAllUniversityForAdminResponse, error) {
+	o := orm.NewOrm()
+	var universities []*University
+	_, err := o.QueryTable("university").All(&universities)
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []*GetAllUniversityForAdminResponse
+	for _, university := range universities {
+		if _, err := o.LoadRelated(university, "Specialities"); err != nil {
+			return nil, err
+		}
+
+		response := &GetAllUniversityForAdminResponse{
+			Id:                 university.Id,
+			NameRu:             university.NameRu,
+			NameKz:             university.NameKz,
+			ImageUrl:           university.MainImageUrl,
+			Address:            university.Address,
+			UniversityCode:     university.UniversityCode,
+			SpecialityCount:    len(university.Specialities),
+			UniversityStatusRu: university.UniversityStatusRu,
+			UniversityStatusKz: university.UniversityStatusKz,
+			MinScore:           university.MinEntryScore,
+			Rating:             university.Rating,
 		}
 
 		responses = append(responses, response)

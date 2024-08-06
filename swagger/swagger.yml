@@ -891,10 +891,10 @@ paths:
             $ref: '#/definitions/models.SpecialitySearchResult'
         "400":
           description: '"Ошибка поиска или другая ошибка"'
-  /subjectpair/:
+  /subjectpairs/:
     get:
       tags:
-      - subjectpair
+      - subjectpairs
       description: |-
         Получение списка всех пар предметов.
         <br>
@@ -908,10 +908,10 @@ paths:
               $ref: '#/definitions/models.SubjectPair'
         "400":
           description: ошибка получения списка или другая ошибка
-  /subjectpair/{id}:
+  /subjectpairs/{id}:
     get:
       tags:
-      - subjectpair
+      - subjectpairs
       description: |-
         Получение информации о паре предметов по ID.
         <br>
@@ -932,7 +932,7 @@ paths:
           description: некорректный ID или другая ошибка
     delete:
       tags:
-      - subjectpair
+      - subjectpairs
       description: |-
         Удаление пары предметов по ID.
         <br>
@@ -949,10 +949,10 @@ paths:
           description: "string\t\"Удаление успешно выполнено\""
         "400":
           description: некорректный ID или другая ошибка
-  /subjectpair/{id}/{firstSubjectId}/{secondSubjectId}:
+  /subjectpairs/{id}/{firstSubjectId}/{secondSubjectId}:
     put:
       tags:
-      - subjectpair
+      - subjectpairs
       description: |-
         Обновление информации о паре предметов по ID.
         <br>
@@ -981,10 +981,10 @@ paths:
           description: "string\t\"Обновление успешно выполнено\""
         "400":
           description: некорректные ID или другая ошибка
-  /subjectpair/add/{firstSubjectId}/{secondSubjectId}:
+  /subjectpairs/add/{firstSubjectId}/{secondSubjectId}:
     post:
       tags:
-      - subjectpair
+      - subjectpairs
       description: |-
         Создание новой пары предметов.
         <br>
@@ -1009,10 +1009,10 @@ paths:
             $ref: '#/definitions/map[string]int64'
         "400":
           description: некорректные ID или другая ошибка
-  /subjectpair/get/{firstSubjectId}/{secondSubjectId}:
+  /subjectpairs/get/{firstSubjectId}/{secondSubjectId}:
     get:
       tags:
-      - subjectpair
+      - subjectpairs
       description: |-
         Получение ID пары предметов по ID первого и второго предмета.
         <br>
@@ -1226,27 +1226,6 @@ paths:
               $ref: '#/definitions/models.University'
         "400":
           description: ошибка получения списка или другая ошибка
-    post:
-      tags:
-      - universities
-      description: |-
-        Создание нового университета.
-        <br>
-      operationId: UniversityController.Create
-      parameters:
-      - in: body
-        name: body
-        description: JSON с данными о университете
-        required: true
-        schema:
-          $ref: '#/definitions/models.University'
-      responses:
-        "200":
-          description: '"ID созданного университета"'
-          schema:
-            $ref: '#/definitions/map[string]int64'
-        "400":
-          description: оsaшибка разбора JSON или другая ошибка
   /universities/{id}:
     get:
       tags:
@@ -1269,32 +1248,6 @@ paths:
             $ref: '#/definitions/models.University'
         "400":
           description: некорректный ID или другая ошибка
-    put:
-      tags:
-      - universities
-      description: |-
-        Обновление информации о университете по ID.
-        <br>
-      operationId: UniversityController.Update
-      parameters:
-      - in: path
-        name: id
-        description: ID университета для обновления информации
-        required: true
-        type: integer
-        format: int64
-      - in: body
-        name: body
-        description: JSON с обновленными данными о университете
-        required: true
-        schema:
-          $ref: '#/definitions/models.University'
-      responses:
-        "200":
-          description: '{string} "Обновление успешно выполнено"'
-        "400":
-          description: '{string} "Некорректный ID, ошибка разбора JSON или другая
-            ошибка"'
     delete:
       tags:
       - universities
@@ -1424,6 +1377,34 @@ paths:
           description: "string\t\"Специальности успешно добавлены к университету\""
         "400":
           description: некорректные ID или другая ошибка
+  /universities/deletespec/{universityId}/{speciality_id}:
+    delete:
+      tags:
+      - universities
+      description: |-
+        удаляет взаимосвязь между университетом и специальностью
+        <br>
+      operationId: UniversityController.DeleteSpecialityFromUniversity
+      parameters:
+      - in: path
+        name: university_id
+        description: ID университета
+        required: true
+        type: integer
+        format: int64
+      - in: path
+        name: speciality_id
+        description: ID специальности
+        required: true
+        type: integer
+        format: int64
+      responses:
+        "200":
+          description: '{string} "Success"'
+        "400":
+          description: '{string} "Invalid input"'
+        "404":
+          description: '{string} "Not Found"'
   /universities/search:
     get:
       tags:
@@ -1497,6 +1478,233 @@ paths:
             $ref: '#/definitions/models.UniversitySearchResult'
         "400":
           description: '{string} string "400 ошибка поиска или другая ошибка"'
+  /universities/universities:
+    post:
+      tags:
+      - universities
+      description: |-
+        Создает новый университет с привязкой к сервисам и галерее изображений
+        <br>
+      operationId: UniversityController.CreateUniversity
+      parameters:
+      - in: formData
+        name: NameRu
+        description: Название на русском языке
+        required: true
+        type: string
+      - in: formData
+        name: NameKz
+        description: Название на казахском языке
+        required: true
+        type: string
+      - in: formData
+        name: UniversityStatusRu
+        description: Статус университета на русском языке
+        required: true
+        type: string
+      - in: formData
+        name: UniversityStatusKz
+        description: Статус университета на казахском языке
+        required: true
+        type: string
+      - in: formData
+        name: Website
+        description: Вебсайт
+        required: true
+        type: string
+      - in: formData
+        name: CallCenterNumber
+        description: Номер колл-центра
+        required: true
+        type: string
+      - in: formData
+        name: WhatsAppNumber
+        description: Номер WhatsApp
+        required: true
+        type: string
+      - in: formData
+        name: Address
+        description: Адрес
+        required: true
+        type: string
+      - in: formData
+        name: UniversityCode
+        description: Код университета
+        required: true
+        type: string
+      - in: formData
+        name: StudyFormatRu
+        description: Формат обучения на русском языке
+        required: true
+        type: string
+      - in: formData
+        name: StudyFormatKz
+        description: Формат обучения на казахском языке
+        required: true
+        type: string
+      - in: formData
+        name: AbbreviationRu
+        description: Аббревиатура на русском языке
+        required: true
+        type: string
+      - in: formData
+        name: AbbreviationKz
+        description: Аббревиатура на казахском языке
+        required: true
+        type: string
+      - in: formData
+        name: MainImageUrl
+        description: Главное изображение
+        required: true
+        type: file
+      - in: formData
+        name: AddressLink
+        description: Ссылка на адрес
+        required: true
+        type: string
+      - in: formData
+        name: DescriptionRu
+        description: Описание на русском языке
+        required: true
+        type: string
+      - in: formData
+        name: DescriptionKz
+        description: Описание на казахском языке
+        required: true
+        type: string
+      - in: formData
+        name: Rating
+        description: Рейтинг
+        required: true
+        type: string
+      - in: formData
+        name: Gallery
+        description: Галерея изображений
+        required: true
+        type: file
+      - in: formData
+        name: CityId
+        description: ID города
+        required: true
+        type: integer
+        format: int64
+      - in: formData
+        name: ServiceIds
+        description: Список ID сервисов в формате [1,2,3]
+        required: true
+        type: string
+      responses:
+        "200":
+          description: '{int64} id "ID созданного университета"'
+        "400":
+          description: '{object} map[string]string "Error message"'
+        "500":
+          description: '{object} map[string]string "Error message"'
+  /universities/universities/{id}:
+    put:
+      tags:
+      - universities
+      description: |-
+        Update the specified fields of a university
+        <br>
+      parameters:
+      - in: formData
+        name: NameRu
+        description: Russian name of the university
+        type: string
+      - in: formData
+        name: NameKz
+        description: Kazakh name of the university
+        type: string
+      - in: formData
+        name: UniversityStatusRu
+        description: Russian university status
+        type: string
+      - in: formData
+        name: UniversityStatusKz
+        description: Kazakh university status
+        type: string
+      - in: formData
+        name: Website
+        description: Website of the university
+        type: string
+      - in: formData
+        name: CallCenterNumber
+        description: Call center number
+        type: string
+      - in: formData
+        name: WhatsAppNumber
+        description: WhatsApp number
+        type: string
+      - in: formData
+        name: Address
+        description: Address of the university
+        type: string
+      - in: formData
+        name: UniversityCode
+        description: University code
+        type: string
+      - in: formData
+        name: StudyFormatRu
+        description: Russian study format
+        type: string
+      - in: formData
+        name: StudyFormatKz
+        description: Kazakh study format
+        type: string
+      - in: formData
+        name: AbbreviationRu
+        description: Russian abbreviation
+        type: string
+      - in: formData
+        name: AbbreviationKz
+        description: Kazakh abbreviation
+        type: string
+      - in: formData
+        name: AddressLink
+        description: Address link
+        type: string
+      - in: formData
+        name: DescriptionRu
+        description: Russian description
+        type: string
+      - in: formData
+        name: DescriptionKz
+        description: Kazakh description
+        type: string
+      - in: formData
+        name: Rating
+        description: Rating of the university
+        type: integer
+        format: int64
+      - in: formData
+        name: CityId
+        description: City ID
+        type: integer
+        format: int64
+      - in: formData
+        name: MainImageUrl
+        description: Main image of the university
+        type: file
+      - in: formData
+        name: Gallery
+        description: Gallery images of the university
+        type: file
+      - in: formData
+        name: ServiceIds
+        description: Comma-separated list of service IDs
+        type: string
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: '#/definitions/map[string]string'
+        "400":
+          description: '{object} map[string]string'
+        "404":
+          description: '{object} map[string]string'
+        "500":
+          description: '{object} map[string]string'
 definitions:
   CityResponse:
     title: CityResponse
@@ -1509,6 +1717,9 @@ definitions:
     type: object
   map[string]int64:
     title: map[string]int64
+    type: object
+  map[string]string:
+    title: map[string]string
     type: object
   models.City:
     title: City
@@ -1533,11 +1744,31 @@ definitions:
       UpdatedAt:
         type: string
         format: datetime
+  models.Gallery:
+    title: Gallery
+    type: object
+    properties:
+      CreatedAt:
+        type: string
+        format: datetime
+      Id:
+        type: integer
+        format: int64
+      PhotoUrl:
+        type: string
+      University:
+        $ref: '#/definitions/models.University'
+      UpdatedAt:
+        type: string
+        format: datetime
   models.PointStat:
     title: PointStat
     type: object
     properties:
       AnnualGrants:
+        type: integer
+        format: int64
+      AvgSalary:
         type: integer
         format: int64
       CreatedAt:
@@ -1550,6 +1781,9 @@ definitions:
         type: integer
         format: int64
       MinScore:
+        type: integer
+        format: int64
+      Price:
         type: integer
         format: int64
       Speciality:
@@ -1632,11 +1866,30 @@ definitions:
     title: Speciality
     type: object
     properties:
+      AbbreviationKz:
+        type: string
+      AbbreviationRu:
+        type: string
+      DescriptionKz:
+        type: string
+      DescriptionRu:
+        type: string
+      NameKz:
+        type: string
+      NameRu:
+        type: string
+      Scholarship:
+        type: boolean
+      Term:
+        type: integer
+        format: int64
       code:
         type: string
       created_at:
         type: string
         format: datetime
+      degree:
+        type: string
       description:
         type: string
       id:
@@ -1751,9 +2004,17 @@ definitions:
         format: datetime
       Description:
         type: string
+      Email:
+        type: string
+      Gallery:
+        type: array
+        items:
+          $ref: '#/definitions/models.Gallery'
       Id:
         type: integer
         format: int64
+      MainImageUrl:
+        type: string
       MinEntryScore:
         type: integer
         format: int64
@@ -1767,7 +2028,7 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/models.PointStat'
-      ProfileImageUrl:
+      Rating:
         type: string
       Services:
         type: array
@@ -1782,6 +2043,10 @@ definitions:
         items:
           $ref: '#/definitions/models.Speciality'
       StudyFormat:
+        type: string
+      StudyFormatKz:
+        type: string
+      StudyFormatRu:
         type: string
       UniversityCode:
         type: string
@@ -1813,7 +2078,7 @@ tags:
 - name: subjects
   description: |
     SubjectController обрабатывает запросы для работы с предметами.
-- name: subjectpair
+- name: subjectpairs
   description: |
     SubjectPairController обрабатывает запросы для работы с парами предметов.
 - name: specialities
