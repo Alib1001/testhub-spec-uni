@@ -72,24 +72,31 @@ type AddSpecialityResponse struct {
 	Scholarship    bool   `form:"Scholarship"`
 }
 type AnnualGrant struct {
-	Year        int `json:"year"`
-	AnnualGrant int `json:"annual_grant"`
+	Year       int `json:"year"`
+	GrantCount int `json:"grant_count"`
+}
+type AnnualPoints struct {
+	Year          int `json:"year"`
+	MinScore      int `json:"min_score"`
+	MinGrantScore int `json:"min_grant_score"`
 }
 
 type GetByUniResponseForUser struct {
-	SpecialityID    int           `orm:"column(speciality_id)" json:"speciality_id"`
-	SpecialityName  string        `orm:"column(speciality_name)" json:"speciality_name"`
-	UniversityName  string        `orm:"column(university_name)" json:"university_name"`
-	EducationFormat string        `orm:"column(education_format)" json:"education_format"`
-	Degree          string        `orm:"column(degree)" json:"degree"`
-	Scholarship     bool          `orm:"column(scholarship)" json:"scholarship"`
-	AvgSalary       int           `orm:"column(avg_salary)" json:"avg_salary"`
-	Term            int           `orm:"column(term)" json:"term"`
-	MinScore        int           `orm:"column(min_score)" json:"min_score"`
-	AnnualGrants    []AnnualGrant `json:"annual_grants"`
-	Subject1ID      int           `orm:"column(subject1_id)" json:"-"`
-	Subject2ID      int           `orm:"column(subject2_id)" json:"-"`
-	SubjectNames    []string      `json:"subject_names"`
+	SpecialityID    int            `orm:"column(speciality_id)" json:"speciality_id"`
+	SpecialityName  string         `orm:"column(speciality_name)" json:"speciality_name"`
+	UniversityName  string         `orm:"column(university_name)" json:"university_name"`
+	EducationFormat string         `orm:"column(education_format)" json:"education_format"`
+	Code            string         `orm:"column(code)" json:"speciality_code"`
+	Price           int            `orm:"column(price)" json:"price"`
+	Degree          string         `orm:"column(degree)" json:"degree"`
+	Scholarship     bool           `orm:"column(scholarship)" json:"scholarship"`
+	AvgSalary       int            `orm:"column(avg_salary)" json:"avg_salary"`
+	Term            int            `orm:"column(term)" json:"term"`
+	SubjectNames    []string       `json:"subject_names"`
+	AnnualPoints    []AnnualPoints `json:"annual_points"`
+	AnnualGrants    []AnnualGrant  `json:"annual_grants"`
+	Subject1ID      int            `orm:"column(subject1_id)" json:"-"`
+	Subject2ID      int            `orm:"column(subject2_id)" json:"-"`
 }
 
 type GetByUniResponseForAdm struct {
@@ -100,6 +107,8 @@ type GetByUniResponseForAdm struct {
 	UniversityNameKz  string   `json:"university_name_kz" orm:"column(university_name_kz)"`
 	EducationFormatRu string   `json:"education_format_ru" orm:"column(education_format_ru)"`
 	EducationFormatKz string   `json:"education_format_kz" orm:"column(education_format_kz)"`
+	Code              string   `orm:"column(code)" json:"speciality_code"`
+	Price             int      `orm:"column(price)" json:"price"`
 	Degree            string   `json:"degree" orm:"column(degree)"`
 	Scholarship       string   `json:"scholarship" orm:"column(scholarship)"`
 	AvgSalary         int      `json:"avg_salary" orm:"column(avg_salary)"`
@@ -291,11 +300,12 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
             CASE WHEN ? = 'ru' THEN s.name_ru ELSE s.name_kz END as speciality_name,
             CASE WHEN ? = 'ru' THEN u.name_ru ELSE u.name_kz END as university_name,
             CASE WHEN ? = 'ru' THEN u.study_format_ru ELSE u.study_format_kz END as education_format,
+            s.code,
+            ps.price,
             s.degree,
             s.scholarship,
             ps.avg_salary,
             s.term,
-            ps.min_score,
             sp.subject1_id,
             sp.subject2_id
         FROM 
@@ -342,7 +352,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 
 		results[i].SubjectNames = subjectNames
 
-		// Fetching annual grants
+		// Fetching annual points and annual grants
 		var pointStats []PointStat
 		_, err := o.QueryTable("point_stat").
 			Filter("speciality_id", results[i].SpecialityID).
@@ -352,17 +362,26 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 			return nil, err
 		}
 
+		var annualPoints []AnnualPoints
 		var annualGrants []AnnualGrant
 		for _, ps := range pointStats {
-			annualGrants = append(annualGrants, AnnualGrant{Year: ps.Year, AnnualGrant: ps.AnnualGrants})
+			annualPoints = append(annualPoints, AnnualPoints{
+				Year:          ps.Year,
+				MinScore:      ps.MinScore,
+				MinGrantScore: ps.MinGrantScore,
+			})
+			annualGrants = append(annualGrants, AnnualGrant{
+				Year:       ps.Year,
+				GrantCount: ps.GrantCount,
+			})
 		}
 
+		results[i].AnnualPoints = annualPoints
 		results[i].AnnualGrants = annualGrants
 	}
 
 	return results, nil
 }
-
 func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseForAdm, error) {
 	o := orm.NewOrm()
 	var results []GetByUniResponseForAdm
@@ -376,12 +395,14 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
             u.name_kz as university_name_kz,
             u.study_format_ru as education_format_ru,
             u.study_format_kz as education_format_kz,
+            s.code,
+        	ps.price,
             s.degree,
             s.scholarship,
             ps.avg_salary,
             s.term,
             ps.min_score,
-            ps.annual_grants,
+            ps.grant_count,
             sp.subject1_id,
             sp.subject2_id
         FROM 

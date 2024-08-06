@@ -337,7 +337,7 @@ func (c *SpecialityController) AddPointStat() {
 	}
 
 	pointStat := models.PointStat{
-		AnnualGrants:  form.AnnualGrants,
+		GrantCount:    form.AnnualGrants,
 		MinScore:      form.MinScore,
 		MinGrantScore: form.MinGrantScore,
 		Year:          form.Year,
