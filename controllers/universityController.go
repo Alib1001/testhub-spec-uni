@@ -227,21 +227,16 @@ func uploadFileToCloud(filePath string, file multipart.File) (string, error) {
 	return fileURL, nil
 }
 
-// Get возвращает информацию о университете по его ID.
-// @Title Get
+// GetForAdmin возвращает информацию о университете по его ID.
+// @Title GetForAdmin
 // @Description Получение информации о университете по ID.
 // @Param	id		path	int	true	"ID университета для получения информации"
 // @Success 200 {object} models.University	"Информация о университете"
 // @Failure 400 некорректный ID или другая ошибка
 // @router /:id [get]
-func (c *UniversityController) Get() {
+func (c *UniversityController) GetForAdmin() {
 	id, _ := c.GetInt(":id")
-	language := c.Ctx.Input.Header("lang")
-	if language != "ru" && language != "kz" {
-		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
-		return
-	}
-	university, err := models.GetUniversityById(id)
+	university, err := models.GetUniversityByIdForAdmin(id)
 	if err == nil {
 		c.Data["json"] = university
 	} else {
@@ -263,6 +258,22 @@ func (c *UniversityController) GetAll() {
 		return
 	}
 	universities, err := models.GetAllUniversities(language)
+	if err == nil {
+		c.Data["json"] = universities
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
+// GetAllForAdmin возвращает список всех университетов.
+// @Title GetAllForAdmin
+// @Description Получение списка всех университетов.
+// @Success 200 {array} models.University	"Список университетов"
+// @Failure 400 ошибка получения списка или другая ошибка
+// @router / [get]
+func (c *UniversityController) GetAllForAdmin() {
+	universities, err := models.GetAllUniversitiesForAdmin()
 	if err == nil {
 		c.Data["json"] = universities
 	} else {

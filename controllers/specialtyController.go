@@ -168,17 +168,45 @@ func (c *SpecialityController) GetByUniversity() {
 
 	lang := c.Ctx.Input.Header("lang")
 	if lang == "" {
-		lang = "ru" // Установим язык по умолчанию
+		lang = "ru"
 	}
 
-	specialities, err := models.GetSpecialitiesInUniversity(universityId, lang)
+	specialities, err := models.GetSpecialitiesInUniversityForUser(universityId, lang)
 	if err != nil {
 		c.CustomAbort(500, err.Error())
 		return
 	}
 
 	if len(specialities) == 0 {
-		c.Data["json"] = []models.GetSpecialityResponse{}
+		c.Data["json"] = []models.GetSpecialityForAdmResponse{}
+	} else {
+		c.Data["json"] = specialities
+	}
+	c.ServeJSON()
+}
+
+// GetByUniversityForAdmin retrieves all specialities associated with a university by its ID.
+// @Title GetSpecialitiesInUni
+// @Description Получение списка специальностей, связанных с университетом.
+// @Param	universityId		path	int	true	"ID университета"
+// @Success 200 {array} models.Speciality	"Список специальностей университета"
+// @Failure 400 некорректный ID или другая ошибка
+// @router /byuni/:universityId [get]
+func (c *SpecialityController) GetByUniversityForAdmin() {
+	universityId, err := c.GetInt(":universityId")
+	if err != nil {
+		c.CustomAbort(400, "Invalid university ID")
+		return
+	}
+
+	specialities, err := models.GetSpecialitiesInUniversityForAdmin(universityId)
+	if err != nil {
+		c.CustomAbort(500, err.Error())
+		return
+	}
+
+	if len(specialities) == 0 {
+		c.Data["json"] = []models.GetSpecialityForAdmResponse{}
 	} else {
 		c.Data["json"] = specialities
 	}
@@ -290,8 +318,6 @@ func (c *SpecialityController) GetSpecialitiesBySubjectPair() {
 // @Failure 400 ошибка разбора JSON или другая ошибка
 // @router /addPointStat/:universityId/:specialityId [post]
 func (c *SpecialityController) AddPointStat() {
-	_ = c.Ctx.Input.CopyBody(1024)
-
 	universityId, err := c.GetInt(":universityId")
 	if err != nil {
 		c.CustomAbort(400, "Invalid university ID")
@@ -304,15 +330,24 @@ func (c *SpecialityController) AddPointStat() {
 		return
 	}
 
-	var pointStat models.PointStat
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &pointStat); err != nil {
-		c.Data["json"] = err.Error()
-		c.ServeJSON()
+	var form models.AddPointStatResponse
+	if err := c.ParseForm(&form); err != nil {
+		c.CustomAbort(400, "Invalid form data")
 		return
 	}
 
-	pointStat.University = &models.University{Id: universityId}
-	pointStat.Speciality = &models.Speciality{Id: specialityId}
+	pointStat := models.PointStat{
+		AnnualGrants:  form.AnnualGrants,
+		MinScore:      form.MinScore,
+		MinGrantScore: form.MinGrantScore,
+		Year:          form.Year,
+		AvgSalary:     form.AvgSalary,
+		Price:         form.Price,
+		University:    &models.University{Id: universityId},
+		Speciality:    &models.Speciality{Id: specialityId},
+	}
+
+	fmt.Printf("PointStat before insert: %+v\n", pointStat)
 
 	id, err := models.AddPointStat(universityId, specialityId, &pointStat)
 	if err != nil {

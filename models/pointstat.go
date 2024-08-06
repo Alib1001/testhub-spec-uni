@@ -12,10 +12,22 @@ type PointStat struct {
 	MinScore      int
 	MinGrantScore int
 	Year          int
+	AvgSalary     int
+	Price         int
 	Speciality    *Speciality `orm:"rel(fk)"`
 	University    *University `orm:"rel(fk);on_delete(cascade)"`
 	CreatedAt     time.Time   `orm:"auto_now_add;type(datetime)"`
 	UpdatedAt     time.Time   `orm:"auto_now;type(datetime)"`
+}
+
+type AddPointStatResponse struct {
+	Id            int `form:"Id"`
+	AnnualGrants  int `form:"AnnualGrants" validate:"required"`
+	MinScore      int `form:"MinScore" validate:"required"`
+	MinGrantScore int `form:"MinGrantScore" validate:"required"`
+	Year          int `form:"Year" validate:"required"`
+	AvgSalary     int `form:"AvgSalary" validate:"required"`
+	Price         int `form:"Price" validate:"required"`
 }
 
 func init() {

@@ -64,6 +64,7 @@ github.com/beego/beego/v2/core/utils
 github.com/beego/beego/v2/server/web
 github.com/beego/beego/v2/server/web/context
 github.com/beego/beego/v2/server/web/context/param
+github.com/beego/beego/v2/server/web/filter/cors
 github.com/beego/beego/v2/server/web/grace
 github.com/beego/beego/v2/server/web/session
 # github.com/beorn7/perks v1.0.1

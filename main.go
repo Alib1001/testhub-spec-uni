@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/beego/beego/v2/server/web/filter/cors"
 	"log"
 	"testhub-spec-uni/controllers"
 	_ "testhub-spec-uni/routers"
@@ -61,13 +62,18 @@ func main() {
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
 
+	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
 	beego.Include(&controllers.SubjectController{})
 	beego.Include(&controllers.SpecialityController{})
 	beego.Include(&controllers.UniversityController{})
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
-	//TODO: мультиязычность
-	//TODO: проверить все запросы в специальностях
-	//TODO: добавить метод для удаления
 	beego.Run()
 }
