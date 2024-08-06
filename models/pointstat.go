@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/astaxie/beego/orm"
@@ -34,17 +35,23 @@ func init() {
 	orm.RegisterModel(new(PointStat))
 }
 func AddPointStat(universityId, specialityId int, pointStat *PointStat) (int64, error) {
+	o := orm.NewOrm()
+
+	// Check if PointStat with the same year already exists for the given university and speciality
+	exists := o.QueryTable("point_stat").Filter("University__Id", universityId).Filter("Speciality__Id", specialityId).Filter("Year", pointStat.Year).Exist()
+	if exists {
+		return 0, fmt.Errorf("PointStat with year %d already exists for the given university and speciality", pointStat.Year)
+	}
+
 	pointStat.University.Id = universityId
 	pointStat.Speciality.Id = specialityId
 
-	o := orm.NewOrm()
 	id, err := o.Insert(pointStat)
 	if err != nil {
 		return 0, err
 	}
 	return id, nil
 }
-
 func GetPointStatsByUniversityAndSpeciality(universityId, specialityId int) ([]*PointStat, error) {
 	o := orm.NewOrm()
 	var pointStats []*PointStat
