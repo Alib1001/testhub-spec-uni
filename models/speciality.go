@@ -92,6 +92,7 @@ type GetByUniResponseForUser struct {
 	Scholarship     bool           `orm:"column(scholarship)" json:"scholarship"`
 	AvgSalary       int            `orm:"column(avg_salary)" json:"avg_salary"`
 	Term            int            `orm:"column(term)" json:"term"`
+	GrantCount      int            `json:"grant_count"`
 	SubjectNames    []string       `json:"subject_names"`
 	AnnualPoints    []AnnualPoints `json:"annual_points"`
 	AnnualGrants    []AnnualGrant  `json:"annual_grants"`
@@ -114,7 +115,7 @@ type GetByUniResponseForAdm struct {
 	AvgSalary         int      `json:"avg_salary" orm:"column(avg_salary)"`
 	Term              string   `json:"term" orm:"column(term)"`
 	MinScore          int      `json:"min_score" orm:"column(min_score)"`
-	AnnualGrants      int      `json:"annual_grants" orm:"column(annual_grants)"`
+	GrantCount        int      `json:"grant_count" orm:"column(grant_count)"`
 	Subject1ID        int      `json:"subject1_id" orm:"column(subject1_id)"`
 	Subject2ID        int      `json:"subject2_id" orm:"column(subject2_id)"`
 	SubjectNamesRu    []string `json:"subject_names_ru"`
@@ -289,91 +290,61 @@ func SearchSpecialities(params map[string]interface{}, language string) (*Specia
 	fmt.Printf("SearchSpecialities: total specialities after filtering: %d\n", len(result.Specialities))
 	return result, nil
 }
-
 func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]GetByUniResponseForUser, error) {
 	o := orm.NewOrm()
 	var results []GetByUniResponseForUser
 
 	query := `
-    WITH speciality_data AS (
-        SELECT 
-            s.id as speciality_id,
-            CASE WHEN ? = 'ru' THEN s.name_ru ELSE s.name_kz END as speciality_name,
-            CASE WHEN ? = 'ru' THEN u.name_ru ELSE u.name_kz END as university_name,
-            CASE WHEN ? = 'ru' THEN u.study_format_ru ELSE u.study_format_kz END as education_format,
-            s.code as speciality_code,
-            s.degree,
-            s.scholarship,
-            s.term,
-            ps.price,
-            ps.avg_salary,
-            ps.year,
-            ps.min_score,
-            ps.min_grant_score,
-            ps.grant_count,
-            sp.subject1_id,
-            sp.subject2_id
-        FROM 
-            speciality s
-            INNER JOIN speciality_university su ON s.id = su.speciality_id
-            INNER JOIN university u ON su.university_id = u.id
-            LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
-            LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
-        WHERE 
-            u.id = ?
-    ),
-    subjects AS (
+        WITH speciality_data AS (
+            SELECT DISTINCT 
+                s.id as speciality_id,
+                CASE WHEN ? = 'ru' THEN s.name_ru ELSE s.name_kz END as speciality_name,
+                CASE WHEN ? = 'ru' THEN u.name_ru ELSE u.name_kz END as university_name,
+                CASE WHEN ? = 'ru' THEN u.study_format_ru ELSE u.study_format_kz END as education_format,
+                s.code,
+                ps.price,
+                s.degree,
+                s.scholarship,
+                ps.avg_salary,
+                s.term,
+                sp.subject1_id,
+                sp.subject2_id,
+                ps.year,
+                ps.min_score,
+                ps.min_grant_score,
+                ps.grant_count
+            FROM 
+                speciality s
+                INNER JOIN speciality_university su ON s.id = su.speciality_id
+                INNER JOIN university u ON su.university_id = u.id
+                LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
+                LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
+            WHERE 
+                u.id = ?
+        )
         SELECT
             speciality_id,
-            ARRAY_AGG(DISTINCT CASE WHEN subject1_id IS NOT NULL THEN (SELECT CASE WHEN ? = 'ru' THEN name_ru ELSE name_kz END FROM subject WHERE id = subject1_id) END) || 
-            ARRAY_AGG(DISTINCT CASE WHEN subject2_id IS NOT NULL THEN (SELECT CASE WHEN ? = 'ru' THEN name_ru ELSE name_kz END FROM subject WHERE id = subject2_id) END) as subject_names
-        FROM 
+            speciality_name,
+            university_name,
+            education_format,
+            code,
+            price,
+            degree,
+            scholarship,
+            avg_salary,
+            term,
+            subject1_id,
+            subject2_id,
+            MIN(min_score) AS min_score,
+            MAX(min_grant_score) AS min_grant_score,
+            SUM(grant_count) AS grant_count
+        FROM
             speciality_data
-        GROUP BY 
-            speciality_id
-    ),
-    annual_points AS (
-        SELECT
-            speciality_id,
-            JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('year', year, 'min_score', min_score, 'min_grant_score', min_grant_score)) as annual_points
-        FROM 
-            speciality_data
-        GROUP BY 
-            speciality_id
-    ),
-    annual_grants AS (
-        SELECT
-            speciality_id,
-            JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('year', year, 'grant_count', grant_count)) as annual_grants
-        FROM 
-            speciality_data
-        GROUP BY 
-            speciality_id
-    )
-    SELECT 
-        sd.speciality_id,
-        sd.speciality_name,
-        sd.university_name,
-        sd.education_format,
-        sd.speciality_code,
-        sd.degree,
-        sd.scholarship,
-        sd.term,
-        MAX(sd.price) as price,
-        MAX(sd.avg_salary) as avg_salary,
-        s.subject_names,
-        ap.annual_points,
-        ag.annual_grants
-    FROM 
-        speciality_data sd
-        LEFT JOIN subjects s ON sd.speciality_id = s.speciality_id
-        LEFT JOIN annual_points ap ON sd.speciality_id = ap.speciality_id
-        LEFT JOIN annual_grants ag ON sd.speciality_id = ag.speciality_id
-    GROUP BY 
-        sd.speciality_id, sd.speciality_name, sd.university_name, sd.education_format, sd.speciality_code, sd.degree, sd.scholarship, sd.term, s.subject_names, ap.annual_points, ag.annual_grants
-`
+        GROUP BY
+            speciality_id, speciality_name, university_name, education_format, code, price, degree, scholarship, avg_salary, term, subject1_id, subject2_id
+    `
 
-	_, err := o.Raw(query, language, language, language, universityId, language, language).QueryRows(&results)
+	_, err := o.Raw(query, language, language, language, universityId).QueryRows(&results)
 	if err != nil {
 		return nil, err
 	}
@@ -419,6 +390,8 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 
 		var annualPoints []AnnualPoints
 		var annualGrants []AnnualGrant
+		var latestGrantCount int
+
 		for _, ps := range pointStats {
 			annualPoints = append(annualPoints, AnnualPoints{
 				Year:          ps.Year,
@@ -429,51 +402,91 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 				Year:       ps.Year,
 				GrantCount: ps.GrantCount,
 			})
+			if latestGrantCount == 0 || ps.Year > annualGrants[len(annualGrants)-1].Year {
+				latestGrantCount = ps.GrantCount
+			}
 		}
 
 		results[i].AnnualPoints = annualPoints
 		results[i].AnnualGrants = annualGrants
+		results[i].GrantCount = latestGrantCount
 	}
 
 	return results, nil
 }
+
 func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseForAdm, error) {
 	o := orm.NewOrm()
 	var results []GetByUniResponseForAdm
 
 	query := `
-        SELECT 
-            s.id as speciality_id,
-            s.name_ru as speciality_name_ru,
-            s.name_kz as speciality_name_kz,
-            u.name_ru as university_name_ru,
-            u.name_kz as university_name_kz,
-            u.study_format_ru as education_format_ru,
-            u.study_format_kz as education_format_kz,
-            s.code,
-        	ps.price,
-            s.degree,
-            s.scholarship,
-            ps.avg_salary,
-            s.term,
-            ps.min_score,
-            ps.grant_count,
-            sp.subject1_id,
-            sp.subject2_id
-        FROM 
-            speciality s
-            INNER JOIN speciality_university su ON s.id = su.speciality_id
-            INNER JOIN university u ON su.university_id = u.id
-            LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
-            LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
-        WHERE 
-            u.id = ?
+        WITH latest_year AS (
+            SELECT 
+                MAX(ps.year) as year
+            FROM 
+                point_stat ps
+                INNER JOIN speciality_university su ON ps.speciality_id = su.speciality_id
+            WHERE 
+                su.university_id = ?
+        ),
+        speciality_data AS (
+            SELECT DISTINCT 
+                s.id as speciality_id,
+                s.name_ru as speciality_name_ru,
+                s.name_kz as speciality_name_kz,
+                u.name_ru as university_name_ru,
+                u.name_kz as university_name_kz,
+                u.study_format_ru as education_format_ru,
+                u.study_format_kz as education_format_kz,
+                s.code,
+                ps.price,
+                s.degree,
+                s.scholarship,
+                ps.avg_salary,
+                s.term,
+                sp.subject1_id,
+                sp.subject2_id,
+                ps.year,
+                ps.min_score,
+                ps.grant_count
+            FROM 
+                speciality s
+                INNER JOIN speciality_university su ON s.id = su.speciality_id
+                INNER JOIN university u ON su.university_id = u.id
+                LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
+                LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
+            WHERE 
+                u.id = ? AND ps.year = (SELECT year FROM latest_year)
+        )
+        SELECT
+            speciality_id,
+            speciality_name_ru,
+            speciality_name_kz,
+            university_name_ru,
+            university_name_kz,
+            education_format_ru,
+            education_format_kz,
+            code,
+            price,
+            degree,
+            scholarship,
+            avg_salary,
+            term,
+            min_score,
+            grant_count,
+            COALESCE(MAX(subject1_id), 0) AS subject1_id,
+            COALESCE(MAX(subject2_id), 0) AS subject2_id
+        FROM
+            speciality_data
+        GROUP BY
+            speciality_id, speciality_name_ru, speciality_name_kz, university_name_ru, university_name_kz, education_format_ru, education_format_kz, code, price, degree, scholarship, avg_salary, term, min_score, grant_count
     `
 
-	_, err := o.Raw(query, universityId).QueryRows(&results)
+	_, err := o.Raw(query, universityId, universityId).QueryRows(&results)
 	if err != nil {
 		return nil, err
 	}
+
 	for i := range results {
 		var subjectNamesRu, subjectNamesKz []string
 
