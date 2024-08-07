@@ -15,11 +15,17 @@ type Service struct {
 	Universities []*University `orm:"reverse(many)"`
 }
 
-type ServiceResponse struct {
-	Id           int           `json:"Id"`
-	Name         string        `json:"Name"`
-	ImageUrl     string        `json:"ImageUrl"`
-	Universities []*University `json:"Universities"`
+type AddServiceForAdminResponse struct {
+	Id       int    `orm:"auto"`
+	NameRu   string `form:"NameRu" validate:"required"`
+	NameKz   string `form:"NameKz" validate:"required"`
+	ImageUrl string `form:"ImageUrl"`
+}
+
+type ServiceResponseForUser struct {
+	Id       int    `json:"Id"`
+	Name     string `json:"Name"`
+	ImageUrl string `json:"ImageUrl"`
 }
 
 func init() {
@@ -51,16 +57,10 @@ func UpdateService(service *Service, fields ...string) error {
 	return nil
 }
 
-func GetServiceById(id int, language string) (*ServiceResponse, error) {
+func GetServiceById(id int, language string) (*ServiceResponseForUser, error) {
 	o := orm.NewOrm()
 	service := &Service{Id: id}
 	err := o.Read(service)
-	if err != nil {
-		return nil, err
-	}
-
-	// Load related universities
-	_, err = o.LoadRelated(service, "Universities")
 	if err != nil {
 		return nil, err
 	}
@@ -73,11 +73,10 @@ func GetServiceById(id int, language string) (*ServiceResponse, error) {
 		name = service.NameKz
 	}
 
-	return &ServiceResponse{
-		Id:           service.Id,
-		Name:         name,
-		ImageUrl:     service.ImageUrl,
-		Universities: service.Universities,
+	return &ServiceResponseForUser{
+		Id:       service.Id,
+		Name:     name,
+		ImageUrl: service.ImageUrl,
 	}, nil
 }
 func GetServiceByID(serviceID int) (*Service, error) {
@@ -92,7 +91,7 @@ func GetServiceByID(serviceID int) (*Service, error) {
 	return service, nil
 }
 
-func GetAllServices(language string) ([]*ServiceResponse, error) {
+func GetAllServices(language string) ([]*ServiceResponseForUser, error) {
 	o := orm.NewOrm()
 	var services []*Service
 	_, err := o.QueryTable("service").All(&services)
@@ -100,7 +99,7 @@ func GetAllServices(language string) ([]*ServiceResponse, error) {
 		return nil, err
 	}
 
-	var serviceResponses []*ServiceResponse
+	var serviceResponses []*ServiceResponseForUser
 	for _, service := range services {
 		name := service.Name
 		switch language {
@@ -109,18 +108,17 @@ func GetAllServices(language string) ([]*ServiceResponse, error) {
 		case "kz":
 			name = service.NameKz
 		}
-		serviceResponses = append(serviceResponses, &ServiceResponse{
-			Id:           service.Id,
-			Name:         name,
-			ImageUrl:     service.ImageUrl,
-			Universities: service.Universities,
+		serviceResponses = append(serviceResponses, &ServiceResponseForUser{
+			Id:       service.Id,
+			Name:     name,
+			ImageUrl: service.ImageUrl,
 		})
 	}
 
 	return serviceResponses, nil
 }
 
-func SearchServicesByName(prefix, language string) ([]ServiceResponse, error) {
+func SearchServicesByName(prefix, language string) ([]ServiceResponseForUser, error) {
 	var results []Service
 	var field string
 
@@ -142,7 +140,7 @@ func SearchServicesByName(prefix, language string) ([]ServiceResponse, error) {
 		return nil, err
 	}
 
-	var serviceResponses []ServiceResponse
+	var serviceResponses []ServiceResponseForUser
 	for _, service := range results {
 		name := service.Name
 		switch language {
@@ -151,18 +149,17 @@ func SearchServicesByName(prefix, language string) ([]ServiceResponse, error) {
 		case "kz":
 			name = service.NameKz
 		}
-		serviceResponses = append(serviceResponses, ServiceResponse{
-			Id:           service.Id,
-			Name:         name,
-			ImageUrl:     service.ImageUrl,
-			Universities: service.Universities,
+		serviceResponses = append(serviceResponses, ServiceResponseForUser{
+			Id:       service.Id,
+			Name:     name,
+			ImageUrl: service.ImageUrl,
 		})
 	}
 
 	return serviceResponses, nil
 }
 
-func GetServicesByUniversityId(universityId int, language string) ([]*ServiceResponse, error) {
+func GetServicesByUniversityId(universityId int, language string) ([]*ServiceResponseForUser, error) {
 	o := orm.NewOrm()
 	university := &University{Id: universityId}
 	if err := o.Read(university); err != nil {
@@ -175,7 +172,7 @@ func GetServicesByUniversityId(universityId int, language string) ([]*ServiceRes
 		return nil, err
 	}
 
-	var serviceResponses []*ServiceResponse
+	var serviceResponses []*ServiceResponseForUser
 	for _, service := range services {
 		name := service.Name
 		switch language {
@@ -184,11 +181,10 @@ func GetServicesByUniversityId(universityId int, language string) ([]*ServiceRes
 		case "kz":
 			name = service.NameKz
 		}
-		serviceResponses = append(serviceResponses, &ServiceResponse{
-			Id:           service.Id,
-			Name:         name,
-			ImageUrl:     service.ImageUrl,
-			Universities: service.Universities,
+		serviceResponses = append(serviceResponses, &ServiceResponseForUser{
+			Id:       service.Id,
+			Name:     name,
+			ImageUrl: service.ImageUrl,
 		})
 	}
 

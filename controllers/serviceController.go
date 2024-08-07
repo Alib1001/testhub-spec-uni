@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"testhub-spec-uni/models"
@@ -17,7 +18,7 @@ type ServiceController struct {
 // @Title GetAllServices
 // @Description Get all services
 // @Param lang header string true "Язык для получения данных, 'ru' или 'kz'"
-// @Success 200 {array} models.ServiceResponse
+// @Success 200 {array} models.ServiceResponseForUser
 // @Failure 500 Internal server error
 // @router / [get]
 func (c *ServiceController) GetAllServices() {
@@ -40,7 +41,7 @@ func (c *ServiceController) GetAllServices() {
 // @Description Get service by ID
 // @Param id path int true "Service ID"
 // @Param lang header string true "Язык для получения данных, 'ru' или 'kz'"
-// @Success 200 {object} models.ServiceResponse
+// @Success 200 {object} models.ServiceResponseForUser
 // @Failure 404 Not found
 // @router /:id [get]
 func (c *ServiceController) GetServiceById() {
@@ -71,7 +72,7 @@ func (c *ServiceController) GetServiceById() {
 // @Description Search for services by name
 // @Param prefix query string true "Prefix for service name"
 // @Param lang header string true "Язык для получения данных, 'ru' или 'kz'"
-// @Success 200 {array} models.ServiceResponse
+// @Success 200 {array} models.ServiceResponseForUser
 // @Failure 400 Invalid input
 // @router /search [get]
 func (c *ServiceController) SearchServices() {
@@ -97,19 +98,39 @@ func (c *ServiceController) SearchServices() {
 	c.ServeJSON()
 }
 
+// AddService добавляет новый сервис
 // @Title AddService
 // @Description Add a new service
-// @Param   body    body    models.Service   true        "Service data"
+// @Param   NameRu     formData    string  true        "Service name in Russian"
+// @Param   NameKz     formData    string  true        "Service name in Kazakh"
+// @Param   Image      formData    file    false       "Service image"
 // @Success 200 {int} models.Service.Id
 // @Failure 400 Invalid input
 // @router / [post]
 func (c *ServiceController) AddService() {
-	_ = c.Ctx.Input.CopyBody(1024)
-	var service models.Service
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &service); err != nil {
+	c.Ctx.Input.CopyBody(1024 * 1024)
+
+	service := models.Service{}
+	if err := c.ParseForm(&service); err != nil {
 		c.CustomAbort(http.StatusBadRequest, "Invalid input")
 		return
 	}
+
+	// Handle file upload
+	file, header, err := c.GetFile("ImageUrl")
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Failed to get file")
+		return
+	}
+	defer file.Close()
+
+	filePath := fmt.Sprintf("Services/%d/%s", service.Id, header.Filename)
+	imageUrl, err := uploadFileToCloud(filePath, file)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, "Failed to upload file")
+		return
+	}
+	service.ImageUrl = imageUrl
 
 	id, err := models.AddService(&service)
 	if err != nil {
@@ -117,7 +138,12 @@ func (c *ServiceController) AddService() {
 		return
 	}
 
-	c.Data["json"] = id
+	c.Data["json"] = models.AddServiceForAdminResponse{
+		Id:       int(id),
+		NameRu:   service.NameRu,
+		NameKz:   service.NameKz,
+		ImageUrl: service.ImageUrl,
+	}
 	c.ServeJSON()
 }
 
@@ -192,7 +218,7 @@ func (c *ServiceController) DeleteService() {
 // @Description Get services by university ID
 // @Param id path int true "University ID"
 // @Param lang header string true "Язык для получения данных, 'ru' или 'kz'"
-// @Success 200 {array} models.ServiceResponse
+// @Success 200 {array} models.ServiceResponseForUser
 // @Failure 400 Invalid input
 // @router /university/:id [get]
 func (c *ServiceController) GetServicesByUniversityId() {

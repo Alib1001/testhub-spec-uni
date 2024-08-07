@@ -1,9 +1,9 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"log"
 	"net/http"
 	"strconv"
 	"testhub-spec-uni/models"
@@ -91,42 +91,35 @@ func (c *SpecialityController) GetAll() {
 }
 
 // Update обновляет информацию о специальности по ее ID.
-// @Title Update
-// @Description Обновление информации о специальности по ID.
-// @Param	id		path	int	true	"ID специальности для обновления информации"
-// @Param	body	body	models.Speciality	true	"JSON с обновленными данными о специальности"
-// @Success 200 string	"Обновление успешно выполнено"
-// @Failure 400 некорректный ID, ошибка разбора JSON или другая ошибка
-// @router /:id [put]
+// @Title Update Speciality
+// @Description Update the information of a speciality by its ID.
+// @Param   id      path    int     true    "ID of the speciality to update"
+// @Param   body    formData    models.UpdateSpecialityResponse  true    "Form data containing updated speciality data"
+// @Success 200 {string}    "Update successful"
+// @Failure 400 {string}    "Inva
 func (c *SpecialityController) Update() {
 	idStr := c.Ctx.Input.Param(":id")
-	_ = c.Ctx.Input.CopyBody(1024)
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		c.CustomAbort(http.StatusBadRequest, "Invalid speciality ID")
 		return
 	}
 
-	var speciality models.Speciality
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &speciality); err != nil {
+	// Log raw form data
+	log.Printf("Raw form data: %+v\n", c.Ctx.Input.RequestBody)
+
+	var data models.UpdateSpecialityResponse
+	if err := c.ParseForm(&data); err != nil {
 		c.CustomAbort(http.StatusBadRequest, "Invalid input: "+err.Error())
 		return
 	}
 
-	speciality.Id = id
+	data.Id = id
 
-	var updatedFields map[string]interface{}
-	if err := json.Unmarshal(c.Ctx.Input.RequestBody, &updatedFields); err != nil {
-		c.CustomAbort(http.StatusBadRequest, "Invalid input: "+err.Error())
-		return
-	}
+	// Log the parsed form data
+	log.Printf("Parsed form data: %+v\n", data)
 
-	fields := make([]string, 0, len(updatedFields))
-	for field := range updatedFields {
-		fields = append(fields, field)
-	}
-
-	if err := models.UpdateSpeciality(&speciality, fields...); err != nil {
+	if err := models.UpdateSpecialityFromFormData(&data); err != nil {
 		c.CustomAbort(http.StatusInternalServerError, err.Error())
 		return
 	}

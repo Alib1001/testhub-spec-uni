@@ -49,6 +49,7 @@ type UniversityController struct {
 // @Param   Gallery           formData    file    true  "Галерея изображений"
 // @Param   CityId            formData    int     true  "ID города"
 // @Param   ServiceIds        formData    string  true  "Список ID сервисов в формате [1,2,3]"
+// @Param   MinScore           formData    int     true  "Минимальный балл для университета"
 // @Success 200 {int64} id "ID созданного университета"
 // @Failure 400 {object} map[string]string "Error message"
 // @Failure 500 {object} map[string]string "Error message"
@@ -419,6 +420,9 @@ func (c *UniversityController) Update() {
 	}
 	if partialResponse.Rating != "" {
 		university.Rating = partialResponse.Rating
+	}
+	if partialResponse.MinScore != 0 {
+		university.MinEntryScore = partialResponse.MinScore
 	}
 	if partialResponse.CityId != 0 {
 		university.City.Id = partialResponse.CityId
