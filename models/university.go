@@ -133,6 +133,7 @@ type AddUUniversityResponse struct {
 	DescriptionRu      string   `form:"DescriptionRu" validate:"required"`
 	DescriptionKz      string   `form:"DescriptionKz" validate:"required"`
 	Rating             string   `form:"Rating" validate:"required"`
+	MinScore           int      `form:"MinScore" validate:"required"`
 	Gallery            []string `form:"Gallery"`
 	ServiceIds         []int    `form:"ServiceIds"`
 	CityId             int      `form:"CityId" validate:"required"`
@@ -157,6 +158,7 @@ type AddUniversityPartial struct {
 	DescriptionRu      string   `form:"DescriptionRu" validate:"required"`
 	DescriptionKz      string   `form:"DescriptionKz" validate:"required"`
 	Rating             string   `form:"Rating" validate:"required"`
+	MinScore           int      `form:"MinScore" validate:"required"`
 	Gallery            []string `form:"Gallery"`
 	CityId             int      `form:"CityId" validate:"required"`
 }
@@ -247,6 +249,7 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 		DescriptionRu:      universityResponse.DescriptionRu,
 		DescriptionKz:      universityResponse.DescriptionKz,
 		Rating:             universityResponse.Rating,
+		MinEntryScore:      universityResponse.MinScore,
 		City:               &city,
 	}
 

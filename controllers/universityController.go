@@ -106,6 +106,7 @@ func (c *UniversityController) Create() {
 	universityResponse.DescriptionRu = partialResponse.DescriptionRu
 	universityResponse.DescriptionKz = partialResponse.DescriptionKz
 	universityResponse.Rating = partialResponse.Rating
+	universityResponse.MinScore = partialResponse.MinScore
 	universityResponse.Gallery = partialResponse.Gallery
 	universityResponse.CityId = partialResponse.CityId
 
