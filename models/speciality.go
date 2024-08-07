@@ -62,8 +62,8 @@ type AddSpecialityResponse struct {
 	NameKz         string `form:"NameKz" validate:"required"`
 	AbbreviationRu string `form:"AbbreviationRu" validate:"required"`
 	AbbreviationKz string `form:"AbbreviationKz" validate:"required"`
-	SubjectPairID1 int    `form:"SubjectPairID1" validate:"required"`
-	SubjectPairID2 int    `form:"SubjectPairID2" validate:"required"`
+	Subject1       int    `form:"Subject_1" validate:"required"`
+	Subject2       int    `form:"Subject_2" validate:"required"`
 	Degree         string `form:"Degree" validate:"required"`
 	Code           string `form:"Code" validate:"required"`
 	Term           int    `form:"Term" validate:"required"`
@@ -71,6 +71,22 @@ type AddSpecialityResponse struct {
 	DescriptionKz  string `form:"DescriptionKz"`
 	Scholarship    bool   `form:"Scholarship"`
 }
+type UpdateSpecialityResponse struct {
+	Id             int    `form:"id"`
+	NameRu         string `form:"NameRu"`
+	NameKz         string `form:"NameKz"`
+	AbbreviationRu string `form:"AbbreviationRu"`
+	AbbreviationKz string `form:"AbbreviationKz"`
+	Degree         string `form:"Degree"`
+	Code           string `form:"Code"`
+	Term           int    `form:"Term"`
+	DescriptionRu  string `form:"DescriptionRu"`
+	DescriptionKz  string `form:"DescriptionKz"`
+	Scholarship    bool   `form:"Scholarship"`
+	Subject1       int    `form:"Subject_1"`
+	Subject2       int    `form:"Subject_2"`
+}
+
 type AnnualGrant struct {
 	Year       int `json:"year"`
 	GrantCount int `json:"grant_count"`
@@ -136,8 +152,8 @@ func init() {
 func AddSpecialityFromFormData(data *AddSpecialityResponse) (int64, error) {
 	o := orm.NewOrm()
 
-	subject1 := Subject{Id: data.SubjectPairID1}
-	subject2 := Subject{Id: data.SubjectPairID2}
+	subject1 := Subject{Id: data.Subject1}
+	subject2 := Subject{Id: data.Subject2}
 
 	if err := o.Read(&subject1); err != nil {
 		return 0, fmt.Errorf("subject 1 not found: %v", err)
@@ -243,12 +259,79 @@ func GetAllSpecialities(language string) ([]*Speciality, error) {
 	return specialities, nil
 }
 
-func UpdateSpeciality(speciality *Speciality, fields ...string) error {
+func UpdateSpecialityFromFormData(data *UpdateSpecialityResponse) error {
 	o := orm.NewOrm()
-	_, err := o.Update(speciality, fields...)
-	if err != nil {
-		return err
+	o.Begin() // Begin a transaction
+
+	// Retrieve the existing speciality
+	speciality := Speciality{Id: data.Id}
+	if err := o.Read(&speciality); err != nil {
+		o.Rollback() // Rollback transaction on error
+		return fmt.Errorf("speciality not found: %v", err)
 	}
+
+	// Update only the fields that are provided in the form data
+	if data.NameRu != "" {
+		speciality.NameRu = data.NameRu
+	}
+	if data.NameKz != "" {
+		speciality.NameKz = data.NameKz
+	}
+	if data.AbbreviationRu != "" {
+		speciality.AbbreviationRu = data.AbbreviationRu
+	}
+	if data.AbbreviationKz != "" {
+		speciality.AbbreviationKz = data.AbbreviationKz
+	}
+	if data.Degree != "" {
+		speciality.Degree = data.Degree
+	}
+	if data.Code != "" {
+		speciality.Code = data.Code
+	}
+	if data.Term != 0 {
+		speciality.Term = data.Term
+	}
+	if data.DescriptionRu != "" {
+		speciality.DescriptionRu = data.DescriptionRu
+	}
+	if data.DescriptionKz != "" {
+		speciality.DescriptionKz = data.DescriptionKz
+	}
+	speciality.Scholarship = data.Scholarship
+
+	// Update the subject pair if both subject IDs are provided
+	if data.Subject1 != 0 && data.Subject2 != 0 {
+		subject1 := Subject{Id: data.Subject1}
+		subject2 := Subject{Id: data.Subject2}
+
+		if err := o.Read(&subject1); err != nil {
+			o.Rollback() // Rollback transaction on error
+			return fmt.Errorf("subject 1 not found: %v", err)
+		}
+		if err := o.Read(&subject2); err != nil {
+			o.Rollback() // Rollback transaction on error
+			return fmt.Errorf("subject 2 not found: %v", err)
+		}
+
+		subjectPair := SubjectPair{
+			Subject1: &subject1,
+			Subject2: &subject2,
+		}
+
+		if _, err := o.Insert(&subjectPair); err != nil {
+			o.Rollback() // Rollback transaction on error
+			return fmt.Errorf("failed to insert subject pair: %v", err)
+		}
+		speciality.SubjectPair = &subjectPair
+	}
+
+	if _, err := o.Update(&speciality); err != nil {
+		o.Rollback() // Rollback transaction on error
+		return fmt.Errorf("failed to update speciality: %v", err)
+	}
+
+	o.Commit() // Commit transaction
 	return nil
 }
 

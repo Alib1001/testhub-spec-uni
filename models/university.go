@@ -183,6 +183,7 @@ type UpdateUniversityResponse struct {
 	DescriptionRu      string   `form:"DescriptionRu"`
 	DescriptionKz      string   `form:"DescriptionKz"`
 	Rating             string   `form:"Rating"`
+	MinScore           int      `form:"MinScore"`
 	Gallery            []string `form:"Gallery"`
 	ServiceIds         []int    `form:"ServiceIds"`
 	CityId             int      `form:"CityId"`
@@ -208,6 +209,7 @@ type UpdateUniversityPartial struct {
 	DescriptionRu      string   `form:"DescriptionRu"`
 	DescriptionKz      string   `form:"DescriptionKz"`
 	Rating             string   `form:"Rating"`
+	MinScore           int      `form:"MinScore"`
 	Gallery            []string `form:"Gallery"`
 	CityId             int      `form:"CityId"`
 }
