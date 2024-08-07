@@ -295,17 +295,22 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 	var results []GetByUniResponseForUser
 
 	query := `
+    WITH speciality_data AS (
         SELECT 
             s.id as speciality_id,
             CASE WHEN ? = 'ru' THEN s.name_ru ELSE s.name_kz END as speciality_name,
             CASE WHEN ? = 'ru' THEN u.name_ru ELSE u.name_kz END as university_name,
             CASE WHEN ? = 'ru' THEN u.study_format_ru ELSE u.study_format_kz END as education_format,
-            s.code,
-            ps.price,
+            s.code as speciality_code,
             s.degree,
             s.scholarship,
-            ps.avg_salary,
             s.term,
+            ps.price,
+            ps.avg_salary,
+            ps.year,
+            ps.min_score,
+            ps.min_grant_score,
+            ps.grant_count,
             sp.subject1_id,
             sp.subject2_id
         FROM 
@@ -316,9 +321,59 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
             LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
         WHERE 
             u.id = ?
-    `
+    ),
+    subjects AS (
+        SELECT
+            speciality_id,
+            ARRAY_AGG(DISTINCT CASE WHEN subject1_id IS NOT NULL THEN (SELECT CASE WHEN ? = 'ru' THEN name_ru ELSE name_kz END FROM subject WHERE id = subject1_id) END) || 
+            ARRAY_AGG(DISTINCT CASE WHEN subject2_id IS NOT NULL THEN (SELECT CASE WHEN ? = 'ru' THEN name_ru ELSE name_kz END FROM subject WHERE id = subject2_id) END) as subject_names
+        FROM 
+            speciality_data
+        GROUP BY 
+            speciality_id
+    ),
+    annual_points AS (
+        SELECT
+            speciality_id,
+            JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('year', year, 'min_score', min_score, 'min_grant_score', min_grant_score)) as annual_points
+        FROM 
+            speciality_data
+        GROUP BY 
+            speciality_id
+    ),
+    annual_grants AS (
+        SELECT
+            speciality_id,
+            JSONB_AGG(DISTINCT JSONB_BUILD_OBJECT('year', year, 'grant_count', grant_count)) as annual_grants
+        FROM 
+            speciality_data
+        GROUP BY 
+            speciality_id
+    )
+    SELECT 
+        sd.speciality_id,
+        sd.speciality_name,
+        sd.university_name,
+        sd.education_format,
+        sd.speciality_code,
+        sd.degree,
+        sd.scholarship,
+        sd.term,
+        MAX(sd.price) as price,
+        MAX(sd.avg_salary) as avg_salary,
+        s.subject_names,
+        ap.annual_points,
+        ag.annual_grants
+    FROM 
+        speciality_data sd
+        LEFT JOIN subjects s ON sd.speciality_id = s.speciality_id
+        LEFT JOIN annual_points ap ON sd.speciality_id = ap.speciality_id
+        LEFT JOIN annual_grants ag ON sd.speciality_id = ag.speciality_id
+    GROUP BY 
+        sd.speciality_id, sd.speciality_name, sd.university_name, sd.education_format, sd.speciality_code, sd.degree, sd.scholarship, sd.term, s.subject_names, ap.annual_points, ag.annual_grants
+`
 
-	_, err := o.Raw(query, language, language, language, universityId).QueryRows(&results)
+	_, err := o.Raw(query, language, language, language, universityId, language, language).QueryRows(&results)
 	if err != nil {
 		return nil, err
 	}

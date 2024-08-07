@@ -1216,7 +1216,7 @@ paths:
       description: |-
         Получение списка всех университетов.
         <br>
-      operationId: UniversityController.GetAll
+      operationId: UniversityController.GetAllForAdmin
       responses:
         "200":
           description: '"Список университетов"'
@@ -1233,7 +1233,7 @@ paths:
       description: |-
         Получение информации о университете по ID.
         <br>
-      operationId: UniversityController.Get
+      operationId: UniversityController.GetForAdmin
       parameters:
       - in: path
         name: id
@@ -1765,15 +1765,15 @@ definitions:
     title: PointStat
     type: object
     properties:
-      AnnualGrants:
-        type: integer
-        format: int64
       AvgSalary:
         type: integer
         format: int64
       CreatedAt:
         type: string
         format: datetime
+      GrantCount:
+        type: integer
+        format: int64
       Id:
         type: integer
         format: int64
@@ -2075,6 +2075,24 @@ definitions:
         items:
           $ref: '#/definitions/models.University'
 tags:
+- name: subjects
+  description: |
+    SubjectController обрабатывает запросы для работы с предметами.
+- name: subjectpairs
+  description: |
+    SubjectPairController обрабатывает запросы для работы с парами предметов.
+- name: specialities
+  description: |
+    SpecialityController обрабатывает запросы для работы со специальностями.
+- name: universities
+  description: |
+    UniversityController обрабатывает запросы для работы с университетами.
+- name: quotas
+  description: |
+    QuotaController handles operations for Quota.
+- name: services
+  description: |
+    ServiceController handles operations related to services
 - name: subjects
   description: |
     SubjectController обрабатывает запросы для работы с предметами.
