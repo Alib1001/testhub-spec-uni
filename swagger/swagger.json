@@ -1656,7 +1656,7 @@
                     "universities"
                 ],
                 "description": "Получение списка всех университетов.\n\u003cbr\u003e",
-                "operationId": "UniversityController.GetAll",
+                "operationId": "UniversityController.GetAllForAdmin",
                 "responses": {
                     "200": {
                         "description": "\"Список университетов\"",
@@ -2293,7 +2293,7 @@
                     "universities"
                 ],
                 "description": "Получение информации о университете по ID.\n\u003cbr\u003e",
-                "operationId": "UniversityController.Get",
+                "operationId": "UniversityController.GetForAdmin",
                 "parameters": [
                     {
                         "in": "path",
@@ -2425,10 +2425,6 @@
             "title": "PointStat",
             "type": "object",
             "properties": {
-                "AnnualGrants": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "AvgSalary": {
                     "type": "integer",
                     "format": "int64"
@@ -2436,6 +2432,10 @@
                 "CreatedAt": {
                     "type": "string",
                     "format": "datetime"
+                },
+                "GrantCount": {
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "Id": {
                     "type": "integer",
@@ -2873,6 +2873,30 @@
         }
     },
     "tags": [
+        {
+            "name": "subjects",
+            "description": "SubjectController обрабатывает запросы для работы с предметами.\n"
+        },
+        {
+            "name": "subjectpairs",
+            "description": "SubjectPairController обрабатывает запросы для работы с парами предметов.\n"
+        },
+        {
+            "name": "specialities",
+            "description": "SpecialityController обрабатывает запросы для работы со специальностями.\n"
+        },
+        {
+            "name": "universities",
+            "description": "UniversityController обрабатывает запросы для работы с университетами.\n"
+        },
+        {
+            "name": "quotas",
+            "description": "QuotaController handles operations for Quota.\n"
+        },
+        {
+            "name": "services",
+            "description": "ServiceController handles operations related to services\n"
+        },
         {
             "name": "subjects",
             "description": "SubjectController обрабатывает запросы для работы с предметами.\n"
