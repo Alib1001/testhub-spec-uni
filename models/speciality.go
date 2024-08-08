@@ -117,25 +117,27 @@ type GetByUniResponseForUser struct {
 }
 
 type GetByUniResponseForAdm struct {
-	SpecialityID      int      `json:"speciality_id" orm:"column(speciality_id)"`
-	SpecialityNameRu  string   `json:"speciality_name_ru" orm:"column(speciality_name_ru)"`
-	SpecialityNameKz  string   `json:"speciality_name_kz" orm:"column(speciality_name_kz)"`
-	UniversityNameRu  string   `json:"university_name_ru" orm:"column(university_name_ru)"`
-	UniversityNameKz  string   `json:"university_name_kz" orm:"column(university_name_kz)"`
-	EducationFormatRu string   `json:"education_format_ru" orm:"column(education_format_ru)"`
-	EducationFormatKz string   `json:"education_format_kz" orm:"column(education_format_kz)"`
-	Code              string   `orm:"column(code)" json:"speciality_code"`
-	Price             int      `orm:"column(price)" json:"price"`
-	Degree            string   `json:"degree" orm:"column(degree)"`
-	Scholarship       string   `json:"scholarship" orm:"column(scholarship)"`
-	AvgSalary         int      `json:"avg_salary" orm:"column(avg_salary)"`
-	Term              string   `json:"term" orm:"column(term)"`
-	MinScore          int      `json:"min_score" orm:"column(min_score)"`
-	GrantCount        int      `json:"grant_count" orm:"column(grant_count)"`
-	Subject1ID        int      `json:"subject1_id" orm:"column(subject1_id)"`
-	Subject2ID        int      `json:"subject2_id" orm:"column(subject2_id)"`
-	SubjectNamesRu    []string `json:"subject_names_ru"`
-	SubjectNamesKz    []string `json:"subject_names_kz"`
+	SpecialityID      int            `json:"speciality_id" orm:"column(speciality_id)"`
+	SpecialityNameRu  string         `json:"speciality_name_ru" orm:"column(speciality_name_ru)"`
+	SpecialityNameKz  string         `json:"speciality_name_kz" orm:"column(speciality_name_kz)"`
+	UniversityNameRu  string         `json:"university_name_ru" orm:"column(university_name_ru)"`
+	UniversityNameKz  string         `json:"university_name_kz" orm:"column(university_name_kz)"`
+	EducationFormatRu string         `json:"education_format_ru" orm:"column(education_format_ru)"`
+	EducationFormatKz string         `json:"education_format_kz" orm:"column(education_format_kz)"`
+	Code              string         `orm:"column(code)" json:"speciality_code"`
+	Price             int            `orm:"column(price)" json:"price"`
+	Degree            string         `json:"degree" orm:"column(degree)"`
+	Scholarship       string         `json:"scholarship" orm:"column(scholarship)"`
+	AvgSalary         int            `json:"avg_salary" orm:"column(avg_salary)"`
+	Term              string         `json:"term" orm:"column(term)"`
+	MinScore          int            `json:"min_score" orm:"column(min_score)"`
+	GrantCount        int            `json:"grant_count" orm:"column(grant_count)"`
+	Subject1ID        int            `json:"-" orm:"column(subject1_id)"`
+	Subject2ID        int            `json:"-" orm:"column(subject2_id)"`
+	SubjectNamesRu    []string       `json:"subject_names_ru"`
+	SubjectNamesKz    []string       `json:"subject_names_kz"`
+	AnnualPoints      []AnnualPoints `json:"annual_points"`
+	AnnualGrants      []AnnualGrant  `json:"annual_grants"`
 }
 
 type SpecialitySearchResult struct {
@@ -503,16 +505,7 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
 	var results []GetByUniResponseForAdm
 
 	query := `
-        WITH latest_year AS (
-            SELECT 
-                MAX(ps.year) as year
-            FROM 
-                point_stat ps
-                INNER JOIN speciality_university su ON ps.speciality_id = su.speciality_id
-            WHERE 
-                su.university_id = ?
-        ),
-        speciality_data AS (
+        WITH speciality_data AS (
             SELECT DISTINCT 
                 s.id as speciality_id,
                 s.name_ru as speciality_name_ru,
@@ -531,6 +524,7 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
                 sp.subject2_id,
                 ps.year,
                 ps.min_score,
+                ps.min_grant_score,
                 ps.grant_count
             FROM 
                 speciality s
@@ -539,7 +533,7 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
                 LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
                 LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
             WHERE 
-                u.id = ? AND ps.year = (SELECT year FROM latest_year)
+                u.id = ?
         )
         SELECT
             speciality_id,
@@ -555,23 +549,24 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
             scholarship,
             avg_salary,
             term,
-            min_score,
-            grant_count,
-            COALESCE(MAX(subject1_id), 0) AS subject1_id,
-            COALESCE(MAX(subject2_id), 0) AS subject2_id
+            subject1_id,
+            subject2_id,
+            MIN(min_score) AS min_score,
+            SUM(grant_count) AS grant_count
         FROM
             speciality_data
         GROUP BY
-            speciality_id, speciality_name_ru, speciality_name_kz, university_name_ru, university_name_kz, education_format_ru, education_format_kz, code, price, degree, scholarship, avg_salary, term, min_score, grant_count
+            speciality_id, speciality_name_ru, speciality_name_kz, university_name_ru, university_name_kz, education_format_ru, education_format_kz, code, price, degree, scholarship, avg_salary, term, subject1_id, subject2_id
     `
 
-	_, err := o.Raw(query, universityId, universityId).QueryRows(&results)
+	_, err := o.Raw(query, universityId).QueryRows(&results)
 	if err != nil {
 		return nil, err
 	}
 
 	for i := range results {
-		var subjectNamesRu, subjectNamesKz []string
+		var subjectNamesRu []string
+		var subjectNamesKz []string
 
 		if results[i].Subject1ID != 0 {
 			var subject1 Subject
@@ -593,6 +588,39 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
 
 		results[i].SubjectNamesRu = subjectNamesRu
 		results[i].SubjectNamesKz = subjectNamesKz
+
+		// Fetching annual points and annual grants
+		var pointStats []PointStat
+		_, err := o.QueryTable("point_stat").
+			Filter("speciality_id", results[i].SpecialityID).
+			Filter("university_id", universityId).
+			All(&pointStats)
+		if err != nil {
+			return nil, err
+		}
+
+		var annualPoints []AnnualPoints
+		var annualGrants []AnnualGrant
+		var latestGrantCount int
+
+		for _, ps := range pointStats {
+			annualPoints = append(annualPoints, AnnualPoints{
+				Year:          ps.Year,
+				MinScore:      ps.MinScore,
+				MinGrantScore: ps.MinGrantScore,
+			})
+			annualGrants = append(annualGrants, AnnualGrant{
+				Year:       ps.Year,
+				GrantCount: ps.GrantCount,
+			})
+			if latestGrantCount == 0 || ps.Year > annualGrants[len(annualGrants)-1].Year {
+				latestGrantCount = ps.GrantCount
+			}
+		}
+
+		results[i].AnnualPoints = annualPoints
+		results[i].AnnualGrants = annualGrants
+		results[i].GrantCount = latestGrantCount
 	}
 
 	return results, nil

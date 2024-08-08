@@ -260,6 +260,30 @@ func (c *ServiceController) GetServicesByUniversityId() {
 	c.ServeJSON()
 }
 
+// @Title GetServicesByUniversityIdForAdmin
+// @Description Get services by university ID
+// @Param id path int true "University ID"
+// @Success 200 {array} models.ServiceResponseForAdmin
+// @Failure 400 Invalid input
+// @router /university/:id [get]
+func (c *ServiceController) GetServicesByUniversityIdForAdmin() {
+	universityIdStr := c.Ctx.Input.Param(":id")
+	universityId, err := strconv.Atoi(universityIdStr)
+	if err != nil {
+		c.CustomAbort(http.StatusBadRequest, "Invalid university ID")
+		return
+	}
+
+	services, err := models.GetServicesByUniversityIdForAdmin(universityId)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Data["json"] = services
+	c.ServeJSON()
+}
+
 // @Title AddServiceToUniversity
 // @Description Add a service to a university
 // @Param serviceId path int true "Service ID"

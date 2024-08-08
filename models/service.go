@@ -219,6 +219,32 @@ func GetServicesByUniversityId(universityId int, language string) ([]*ServiceRes
 	return serviceResponses, nil
 }
 
+func GetServicesByUniversityIdForAdmin(universityId int) ([]*ServiceResponseForAdmin, error) {
+	o := orm.NewOrm()
+	university := &University{Id: universityId}
+	if err := o.Read(university); err != nil {
+		return nil, err
+	}
+
+	var services []*Service
+	_, err := o.QueryTable("service").Filter("Universities__University__Id", universityId).All(&services)
+	if err != nil {
+		return nil, err
+	}
+
+	var serviceResponses []*ServiceResponseForAdmin
+	for _, service := range services {
+		serviceResponses = append(serviceResponses, &ServiceResponseForAdmin{
+			Id:       service.Id,
+			NameRu:   service.NameRu,
+			NameKz:   service.NameKz,
+			ImageUrl: service.ImageUrl,
+		})
+	}
+
+	return serviceResponses, nil
+}
+
 func AddServiceToUniversity(serviceId, universityId int) error {
 	o := orm.NewOrm()
 	service := &Service{Id: serviceId}

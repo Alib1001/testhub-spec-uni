@@ -273,7 +273,6 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 		}
 	}
 
-	// Add services to the university
 	for _, serviceID := range universityResponse.ServiceIds {
 		service := &Service{Id: serviceID}
 		m2m := o.QueryM2M(dbUniversity, "Services")

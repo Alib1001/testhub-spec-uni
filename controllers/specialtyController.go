@@ -182,7 +182,7 @@ func (c *SpecialityController) GetByUniversity() {
 // @Title GetSpecialitiesInUni
 // @Description Получение списка специальностей, связанных с университетом.
 // @Param	universityId		path	int	true	"ID университета"
-// @Success 200 {array} models.Speciality	"Список специальностей университета"
+// @Success 200 {array} models.GetByUniResponseForAdm	"Список специальностей университета"
 // @Failure 400 некорректный ID или другая ошибка
 // @router /byuni/:universityId [get]
 func (c *SpecialityController) GetByUniversityForAdmin() {
@@ -198,11 +198,7 @@ func (c *SpecialityController) GetByUniversityForAdmin() {
 		return
 	}
 
-	if len(specialities) == 0 {
-		c.Data["json"] = []models.GetSpecialityForAdmResponse{}
-	} else {
-		c.Data["json"] = specialities
-	}
+	c.Data["json"] = specialities
 	c.ServeJSON()
 }
 
