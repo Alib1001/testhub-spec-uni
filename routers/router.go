@@ -94,7 +94,7 @@ func init() {
 			beego.NSInclude(&controllers.ServiceController{}),
 			beego.NSRouter("/search", &controllers.ServiceController{}, "get:SearchServices"),
 			beego.NSRouter("/", &controllers.ServiceController{}, "post:AddService"),
-			beego.NSRouter("/", &controllers.ServiceController{}, "get:GetAllServices"),
+			beego.NSRouter("/", &controllers.ServiceController{}, "get:GetAllServicesForAdmin"),
 			beego.NSRouter("/:id", &controllers.ServiceController{}, "get:GetServiceById"),
 			beego.NSRouter("/:id", &controllers.ServiceController{}, "delete:DeleteService"),
 			beego.NSRouter("/:id", &controllers.ServiceController{}, "put:UpdateService"),

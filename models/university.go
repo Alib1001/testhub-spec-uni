@@ -108,6 +108,7 @@ type GetByIdUniversityResponseForAdmin struct {
 	DescriptionRu      string             `json:"DescriptionRu" validate:"required"`
 	DescriptionKz      string             `json:"DescriptionKz" validate:"required"`
 	Rating             string             `json:"Rating" validate:"required"`
+	MinScore           int                `json:"MinScore" `
 	Gallery            []*GalleryResponse `json:"Gallery"`
 	Services           []*Service         `json:"Services"`
 	City               *City              `json:"City" validate:"required"`
@@ -375,6 +376,7 @@ func GetUniversityByIdForAdmin(id int) (*GetByIdUniversityResponseForAdmin, erro
 		DescriptionRu:      university.DescriptionRu,
 		DescriptionKz:      university.DescriptionKz,
 		Rating:             university.Rating,
+		MinScore:           university.MinEntryScore,
 		Services:           university.Services,
 		City:               university.City,
 	}

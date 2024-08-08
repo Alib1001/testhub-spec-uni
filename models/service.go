@@ -28,6 +28,13 @@ type ServiceResponseForUser struct {
 	ImageUrl string `json:"ImageUrl"`
 }
 
+type ServiceResponseForAdmin struct {
+	Id       int    `json:"Id"`
+	NameRu   string `json:"NameRu"`
+	NameKz   string `json:"NameKz"`
+	ImageUrl string `json:"ImageUrl"`
+}
+
 func init() {
 	orm.RegisterModel(new(Service))
 }
@@ -111,6 +118,27 @@ func GetAllServices(language string) ([]*ServiceResponseForUser, error) {
 		serviceResponses = append(serviceResponses, &ServiceResponseForUser{
 			Id:       service.Id,
 			Name:     name,
+			ImageUrl: service.ImageUrl,
+		})
+	}
+
+	return serviceResponses, nil
+}
+
+func GetAllServicesForAdmin() ([]*ServiceResponseForAdmin, error) {
+	o := orm.NewOrm()
+	var services []*Service
+	_, err := o.QueryTable("service").All(&services)
+	if err != nil {
+		return nil, err
+	}
+
+	var serviceResponses []*ServiceResponseForAdmin
+	for _, service := range services {
+		serviceResponses = append(serviceResponses, &ServiceResponseForAdmin{
+			Id:       service.Id,
+			NameRu:   service.NameRu,
+			NameKz:   service.NameKz,
 			ImageUrl: service.ImageUrl,
 		})
 	}
