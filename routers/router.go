@@ -1,4 +1,4 @@
-// @APIVersion 1.0.2
+// @APIVersion 1.0.3
 // @Title Testhub universities  API
 // @Description API for Testhub universities.
 // @Contact superalibek123@gmail.com

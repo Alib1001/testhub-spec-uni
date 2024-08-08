@@ -3,7 +3,7 @@
     "info": {
         "title": "Testhub universities  API",
         "description": "API for Testhub universities.\n",
-        "version": "1.0.2",
+        "version": "1.0.3",
         "contact": {
             "email": "superalibek123@gmail.com"
         }
@@ -516,7 +516,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.ServiceResponse"
+                                "$ref": "#/definitions/models.ServiceResponseForUser"
                             }
                         }
                     },
@@ -533,13 +533,24 @@
                 "operationId": "ServiceController.AddService",
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Service data",
+                        "in": "formData",
+                        "name": "NameRu",
+                        "description": "Service name in Russian",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Service"
-                        }
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "NameKz",
+                        "description": "Service name in Kazakh",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Image",
+                        "description": "Service image",
+                        "type": "file"
                     }
                 ],
                 "responses": {
@@ -548,6 +559,29 @@
                     },
                     "400": {
                         "description": "Invalid input"
+                    }
+                }
+            }
+        },
+        "/services/all": {
+            "get": {
+                "tags": [
+                    "services"
+                ],
+                "description": "Get all services without language filtering\n\u003cbr\u003e",
+                "operationId": "ServiceController.GetAllServicesForAdmin",
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ServiceResponseForAdmin"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
                     }
                 }
             }
@@ -581,7 +615,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.ServiceResponse"
+                                "$ref": "#/definitions/models.ServiceResponseForUser"
                             }
                         }
                     },
@@ -597,7 +631,7 @@
                     "services"
                 ],
                 "description": "Get services by university ID\n\u003cbr\u003e",
-                "operationId": "ServiceController.GetServicesByUniversityId",
+                "operationId": "ServiceController.GetServicesByUniversityIdForAdmin",
                 "parameters": [
                     {
                         "in": "path",
@@ -606,13 +640,6 @@
                         "required": true,
                         "type": "integer",
                         "format": "int64"
-                    },
-                    {
-                        "in": "header",
-                        "name": "lang",
-                        "description": "Язык для получения данных, 'ru' или 'kz'",
-                        "required": true,
-                        "type": "string"
                     }
                 ],
                 "responses": {
@@ -621,7 +648,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.ServiceResponse"
+                                "$ref": "#/definitions/models.ServiceResponseForAdmin"
                             }
                         }
                     },
@@ -659,7 +686,7 @@
                     "200": {
                         "description": "",
                         "schema": {
-                            "$ref": "#/definitions/models.ServiceResponse"
+                            "$ref": "#/definitions/models.ServiceResponseForUser"
                         }
                     },
                     "404": {
@@ -1008,7 +1035,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Speciality"
+                                "$ref": "#/definitions/models.GetByUniResponseForAdm"
                             }
                         }
                     },
@@ -1154,40 +1181,6 @@
                     },
                     "400": {
                         "description": "некорректный ID или другая ошибка"
-                    }
-                }
-            },
-            "put": {
-                "tags": [
-                    "specialities"
-                ],
-                "description": "Обновление информации о специальности по ID.\n\u003cbr\u003e",
-                "operationId": "SpecialityController.Update",
-                "parameters": [
-                    {
-                        "in": "path",
-                        "name": "id",
-                        "description": "ID специальности для обновления информации",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "JSON с обновленными данными о специальности",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Speciality"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "string\t\"Обновление успешно выполнено\""
-                    },
-                    "400": {
-                        "description": "некорректный ID, ошибка разбора JSON или другая ошибка"
                     }
                 }
             },
@@ -2117,6 +2110,14 @@
                         "description": "Список ID сервисов в формате [1,2,3]",
                         "required": true,
                         "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "MinScore",
+                        "description": "Минимальный балл для университета",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
                     }
                 ],
                 "responses": {
@@ -2364,6 +2365,38 @@
             "title": "map[string]string",
             "type": "object"
         },
+        "models.AnnualGrant": {
+            "title": "AnnualGrant",
+            "type": "object",
+            "properties": {
+                "grant_count": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "year": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
+        "models.AnnualPoints": {
+            "title": "AnnualPoints",
+            "type": "object",
+            "properties": {
+                "min_grant_score": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "min_score": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "year": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        },
         "models.City": {
             "title": "City",
             "type": "object",
@@ -2418,6 +2451,86 @@
                 "UpdatedAt": {
                     "type": "string",
                     "format": "datetime"
+                }
+            }
+        },
+        "models.GetByUniResponseForAdm": {
+            "title": "GetByUniResponseForAdm",
+            "type": "object",
+            "properties": {
+                "annual_grants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.AnnualGrant"
+                    }
+                },
+                "annual_points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.AnnualPoints"
+                    }
+                },
+                "avg_salary": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "degree": {
+                    "type": "string"
+                },
+                "education_format_kz": {
+                    "type": "string"
+                },
+                "education_format_ru": {
+                    "type": "string"
+                },
+                "grant_count": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "min_score": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "price": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "scholarship": {
+                    "type": "string"
+                },
+                "speciality_code": {
+                    "type": "string"
+                },
+                "speciality_id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "speciality_name_kz": {
+                    "type": "string"
+                },
+                "speciality_name_ru": {
+                    "type": "string"
+                },
+                "subject_names_kz": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "subject_names_ru": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "term": {
+                    "type": "string"
+                },
+                "university_name_kz": {
+                    "type": "string"
+                },
+                "university_name_ru": {
+                    "type": "string"
                 }
             }
         },
@@ -2542,8 +2655,27 @@
                 }
             }
         },
-        "models.ServiceResponse": {
-            "title": "ServiceResponse",
+        "models.ServiceResponseForAdmin": {
+            "title": "ServiceResponseForAdmin",
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ImageUrl": {
+                    "type": "string"
+                },
+                "NameKz": {
+                    "type": "string"
+                },
+                "NameRu": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ServiceResponseForUser": {
+            "title": "ServiceResponseForUser",
             "type": "object",
             "properties": {
                 "Id": {
@@ -2555,12 +2687,6 @@
                 },
                 "Name": {
                     "type": "string"
-                },
-                "Universities": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.University"
-                    }
                 }
             }
         },
@@ -2868,6 +2994,55 @@
                     "items": {
                         "$ref": "#/definitions/models.University"
                     }
+                }
+            }
+        },
+        "models.UpdateSpecialityResponse": {
+            "title": "UpdateSpecialityResponse",
+            "type": "object",
+            "properties": {
+                "AbbreviationKz": {
+                    "type": "string"
+                },
+                "AbbreviationRu": {
+                    "type": "string"
+                },
+                "Code": {
+                    "type": "string"
+                },
+                "Degree": {
+                    "type": "string"
+                },
+                "DescriptionKz": {
+                    "type": "string"
+                },
+                "DescriptionRu": {
+                    "type": "string"
+                },
+                "Id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "NameKz": {
+                    "type": "string"
+                },
+                "NameRu": {
+                    "type": "string"
+                },
+                "Scholarship": {
+                    "type": "boolean"
+                },
+                "Subject1": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Subject2": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "Term": {
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         }
