@@ -16,12 +16,23 @@ type SpecialityController struct {
 	beego.Controller
 }
 
-// Create добавляет новую специальность в базу данных.
+// Create adds a new speciality to the database.
 // @Title Create
-// @Description Создание новой специальности.
-// @Param	body	body	models.Speciality	true	"JSON с данными о специальности"
-// @Success 200 {object} map[string]int64	"ID созданной специальности"
-// @Failure 400 ошибка разбора JSON или другая ошибка
+// @Description Create a new speciality.
+// @Param   NameRu         formData string true "Name of the speciality in Russian"
+// @Param   NameKz         formData string true "Name of the speciality in Kazakh"
+// @Param   AbbreviationRu formData string true "Abbreviation of the speciality in Russian"
+// @Param   AbbreviationKz formData string true "Abbreviation of the speciality in Kazakh"
+// @Param   Subject_1      formData int    true "ID of the first subject"
+// @Param   Subject_2      formData int    true "ID of the second subject"
+// @Param   Degree         formData string true "Degree of the speciality"
+// @Param   Code           formData string true "Code of the speciality"
+// @Param   Term           formData int    true "Term of the speciality"
+// @Param   DescriptionRu  formData string false "Description of the speciality in Russian"
+// @Param   DescriptionKz  formData string false "Description of the speciality in Kazakh"
+// @Param   Scholarship    formData bool   false "Whether the speciality has a scholarship"
+// @Success 200 {object} map[string]int64 "ID of the created speciality"
+// @Failure 400 {string} string "JSON parsing error or other error"
 // @router / [post]
 func (c *SpecialityController) Create() {
 	var data models.AddSpecialityResponse
@@ -90,13 +101,25 @@ func (c *SpecialityController) GetAll() {
 	c.ServeJSON()
 }
 
-// Update обновляет информацию о специальности по ее ID.
+// Update updates the information of a speciality by its ID.
 // @Title Update Speciality
 // @Description Update the information of a speciality by its ID.
-// @Param   id      path    int     true    "ID of the speciality to update"
-// @Param   body    formData    models.UpdateSpecialityResponse  true    "Form data containing updated speciality data"
-// @Success 200 {string}    "Update successful"
-// @Failure 400 {string}    "Inva
+// @Param   id             path     int    true  "ID of the speciality to update"
+// @Param   NameRu         formData string false "Updated name of the speciality in Russian"
+// @Param   NameKz         formData string false "Updated name of the speciality in Kazakh"
+// @Param   AbbreviationRu formData string false "Updated abbreviation of the speciality in Russian"
+// @Param   AbbreviationKz formData string false "Updated abbreviation of the speciality in Kazakh"
+// @Param   Degree         formData string false "Updated degree of the speciality"
+// @Param   Code           formData string false "Updated code of the speciality"
+// @Param   Term           formData int    false "Updated term of the speciality"
+// @Param   DescriptionRu  formData string false "Updated description of the speciality in Russian"
+// @Param   DescriptionKz  formData string false "Updated description of the speciality in Kazakh"
+// @Param   Scholarship    formData bool   false "Updated scholarship status of the speciality"
+// @Param   Subject_1      formData int    false "Updated ID of the first subject"
+// @Param   Subject_2      formData int    false "Updated ID of the second subject"
+// @Success 200 {string} string "Update successful"
+// @Failure 400 {string} string "Invalid input or other error"
+// @router /:id [put]
 func (c *SpecialityController) Update() {
 	idStr := c.Ctx.Input.Param(":id")
 	id, err := strconv.Atoi(idStr)

@@ -815,28 +815,103 @@
                 "tags": [
                     "specialities"
                 ],
-                "description": "Создание новой специальности.\n\u003cbr\u003e",
+                "description": "Create a new speciality.\n\u003cbr\u003e",
                 "operationId": "SpecialityController.Create",
                 "parameters": [
                     {
-                        "in": "body",
-                        "name": "body",
-                        "description": "JSON с данными о специальности",
+                        "in": "formData",
+                        "name": "NameRu",
+                        "description": "Name of the speciality in Russian",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.Speciality"
-                        }
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "NameKz",
+                        "description": "Name of the speciality in Kazakh",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "AbbreviationRu",
+                        "description": "Abbreviation of the speciality in Russian",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "AbbreviationKz",
+                        "description": "Abbreviation of the speciality in Kazakh",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Subject_1",
+                        "description": "ID of the first subject",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Subject_2",
+                        "description": "ID of the second subject",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Degree",
+                        "description": "Degree of the speciality",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Code",
+                        "description": "Code of the speciality",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Term",
+                        "description": "Term of the speciality",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "DescriptionRu",
+                        "description": "Description of the speciality in Russian",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "DescriptionKz",
+                        "description": "Description of the speciality in Kazakh",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Scholarship",
+                        "description": "Whether the speciality has a scholarship",
+                        "type": "boolean"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "\"ID созданной специальности\"",
+                        "description": "\"ID of the created speciality\"",
                         "schema": {
                             "$ref": "#/definitions/map[string]int64"
                         }
                     },
                     "400": {
-                        "description": "ошибка разбора JSON или другая ошибка"
+                        "description": "{string} string \"JSON parsing error or other error\""
                     }
                 }
             }
@@ -1181,6 +1256,106 @@
                     },
                     "400": {
                         "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Update the information of a speciality by its ID.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.Update Speciality",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID of the speciality to update",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "NameRu",
+                        "description": "Updated name of the speciality in Russian",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "NameKz",
+                        "description": "Updated name of the speciality in Kazakh",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "AbbreviationRu",
+                        "description": "Updated abbreviation of the speciality in Russian",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "AbbreviationKz",
+                        "description": "Updated abbreviation of the speciality in Kazakh",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Degree",
+                        "description": "Updated degree of the speciality",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Code",
+                        "description": "Updated code of the speciality",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Term",
+                        "description": "Updated term of the speciality",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "DescriptionRu",
+                        "description": "Updated description of the speciality in Russian",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "DescriptionKz",
+                        "description": "Updated description of the speciality in Kazakh",
+                        "type": "string"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Scholarship",
+                        "description": "Updated scholarship status of the speciality",
+                        "type": "boolean"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Subject_1",
+                        "description": "Updated ID of the first subject",
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "Subject_2",
+                        "description": "Updated ID of the second subject",
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} string \"Update successful\""
+                    },
+                    "400": {
+                        "description": "{string} string \"Invalid input or other error\""
                     }
                 }
             },
@@ -2994,55 +3169,6 @@
                     "items": {
                         "$ref": "#/definitions/models.University"
                     }
-                }
-            }
-        },
-        "models.UpdateSpecialityResponse": {
-            "title": "UpdateSpecialityResponse",
-            "type": "object",
-            "properties": {
-                "AbbreviationKz": {
-                    "type": "string"
-                },
-                "AbbreviationRu": {
-                    "type": "string"
-                },
-                "Code": {
-                    "type": "string"
-                },
-                "Degree": {
-                    "type": "string"
-                },
-                "DescriptionKz": {
-                    "type": "string"
-                },
-                "DescriptionRu": {
-                    "type": "string"
-                },
-                "Id": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "NameKz": {
-                    "type": "string"
-                },
-                "NameRu": {
-                    "type": "string"
-                },
-                "Scholarship": {
-                    "type": "boolean"
-                },
-                "Subject1": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Subject2": {
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "Term": {
-                    "type": "integer",
-                    "format": "int64"
                 }
             }
         }
