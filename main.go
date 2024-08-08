@@ -76,4 +76,8 @@ func main() {
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
 	beego.Run()
+
+	//TODO:Point_stat DELETE AND EDIT
+	//TODO:DELETE GALLERY by uni and photo id
+	//TODO:Галерея при обновлении фотографий старые удалятся не должны
 }

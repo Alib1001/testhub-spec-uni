@@ -8,25 +8,25 @@ import (
 )
 
 type Speciality struct {
-	Id             int    `orm:"auto" json:"id"`
-	Name           string `orm:"size(128)" json:"name"`
-	NameRu         string `orm:"size(128)" json:"NameRu"`
-	NameKz         string `orm:"size(128)" json:"NameKz"`
-	AbbreviationRu string `json:"AbbreviationRu" validate:"required"`
-	AbbreviationKz string `json:"AbbreviationKz" validate:"required"`
-	Code           string `orm:"size(64)" json:"code"`
-	VideoLink      string `orm:"size(256)" json:"video_link"`
-	Description    string `orm:"type(text)" json:"description"`
-	DescriptionRu  string `orm:"type(text)" json:"DescriptionRu"`
-	DescriptionKz  string `orm:"type(text)" json:"DescriptionKz"`
-	Degree         string `orm:"size(128)" json:"degree"`
-	Term           int
-	Scholarship    bool
-	Universities   []*University `orm:"reverse(many)" json:"universities,omitempty"`
-	SubjectPair    *SubjectPair  `orm:"rel(fk);on_delete(set_null);null" json:"subject_pair,omitempty"`
-	CreatedAt      time.Time     `orm:"auto_now_add;type(datetime)" json:"created_at"`
-	UpdatedAt      time.Time     `orm:"auto_now;type(datetime)" json:"updated_at"`
-	PointStats     []*PointStat  `orm:"reverse(many)" json:"point_stats,omitempty"`
+	Id              int                           `orm:"auto" json:"id"`
+	Name            string                        `orm:"size(128)" json:"name"`
+	NameRu          string                        `orm:"size(128)" json:"NameRu"`
+	NameKz          string                        `orm:"size(128)" json:"NameKz"`
+	AbbreviationRu  string                        `json:"AbbreviationRu" validate:"required"`
+	AbbreviationKz  string                        `json:"AbbreviationKz" validate:"required"`
+	Code            string                        `orm:"size(64)" json:"code"`
+	VideoLink       string                        `orm:"size(256)" json:"video_link"`
+	Description     string                        `orm:"type(text)" json:"description"`
+	DescriptionRu   string                        `orm:"type(text)" json:"DescriptionRu"`
+	DescriptionKz   string                        `orm:"type(text)" json:"DescriptionKz"`
+	Degree          string                        `orm:"size(128)" json:"degree"`
+	UniversityTerms []*UniversitySpecialityDetail `orm:"reverse(many)" json:"university_terms,omitempty"`
+	Scholarship     bool
+	Universities    []*University `orm:"reverse(many)" json:"universities,omitempty"`
+	SubjectPair     *SubjectPair  `orm:"rel(fk);on_delete(set_null);null" json:"subject_pair,omitempty"`
+	CreatedAt       time.Time     `orm:"auto_now_add;type(datetime)" json:"created_at"`
+	UpdatedAt       time.Time     `orm:"auto_now;type(datetime)" json:"updated_at"`
+	PointStats      []*PointStat  `orm:"reverse(many)" json:"point_stats,omitempty"`
 }
 
 type GetSpecialityResponse struct {
@@ -66,7 +66,6 @@ type AddSpecialityResponse struct {
 	Subject2       int    `form:"Subject_2" validate:"required"`
 	Degree         string `form:"Degree" validate:"required"`
 	Code           string `form:"Code" validate:"required"`
-	Term           int    `form:"Term" validate:"required"`
 	DescriptionRu  string `form:"DescriptionRu"`
 	DescriptionKz  string `form:"DescriptionKz"`
 	Scholarship    bool   `form:"Scholarship"`
@@ -79,7 +78,6 @@ type UpdateSpecialityResponse struct {
 	AbbreviationKz string `form:"AbbreviationKz"`
 	Degree         string `form:"Degree"`
 	Code           string `form:"Code"`
-	Term           int    `form:"Term"`
 	DescriptionRu  string `form:"DescriptionRu"`
 	DescriptionKz  string `form:"DescriptionKz"`
 	Scholarship    bool   `form:"Scholarship"`
@@ -107,7 +105,6 @@ type GetByUniResponseForUser struct {
 	Degree          string         `orm:"column(degree)" json:"degree"`
 	Scholarship     bool           `orm:"column(scholarship)" json:"scholarship"`
 	AvgSalary       int            `orm:"column(avg_salary)" json:"avg_salary"`
-	Term            int            `orm:"column(term)" json:"term"`
 	GrantCount      int            `json:"grant_count"`
 	SubjectNames    []string       `json:"subject_names"`
 	AnnualPoints    []AnnualPoints `json:"annual_points"`
@@ -129,11 +126,11 @@ type GetByUniResponseForAdm struct {
 	Degree            string         `json:"degree" orm:"column(degree)"`
 	Scholarship       string         `json:"scholarship" orm:"column(scholarship)"`
 	AvgSalary         int            `json:"avg_salary" orm:"column(avg_salary)"`
-	Term              string         `json:"term" orm:"column(term)"`
 	MinScore          int            `json:"min_score" orm:"column(min_score)"`
 	GrantCount        int            `json:"grant_count" orm:"column(grant_count)"`
 	Subject1ID        int            `json:"-" orm:"column(subject1_id)"`
 	Subject2ID        int            `json:"-" orm:"column(subject2_id)"`
+	Term              int            `json:"term" orm:"column(term)"`
 	SubjectNamesRu    []string       `json:"subject_names_ru"`
 	SubjectNamesKz    []string       `json:"subject_names_kz"`
 	AnnualPoints      []AnnualPoints `json:"annual_points"`
@@ -180,7 +177,6 @@ func AddSpecialityFromFormData(data *AddSpecialityResponse) (int64, error) {
 		AbbreviationKz: data.AbbreviationKz,
 		Degree:         data.Degree,
 		Code:           data.Code,
-		Term:           data.Term,
 		DescriptionKz:  data.DescriptionKz,
 		DescriptionRu:  data.DescriptionRu,
 		Scholarship:    data.Scholarship,
@@ -291,9 +287,6 @@ func UpdateSpecialityFromFormData(data *UpdateSpecialityResponse) error {
 	if data.Code != "" {
 		speciality.Code = data.Code
 	}
-	if data.Term != 0 {
-		speciality.Term = data.Term
-	}
 	if data.DescriptionRu != "" {
 		speciality.DescriptionRu = data.DescriptionRu
 	}
@@ -391,7 +384,6 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
                 s.degree,
                 s.scholarship,
                 ps.avg_salary,
-                s.term,
                 sp.subject1_id,
                 sp.subject2_id,
                 ps.year,
@@ -417,7 +409,6 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
             degree,
             scholarship,
             avg_salary,
-            term,
             subject1_id,
             subject2_id,
             MIN(min_score) AS min_score,
@@ -426,7 +417,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
         FROM
             speciality_data
         GROUP BY
-            speciality_id, speciality_name, university_name, education_format, code, price, degree, scholarship, avg_salary, term, subject1_id, subject2_id
+            speciality_id, speciality_name, university_name, education_format, code, price, degree, scholarship, avg_salary, subject1_id, subject2_id
     `
 
 	_, err := o.Raw(query, language, language, language, universityId).QueryRows(&results)
@@ -519,19 +510,20 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
                 s.degree,
                 s.scholarship,
                 ps.avg_salary,
-                s.term,
                 sp.subject1_id,
                 sp.subject2_id,
                 ps.year,
                 ps.min_score,
                 ps.min_grant_score,
-                ps.grant_count
+                ps.grant_count,
+                us.term -- Добавляем term из таблицы university_speciality
             FROM 
                 speciality s
                 INNER JOIN speciality_university su ON s.id = su.speciality_id
                 INNER JOIN university u ON su.university_id = u.id
                 LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
                 LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
+                LEFT JOIN university_speciality_detail us ON su.speciality_id = us.speciality_id AND su.university_id = us.university_id
             WHERE 
                 u.id = ?
         )
@@ -548,15 +540,15 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
             degree,
             scholarship,
             avg_salary,
-            term,
             subject1_id,
             subject2_id,
             MIN(min_score) AS min_score,
-            SUM(grant_count) AS grant_count
+            SUM(grant_count) AS grant_count,
+            term -- Включаем term в результирующий набор
         FROM
             speciality_data
         GROUP BY
-            speciality_id, speciality_name_ru, speciality_name_kz, university_name_ru, university_name_kz, education_format_ru, education_format_kz, code, price, degree, scholarship, avg_salary, term, subject1_id, subject2_id
+            speciality_id, speciality_name_ru, speciality_name_kz, university_name_ru, university_name_kz, education_format_ru, education_format_kz, code, price, degree, scholarship, avg_salary, subject1_id, subject2_id, term
     `
 
 	_, err := o.Raw(query, universityId).QueryRows(&results)
@@ -738,7 +730,6 @@ func filterSpecialitiesInUniversity(params map[string]interface{}, specialities 
 			Name:        sr.SpecialityName,
 			Degree:      sr.Degree,
 			Scholarship: sr.Scholarship,
-			Term:        sr.Term,
 		}
 
 		// Динамическое обновление имени в зависимости от языка

@@ -878,14 +878,6 @@
                     },
                     {
                         "in": "formData",
-                        "name": "Term",
-                        "description": "Term of the speciality",
-                        "required": true,
-                        "type": "integer",
-                        "format": "int64"
-                    },
-                    {
-                        "in": "formData",
                         "name": "DescriptionRu",
                         "description": "Description of the speciality in Russian",
                         "type": "string"
@@ -1120,6 +1112,36 @@
                 }
             }
         },
+        "/specialities/deletePointStat/{id}": {
+            "delete": {
+                "tags": [
+                    "specialities"
+                ],
+                "description": "Удаление статистики по баллам для специальности и университета.\n\u003cbr\u003e",
+                "operationId": "SpecialityController.DeletePointStat",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "description": "ID статистики по баллам",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "\"Сообщение об успешном удалении\"",
+                        "schema": {
+                            "$ref": "#/definitions/map[string]string"
+                        }
+                    },
+                    "400": {
+                        "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            }
+        },
         "/specialities/pointstatsbyparams/{universityId}/{specialityId}": {
             "get": {
                 "tags": [
@@ -1309,13 +1331,6 @@
                         "name": "Code",
                         "description": "Updated code of the speciality",
                         "type": "string"
-                    },
-                    {
-                        "in": "formData",
-                        "name": "Term",
-                        "description": "Updated term of the speciality",
-                        "type": "integer",
-                        "format": "int64"
                     },
                     {
                         "in": "formData",
@@ -1814,6 +1829,173 @@
                     },
                     "400": {
                         "description": "некорректный ID или другая ошибка"
+                    }
+                }
+            }
+        },
+        "/unispecdetails/{uid}/{sid}": {
+            "get": {
+                "tags": [
+                    "unispecdetails"
+                ],
+                "description": "get UniversitySpecialityDetail by university_id and speciality_id\n\u003cbr\u003e",
+                "operationId": "UniversitySpecialityDetailController.GetUniversitySpecialityDetail",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "university_id",
+                        "description": "University ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "Speciality ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/models.UniversitySpecialityDetail"
+                        }
+                    },
+                    "404": {
+                        "description": "{string} record not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "unispecdetails"
+                ],
+                "description": "update UniversitySpecialityDetail by id\n\u003cbr\u003e",
+                "operationId": "UniversitySpecialityDetailController.UpdateUniversitySpecialityDetail",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "university_id",
+                        "description": "University ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "Speciality ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "term",
+                        "description": "Term",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "edu_lang",
+                        "description": "EduLang",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} update success!"
+                    },
+                    "400": {
+                        "description": "{string} invalid input"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "unispecdetails"
+                ],
+                "description": "create UniversitySpecialityDetail\n\u003cbr\u003e",
+                "operationId": "UniversitySpecialityDetailController.CreateUniversitySpecialityDetail",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "university_id",
+                        "description": "University ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "Speciality ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "term",
+                        "description": "Term",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "formData",
+                        "name": "edu_lang",
+                        "description": "EduLang",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "{int} models.UniversitySpecialityDetail"
+                    },
+                    "400": {
+                        "description": "{string} invalid input"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "unispecdetails"
+                ],
+                "description": "delete UniversitySpecialityDetail by university_id and speciality_id\n\u003cbr\u003e",
+                "operationId": "UniversitySpecialityDetailController.DeleteUniversitySpecialityDetail",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "university_id",
+                        "description": "University ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    {
+                        "in": "path",
+                        "name": "speciality_id",
+                        "description": "Speciality ID",
+                        "required": true,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{string} delete success!"
+                    },
+                    "404": {
+                        "description": "{string} record not found"
                     }
                 }
             }
@@ -2699,7 +2881,8 @@
                     }
                 },
                 "term": {
-                    "type": "string"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "university_name_kz": {
                     "type": "string"
@@ -2890,10 +3073,6 @@
                 "Scholarship": {
                     "type": "boolean"
                 },
-                "Term": {
-                    "type": "integer",
-                    "format": "int64"
-                },
                 "code": {
                     "type": "string"
                 },
@@ -2927,6 +3106,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.University"
+                    }
+                },
+                "university_terms": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UniversitySpecialityDetail"
                     }
                 },
                 "updated_at": {
@@ -3169,6 +3354,37 @@
                     "items": {
                         "$ref": "#/definitions/models.University"
                     }
+                }
+            }
+        },
+        "models.UniversitySpecialityDetail": {
+            "title": "UniversitySpecialityDetail",
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "format": "datetime"
+                },
+                "edu_lang": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "speciality": {
+                    "$ref": "#/definitions/models.Speciality"
+                },
+                "term": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "university": {
+                    "$ref": "#/definitions/models.University"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "format": "datetime"
                 }
             }
         }

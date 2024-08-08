@@ -27,7 +27,6 @@ type SpecialityController struct {
 // @Param   Subject_2      formData int    true "ID of the second subject"
 // @Param   Degree         formData string true "Degree of the speciality"
 // @Param   Code           formData string true "Code of the speciality"
-// @Param   Term           formData int    true "Term of the speciality"
 // @Param   DescriptionRu  formData string false "Description of the speciality in Russian"
 // @Param   DescriptionKz  formData string false "Description of the speciality in Kazakh"
 // @Param   Scholarship    formData bool   false "Whether the speciality has a scholarship"
@@ -111,7 +110,6 @@ func (c *SpecialityController) GetAll() {
 // @Param   AbbreviationKz formData string false "Updated abbreviation of the speciality in Kazakh"
 // @Param   Degree         formData string false "Updated degree of the speciality"
 // @Param   Code           formData string false "Updated code of the speciality"
-// @Param   Term           formData int    false "Updated term of the speciality"
 // @Param   DescriptionRu  formData string false "Updated description of the speciality in Russian"
 // @Param   DescriptionKz  formData string false "Updated description of the speciality in Kazakh"
 // @Param   Scholarship    formData bool   false "Updated scholarship status of the speciality"
@@ -402,6 +400,56 @@ func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 	} else {
 		c.Data["json"] = pointStats
 	}
+	c.ServeJSON()
+}
+
+// DeletePointStat удаляет статистику по баллам для специальности и университета.
+// @Title DeletePointStat
+// @Description Удаление статистики по баллам для специальности и университета.
+// @Param	id	path	int	true	"ID статистики по баллам"
+// @Success 200 {object} map[string]string	"Сообщение об успешном удалении"
+// @Failure 400 некорректный ID или другая ошибка
+// @router /deletePointStat/:id [delete]
+func (c *SpecialityController) DeletePointStat() {
+	id, err := c.GetInt(":id")
+	if err != nil {
+		c.CustomAbort(400, "Invalid PointStat ID")
+		return
+	}
+
+	if err := models.DeletePointStat(id); err != nil {
+		c.CustomAbort(500, err.Error())
+		return
+	}
+
+	c.Data["json"] = map[string]string{"message": "PointStat deleted successfully"}
+	c.ServeJSON()
+}
+func (c *SpecialityController) UpdatePointStat() {
+	id, err := c.GetInt(":id")
+	if err != nil {
+		c.CustomAbort(400, "Invalid PointStat ID")
+		return
+	}
+
+	var form models.UpdatePointStatResponse
+	if err := c.ParseForm(&form); err != nil {
+		c.CustomAbort(400, "Invalid form data")
+		return
+	}
+
+	// Validate form data
+	if err := validator.New().Struct(&form); err != nil {
+		c.CustomAbort(400, "Validation failed: "+err.Error())
+		return
+	}
+
+	if err := models.UpdatePointStatById(id, &form); err != nil {
+		c.CustomAbort(500, "Failed to update PointStat: "+err.Error())
+		return
+	}
+
+	c.Data["json"] = map[string]string{"message": "PointStat updated successfully"}
 	c.ServeJSON()
 }
 

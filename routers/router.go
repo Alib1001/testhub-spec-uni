@@ -49,6 +49,7 @@ func init() {
 			beego.NSRouter("/byspec/:speciality_id", &controllers.SpecialityController{}, "get:GetSubjectPairsBySpecialityId"),
 			beego.NSRouter("/addpointstat/:universityId/:specialityId", &controllers.SpecialityController{}, "post:AddPointStat"),
 			beego.NSRouter("/pointstatsbyparams/:universityId/:specialityId", &controllers.SpecialityController{}, "get:GetPointStatsByUniversityAndSpeciality"),
+			beego.NSRouter("/updatepointstat/:id", &controllers.SpecialityController{}, "put:UpdatePointStat"),
 
 			//beego.NSRouter("/subject_combinations/:id", &controllers.SpecialityController{}, "get:GetSubjectsCombinationForSpeciality"),
 			//beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),
@@ -100,6 +101,14 @@ func init() {
 			beego.NSRouter("/:id", &controllers.ServiceController{}, "put:UpdateService"),
 			beego.NSRouter("/bind/:serviceId/:universityId", &controllers.ServiceController{}, "post:AddServiceToUniversity"),
 			beego.NSRouter("/getbyuni/:id", &controllers.ServiceController{}, "get:GetServicesByUniversityIdForAdmin"),
+		),
+
+		beego.NSNamespace("/unispecdetails",
+			beego.NSInclude(&controllers.UniversitySpecialityDetailController{}),
+			beego.NSRouter("/add/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "post:CreateUniversitySpecialityDetail"),
+			beego.NSRouter("/get/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "get:GetUniversitySpecialityDetail"),
+			beego.NSRouter("/update/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "put:UpdateUniversitySpecialityDetail"),
+			beego.NSRouter("/delete/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "delete:DeleteUniversitySpecialityDetail"),
 		),
 
 		/**

@@ -191,28 +191,29 @@ type UpdateUniversityResponse struct {
 }
 
 type UpdateUniversityPartial struct {
-	Id                 int      `form:"Id"`
-	NameRu             string   `form:"NameRu"`
-	NameKz             string   `form:"NameKz"`
-	UniversityStatusRu string   `form:"UniversityStatusRu"`
-	UniversityStatusKz string   `form:"UniversityStatusKz"`
-	Website            string   `form:"Website"`
-	CallCenterNumber   string   `form:"CallCenterNumber"`
-	WhatsAppNumber     string   `form:"WhatsAppNumber"`
-	Address            string   `form:"Address"`
-	UniversityCode     string   `form:"UniversityCode"`
-	StudyFormatRu      string   `form:"StudyFormatRu"`
-	StudyFormatKz      string   `form:"StudyFormatKz"`
-	AbbreviationRu     string   `form:"AbbreviationRu"`
-	AbbreviationKz     string   `form:"AbbreviationKz"`
-	MainImageUrl       string   `form:"MainImageUrl"`
-	AddressLink        string   `form:"AddressLink"`
-	DescriptionRu      string   `form:"DescriptionRu"`
-	DescriptionKz      string   `form:"DescriptionKz"`
-	Rating             string   `form:"Rating"`
-	MinScore           int      `form:"MinScore"`
-	Gallery            []string `form:"Gallery"`
-	CityId             int      `form:"CityId"`
+	Id                 int                           `form:"Id"`
+	NameRu             string                        `form:"NameRu"`
+	NameKz             string                        `form:"NameKz"`
+	UniversityStatusRu string                        `form:"UniversityStatusRu"`
+	UniversityStatusKz string                        `form:"UniversityStatusKz"`
+	Website            string                        `form:"Website"`
+	CallCenterNumber   string                        `form:"CallCenterNumber"`
+	WhatsAppNumber     string                        `form:"WhatsAppNumber"`
+	Address            string                        `form:"Address"`
+	UniversityCode     string                        `form:"UniversityCode"`
+	StudyFormatRu      string                        `form:"StudyFormatRu"`
+	StudyFormatKz      string                        `form:"StudyFormatKz"`
+	AbbreviationRu     string                        `form:"AbbreviationRu"`
+	AbbreviationKz     string                        `form:"AbbreviationKz"`
+	MainImageUrl       string                        `form:"MainImageUrl"`
+	AddressLink        string                        `form:"AddressLink"`
+	DescriptionRu      string                        `form:"DescriptionRu"`
+	DescriptionKz      string                        `form:"DescriptionKz"`
+	Rating             string                        `form:"Rating"`
+	MinScore           int                           `form:"MinScore"`
+	Gallery            []string                      `form:"Gallery"`
+	SpecialityTerms    []*UniversitySpecialityDetail `orm:"reverse(many)" json:"speciality_terms,omitempty"`
+	CityId             int                           `form:"CityId"`
 }
 
 func init() {
