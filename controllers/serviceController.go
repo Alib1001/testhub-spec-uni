@@ -37,6 +37,21 @@ func (c *ServiceController) GetAllServices() {
 	c.ServeJSON()
 }
 
+// @Title GetAllServicesForAdmin
+// @Description Get all services without language filtering
+// @Success 200 {array} models.ServiceResponseForAdmin
+// @Failure 500 Internal server error
+// @router /all [get]
+func (c *ServiceController) GetAllServicesForAdmin() {
+	services, err := models.GetAllServicesForAdmin()
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, err.Error())
+	}
+
+	c.Data["json"] = services
+	c.ServeJSON()
+}
+
 // @Title GetServiceById
 // @Description Get service by ID
 // @Param id path int true "Service ID"
