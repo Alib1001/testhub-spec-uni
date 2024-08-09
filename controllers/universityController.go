@@ -432,7 +432,6 @@ func (c *UniversityController) Update() {
 		return
 	}
 
-	// Update the university record
 	if err := models.UpdateUniversity(university); err != nil {
 		c.Data["json"] = map[string]string{"error": "Failed to update university: " + err.Error()}
 		c.Ctx.Output.SetStatus(500)
@@ -440,7 +439,6 @@ func (c *UniversityController) Update() {
 		return
 	}
 
-	// Update services
 	var services []*models.Service
 	for _, serviceID := range serviceIds {
 		service, err := models.GetServiceByID(serviceID)

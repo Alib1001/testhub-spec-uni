@@ -1,7 +1,9 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/astaxie/beego/orm"
@@ -105,10 +107,12 @@ type GetByUniResponseForUser struct {
 	Degree          string         `orm:"column(degree)" json:"degree"`
 	Scholarship     bool           `orm:"column(scholarship)" json:"scholarship"`
 	AvgSalary       int            `orm:"column(avg_salary)" json:"avg_salary"`
+	MinScore        int            `json:"min_score" orm:"column(min_score)"`
 	GrantCount      int            `json:"grant_count"`
 	SubjectNames    []string       `json:"subject_names"`
 	AnnualPoints    []AnnualPoints `json:"annual_points"`
 	AnnualGrants    []AnnualGrant  `json:"annual_grants"`
+	Term            int            `json:"term" orm:"column(term)"`
 	Subject1ID      int            `orm:"column(subject1_id)" json:"-"`
 	Subject2ID      int            `orm:"column(subject2_id)" json:"-"`
 }
@@ -142,6 +146,26 @@ type SpecialitySearchResult struct {
 	Page         int           `json:"page"`
 	TotalPages   int           `json:"total_pages"`
 	TotalCount   int           `json:"total_count"`
+}
+
+type IUniverStatistic struct {
+	Id         int `json:"id"`
+	GrantCount int `json:"grant_count"`
+	MinScore   int `json:"min_score"`
+	Year       int `json:"year"`
+	AvgSalary  int `json:"avg_salary"`
+	Price      int `json:"price"`
+}
+
+type IUniverSpecialtyShortcut struct {
+	SpecialityID      int                `json:"speciality_id"`
+	SpecialityNameRu  string             `json:"speciality_name_ru"`
+	SpecialityNameKz  string             `json:"speciality_name_kz"`
+	SpecialityCode    string             `json:"speciality_code"`
+	Degree            string             `json:"degree"`
+	EducationFormatRu string             `json:"education_format_ru"`
+	EducationFormatKz string             `json:"education_format_kz"`
+	Statistics        []IUniverStatistic `json:"statistics"`
 }
 
 func init() {
@@ -367,7 +391,9 @@ func SearchSpecialities(params map[string]interface{}, language string) (*Specia
 }
 func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]GetByUniResponseForUser, error) {
 	o := orm.NewOrm()
-	var results []GetByUniResponseForUser = []GetByUniResponseForUser{}
+	var results []GetByUniResponseForUser
+
+	// SQL query using the language parameter to select the correct fields
 	query := `
         WITH speciality_data AS (
             SELECT DISTINCT 
@@ -385,13 +411,15 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
                 ps.year,
                 ps.min_score,
                 ps.min_grant_score,
-                ps.grant_count
+                ps.grant_count,
+                us.term
             FROM 
                 speciality s
                 INNER JOIN speciality_university su ON s.id = su.speciality_id
                 INNER JOIN university u ON su.university_id = u.id
                 LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
                 LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
+                LEFT JOIN university_speciality_detail us ON su.speciality_id = us.speciality_id AND su.university_id = us.university_id
             WHERE 
                 u.id = ?
         )
@@ -408,12 +436,12 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
             subject1_id,
             subject2_id,
             MIN(min_score) AS min_score,
-            MAX(min_grant_score) AS min_grant_score,
-            SUM(grant_count) AS grant_count
+            SUM(grant_count) AS grant_count,
+            term
         FROM
             speciality_data
         GROUP BY
-            speciality_id, speciality_name, university_name, education_format, code, price, degree, scholarship, avg_salary, subject1_id, subject2_id
+            speciality_id, speciality_name, university_name, education_format, code, price, degree, scholarship, avg_salary, subject1_id, subject2_id, term
     `
 
 	_, err := o.Raw(query, language, language, language, universityId).QueryRows(&results)
@@ -424,6 +452,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 	for i := range results {
 		var subjectNames []string
 
+		// Fetch subject names according to the language
 		if results[i].Subject1ID != 0 {
 			var subject1 Subject
 			err := o.QueryTable("subject").Filter("id", results[i].Subject1ID).One(&subject1)
@@ -450,132 +479,10 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 
 		results[i].SubjectNames = subjectNames
 
-		// Fetching annual points and annual grants
-		var pointStats []PointStat
-		_, err := o.QueryTable("point_stat").
-			Filter("speciality_id", results[i].SpecialityID).
-			Filter("university_id", universityId).
-			All(&pointStats)
-		if err != nil {
-			return nil, err
-		}
-
-		var annualPoints []AnnualPoints
-		var annualGrants []AnnualGrant
+		// Initialize slices as empty instead of nil
+		annualPoints := []AnnualPoints{}
+		annualGrants := []AnnualGrant{}
 		var latestGrantCount int
-
-		for _, ps := range pointStats {
-			annualPoints = append(annualPoints, AnnualPoints{
-				Year:          ps.Year,
-				MinScore:      ps.MinScore,
-				MinGrantScore: ps.MinGrantScore,
-			})
-			annualGrants = append(annualGrants, AnnualGrant{
-				Year:       ps.Year,
-				GrantCount: ps.GrantCount,
-			})
-			if latestGrantCount == 0 || ps.Year > annualGrants[len(annualGrants)-1].Year {
-				latestGrantCount = ps.GrantCount
-			}
-		}
-
-		results[i].AnnualPoints = annualPoints
-		results[i].AnnualGrants = annualGrants
-		results[i].GrantCount = latestGrantCount
-	}
-
-	return results, nil
-}
-
-func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseForAdm, error) {
-	o := orm.NewOrm()
-	var results []GetByUniResponseForAdm = []GetByUniResponseForAdm{} // Initialize as an empty slice
-
-	query := `
-        WITH speciality_data AS (
-            SELECT DISTINCT 
-                s.id as speciality_id,
-                s.name_ru as speciality_name_ru,
-                s.name_kz as speciality_name_kz,
-                u.name_ru as university_name_ru,
-                u.name_kz as university_name_kz,
-                u.study_format_ru as education_format_ru,
-                u.study_format_kz as education_format_kz,
-                s.code,
-                ps.price,
-                s.degree,
-                s.scholarship,
-                ps.avg_salary,
-                sp.subject1_id,
-                sp.subject2_id,
-                ps.year,
-                ps.min_score,
-                ps.min_grant_score,
-                ps.grant_count,
-                us.term -- Добавляем term из таблицы university_speciality
-            FROM 
-                speciality s
-                INNER JOIN speciality_university su ON s.id = su.speciality_id
-                INNER JOIN university u ON su.university_id = u.id
-                LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
-                LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
-                LEFT JOIN university_speciality_detail us ON su.speciality_id = us.speciality_id AND su.university_id = us.university_id
-            WHERE 
-                u.id = ?
-        )
-        SELECT
-            speciality_id,
-            speciality_name_ru,
-            speciality_name_kz,
-            university_name_ru,
-            university_name_kz,
-            education_format_ru,
-            education_format_kz,
-            code,
-            price,
-            degree,
-            scholarship,
-            avg_salary,
-            subject1_id,
-            subject2_id,
-            MIN(min_score) AS min_score,
-            SUM(grant_count) AS grant_count,
-            term -- Включаем term в результирующий набор
-        FROM
-            speciality_data
-        GROUP BY
-            speciality_id, speciality_name_ru, speciality_name_kz, university_name_ru, university_name_kz, education_format_ru, education_format_kz, code, price, degree, scholarship, avg_salary, subject1_id, subject2_id, term
-    `
-
-	_, err := o.Raw(query, universityId).QueryRows(&results)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range results {
-		var subjectNamesRu []string
-		var subjectNamesKz []string
-
-		if results[i].Subject1ID != 0 {
-			var subject1 Subject
-			err := o.QueryTable("subject").Filter("id", results[i].Subject1ID).One(&subject1)
-			if err == nil {
-				subjectNamesRu = append(subjectNamesRu, subject1.NameRu)
-				subjectNamesKz = append(subjectNamesKz, subject1.NameKz)
-			}
-		}
-
-		if results[i].Subject2ID != 0 {
-			var subject2 Subject
-			err := o.QueryTable("subject").Filter("id", results[i].Subject2ID).One(&subject2)
-			if err == nil {
-				subjectNamesRu = append(subjectNamesRu, subject2.NameRu)
-				subjectNamesKz = append(subjectNamesKz, subject2.NameKz)
-			}
-		}
-
-		results[i].SubjectNamesRu = subjectNamesRu
-		results[i].SubjectNamesKz = subjectNamesKz
 
 		// Fetching annual points and annual grants
 		var pointStats []PointStat
@@ -586,10 +493,6 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
 		if err != nil {
 			return nil, err
 		}
-
-		var annualPoints []AnnualPoints
-		var annualGrants []AnnualGrant
-		var latestGrantCount int
 
 		for _, ps := range pointStats {
 			annualPoints = append(annualPoints, AnnualPoints{
@@ -613,10 +516,73 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
 
 	// Ensure empty slice is returned if no results are found
 	if len(results) == 0 {
-		return []GetByUniResponseForAdm{}, nil
+		return []GetByUniResponseForUser{}, nil
 	}
 
 	return results, nil
+}
+
+func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtyShortcut, error) {
+	// Initialize the return slice
+	var specialities []IUniverSpecialtyShortcut
+
+	// Write the SQL query
+	query := `
+        SELECT
+            s.id as speciality_id,
+            s.name_ru as speciality_name_ru,
+            s.name_kz as speciality_name_kz,
+            s.code as speciality_code,
+            s.degree,
+            u.study_format_ru as education_format_ru,
+            u.study_format_kz as education_format_kz,
+            COALESCE(json_agg(json_build_object(
+                'id', ls.id,
+                'grant_count', ls.grant_count,
+                'min_score', ls.min_score,
+                'year', ls.year,
+                'avg_salary', ls.avg_salary,
+                'price', ls.price
+            )) FILTER (WHERE ls.id IS NOT NULL), '[]') AS statistics
+        FROM
+            uni_spec.speciality s
+            JOIN uni_spec.speciality_university su ON su.speciality_id = s.id
+            JOIN uni_spec.university u ON su.university_id = u.id
+            LEFT JOIN uni_spec.point_stat ls ON s.id = ls.speciality_id
+        WHERE su.university_id = ?
+        GROUP BY s.id, s.name_ru, s.name_kz, s.code, s.degree, u.study_format_ru, u.study_format_kz
+    `
+
+	// Execute the query
+	o := orm.NewOrm()
+	rawSeter := o.Raw(query, universityID)
+	var maps []orm.Params
+	_, err := rawSeter.Values(&maps)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map the result to IUniverSpecialtyShortcut slice
+	for _, m := range maps {
+		specialityID, _ := strconv.Atoi(m["speciality_id"].(string))
+		var statistics []IUniverStatistic
+		json.Unmarshal([]byte(m["statistics"].(string)), &statistics)
+
+		speciality := IUniverSpecialtyShortcut{
+			SpecialityID:      specialityID,
+			SpecialityNameRu:  m["speciality_name_ru"].(string),
+			SpecialityNameKz:  m["speciality_name_kz"].(string),
+			SpecialityCode:    m["speciality_code"].(string),
+			Degree:            m["degree"].(string),
+			EducationFormatRu: m["education_format_ru"].(string),
+			EducationFormatKz: m["education_format_kz"].(string),
+			Statistics:        statistics,
+		}
+
+		specialities = append(specialities, speciality)
+	}
+
+	return specialities, nil
 }
 
 func AssociateSpecialityWithSubjectPair(specialityId int, subjectPairId int) error {
