@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/astaxie/beego/orm"
@@ -11,6 +12,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-playground/validator/v10"
+	"mime/multipart"
 	"sort"
 	"strconv"
 	"time"
@@ -477,24 +479,32 @@ func UpdateUniversity(university *University) error {
 	return err
 }
 
-func UpdateUniversityGallery(universityID int, galleryURLs []string) error {
+func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 	o := orm.NewOrm()
 
-	// Delete old gallery images
-	if _, err := o.QueryTable("gallery").Filter("university_id", universityID).Delete(); err != nil {
+	var existingGalleries []*Gallery
+	_, err := o.QueryTable("gallery").Filter("university_id", universityID).All(&existingGalleries)
+	if err != nil {
 		return err
 	}
 
-	// Insert new gallery images
-	for _, url := range galleryURLs {
-		gallery := &Gallery{
-			University: &University{Id: universityID},
-			PhotoUrl:   url,
-		}
-		if _, err := o.Insert(gallery); err != nil {
-			return err
+	existingURLs := make(map[string]bool)
+	for _, gallery := range existingGalleries {
+		existingURLs[gallery.PhotoUrl] = true
+	}
+
+	for _, url := range newGalleryURLs {
+		if !existingURLs[url] {
+			gallery := &Gallery{
+				University: &University{Id: universityID},
+				PhotoUrl:   url,
+			}
+			if _, err := o.Insert(gallery); err != nil {
+				return err
+			}
 		}
 	}
+
 	return nil
 }
 
@@ -1104,7 +1114,6 @@ func paginateUniversities(universities []*University, params map[string]interfac
 func UpdateUniversityServices(universityID int, services []*Service) error {
 	o := orm.NewOrm()
 
-	// Begin a transaction
 	err := o.Begin()
 	if err != nil {
 		return err
@@ -1135,7 +1144,6 @@ func UpdateUniversityServices(universityID int, services []*Service) error {
 		}
 	}
 
-	// Commit transaction
 	err = o.Commit()
 	if err != nil {
 		o.Rollback()
@@ -1143,4 +1151,59 @@ func UpdateUniversityServices(universityID int, services []*Service) error {
 	}
 
 	return nil
+}
+
+func (u *University) RemoveGalleryPhoto(photoID int) error {
+	o := orm.NewOrm()
+
+	photo := &Gallery{Id: photoID}
+
+	if err := o.QueryTable(new(Gallery)).Filter("Id", photoID).Filter("University__Id", u.Id).One(photo); err != nil {
+		if err == orm.ErrNoRows {
+			return fmt.Errorf("photo with ID %d not found in university gallery", photoID)
+		}
+		return fmt.Errorf("failed to find photo: %v", err)
+	}
+
+	if _, err := o.Delete(photo); err != nil {
+		return fmt.Errorf("failed to delete photo: %v", err)
+	}
+
+	return nil
+}
+
+func UploadFileToCloud(filePath string, file multipart.File) (string, error) {
+	awsAccessKey, _ := beego.AppConfig.String("aws_access_key")
+	awsSecretKey, _ := beego.AppConfig.String("aws_secret_key")
+	bucket, _ := beego.AppConfig.String("bucket")
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:           aws.String("us-east-1"),
+		Credentials:      credentials.NewStaticCredentials(awsAccessKey, awsSecretKey, ""),
+		Endpoint:         aws.String("https://chi-sextans.object.pscloud.io"),
+		S3ForcePathStyle: aws.Bool(true),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to create AWS session: %v", err)
+	}
+
+	uploader := s3.New(sess)
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := buf.ReadFrom(file); err != nil {
+		return "", fmt.Errorf("failed to read file: %v", err)
+	}
+
+	_, err = uploader.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filePath),
+		Body:   bytes.NewReader(buf.Bytes()),
+		ACL:    aws.String("public-read"),
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to upload file: %v", err)
+	}
+
+	fileURL := fmt.Sprintf("https://chi-sextans.object.pscloud.io/%s/%s", bucket, filePath)
+	return fileURL, nil
 }

@@ -140,7 +140,7 @@ func (c *ServiceController) AddService() {
 	defer file.Close()
 
 	filePath := fmt.Sprintf("Services/%d/%s", service.Id, header.Filename)
-	imageUrl, err := uploadFileToCloud(filePath, file)
+	imageUrl, err := models.UploadFileToCloud(filePath, file)
 	if err != nil {
 		c.CustomAbort(http.StatusInternalServerError, "Failed to upload file")
 		return

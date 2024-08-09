@@ -1,23 +1,16 @@
 package controllers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego/orm"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
 	"log"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 	"strings"
 	"testhub-spec-uni/models"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 // UniversityController обрабатывает запросы для работы с университетами.
@@ -139,7 +132,7 @@ func (c *UniversityController) Create() {
 	universityID := strconv.FormatInt(id, 10)
 	mainImagePath := fmt.Sprintf("Universities/%s/%s", universityID, header.Filename)
 
-	uploadedMainImageURL, err := uploadFileToCloud(mainImagePath, file)
+	uploadedMainImageURL, err := models.UploadFileToCloud(mainImagePath, file)
 	if err != nil {
 		c.Data["json"] = map[string]string{"error": "Failed to upload main image: " + err.Error()}
 		c.Ctx.Output.SetStatus(500)
@@ -169,7 +162,7 @@ func (c *UniversityController) Create() {
 		defer galleryFile.Close()
 
 		galleryFilePath := fmt.Sprintf("Universities/%s/Gallery/%s", universityID, galleryFileHeader.Filename)
-		uploadedGalleryURL, err := uploadFileToCloud(galleryFilePath, galleryFile)
+		uploadedGalleryURL, err := models.UploadFileToCloud(galleryFilePath, galleryFile)
 		if err != nil {
 			c.Data["json"] = map[string]string{"error": "Failed to upload gallery image: " + err.Error()}
 			c.Ctx.Output.SetStatus(500)
@@ -191,42 +184,6 @@ func (c *UniversityController) Create() {
 	c.Data["json"] = map[string]int64{"id": id}
 	c.Ctx.Output.SetStatus(200)
 	c.ServeJSON()
-}
-
-func uploadFileToCloud(filePath string, file multipart.File) (string, error) {
-	awsAccessKey, _ := beego.AppConfig.String("aws_access_key")
-	awsSecretKey, _ := beego.AppConfig.String("aws_secret_key")
-	bucket, _ := beego.AppConfig.String("bucket")
-
-	sess, err := session.NewSession(&aws.Config{
-		Region:           aws.String("us-east-1"),
-		Credentials:      credentials.NewStaticCredentials(awsAccessKey, awsSecretKey, ""),
-		Endpoint:         aws.String("https://chi-sextans.object.pscloud.io"),
-		S3ForcePathStyle: aws.Bool(true),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to create AWS session: %v", err)
-	}
-
-	uploader := s3.New(sess)
-
-	buf := bytes.NewBuffer(nil)
-	if _, err := buf.ReadFrom(file); err != nil {
-		return "", fmt.Errorf("failed to read file: %v", err)
-	}
-
-	_, err = uploader.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(filePath),
-		Body:   bytes.NewReader(buf.Bytes()),
-		ACL:    aws.String("public-read"),
-	})
-	if err != nil {
-		return "", fmt.Errorf("failed to upload file: %v", err)
-	}
-
-	fileURL := fmt.Sprintf("https://chi-sextans.object.pscloud.io/%s/%s", bucket, filePath)
-	return fileURL, nil
 }
 
 // GetForAdmin возвращает информацию о университете по его ID.
@@ -432,7 +389,7 @@ func (c *UniversityController) Update() {
 	if err == nil {
 		defer file.Close()
 		mainImagePath := fmt.Sprintf("Universities/%d/%s", universityId, header.Filename)
-		uploadedMainImageURL, err := uploadFileToCloud(mainImagePath, file)
+		uploadedMainImageURL, err := models.UploadFileToCloud(mainImagePath, file)
 		if err != nil {
 			c.Data["json"] = map[string]string{"error": "Failed to upload main image: " + err.Error()}
 			c.Ctx.Output.SetStatus(500)
@@ -456,7 +413,7 @@ func (c *UniversityController) Update() {
 		defer galleryFile.Close()
 
 		galleryFilePath := fmt.Sprintf("Universities/%d/Gallery/%s", universityId, galleryFileHeader.Filename)
-		uploadedGalleryURL, err := uploadFileToCloud(galleryFilePath, galleryFile)
+		uploadedGalleryURL, err := models.UploadFileToCloud(galleryFilePath, galleryFile)
 		if err != nil {
 			c.Data["json"] = map[string]string{"error": "Failed to upload gallery image: " + err.Error()}
 			c.Ctx.Output.SetStatus(500)
@@ -757,5 +714,45 @@ func (c *UniversityController) DeleteSpecialityFromUniversity() {
 	}
 
 	c.Data["json"] = "Success"
+	c.ServeJSON()
+}
+
+// DeleteGalleryPhoto deletes a gallery photo from a university.
+// @Title DeleteGalleryPhoto
+// @Description Deletes a photo from the university's gallery by photo ID and university ID.
+// @Param	uniId		path	int		true	"University ID"
+// @Param	photoId		path	int		true	"Photo ID"
+// @Success 200 {object} map[string]string "message": "Photo deleted successfully"
+// @Failure 400 {string} string "Invalid university ID or Invalid photo ID"
+// @Failure 404 {string} string "University not found"
+// @Failure 500 {string} string "Internal Server Error"
+// @router /{uniId}/gallery/{photoId} [delete]
+func (c *UniversityController) DeleteGalleryPhoto() {
+	uniId, err := c.GetInt(":uniId")
+	if err != nil {
+		c.CustomAbort(400, "Invalid university ID")
+		return
+	}
+
+	photoId, err := c.GetInt(":photoId")
+	if err != nil {
+		c.CustomAbort(400, "Invalid photo ID")
+		return
+	}
+
+	o := orm.NewOrm()
+
+	university := &models.University{Id: uniId}
+	if err := o.Read(university); err != nil {
+		c.CustomAbort(404, "University not found")
+		return
+	}
+
+	if err := university.RemoveGalleryPhoto(photoId); err != nil {
+		c.CustomAbort(500, err.Error())
+		return
+	}
+
+	c.Data["json"] = map[string]string{"message": "Photo deleted successfully"}
 	c.ServeJSON()
 }

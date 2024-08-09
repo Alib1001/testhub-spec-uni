@@ -259,16 +259,14 @@ func GetAllSpecialities(language string) ([]*Speciality, error) {
 
 func UpdateSpecialityFromFormData(data *UpdateSpecialityResponse) error {
 	o := orm.NewOrm()
-	o.Begin() // Begin a transaction
+	o.Begin()
 
-	// Retrieve the existing speciality
 	speciality := Speciality{Id: data.Id}
 	if err := o.Read(&speciality); err != nil {
-		o.Rollback() // Rollback transaction on error
+		o.Rollback()
 		return fmt.Errorf("speciality not found: %v", err)
 	}
 
-	// Update only the fields that are provided in the form data
 	if data.NameRu != "" {
 		speciality.NameRu = data.NameRu
 	}
@@ -295,7 +293,6 @@ func UpdateSpecialityFromFormData(data *UpdateSpecialityResponse) error {
 	}
 	speciality.Scholarship = data.Scholarship
 
-	// Update the subject pair if both subject IDs are provided
 	if data.Subject1 != 0 && data.Subject2 != 0 {
 		subject1 := Subject{Id: data.Subject1}
 		subject2 := Subject{Id: data.Subject2}
@@ -370,8 +367,7 @@ func SearchSpecialities(params map[string]interface{}, language string) (*Specia
 }
 func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]GetByUniResponseForUser, error) {
 	o := orm.NewOrm()
-	var results []GetByUniResponseForUser
-
+	var results []GetByUniResponseForUser = []GetByUniResponseForUser{}
 	query := `
         WITH speciality_data AS (
             SELECT DISTINCT 
@@ -493,7 +489,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 
 func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseForAdm, error) {
 	o := orm.NewOrm()
-	var results []GetByUniResponseForAdm
+	var results []GetByUniResponseForAdm = []GetByUniResponseForAdm{} // Initialize as an empty slice
 
 	query := `
         WITH speciality_data AS (
@@ -613,6 +609,11 @@ func GetSpecialitiesInUniversityForAdmin(universityId int) ([]GetByUniResponseFo
 		results[i].AnnualPoints = annualPoints
 		results[i].AnnualGrants = annualGrants
 		results[i].GrantCount = latestGrantCount
+	}
+
+	// Ensure empty slice is returned if no results are found
+	if len(results) == 0 {
+		return []GetByUniResponseForAdm{}, nil
 	}
 
 	return results, nil
