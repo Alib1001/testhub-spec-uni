@@ -20,10 +20,11 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
-
+/conf/app.conf
 
 go.sum
 go.sum.tmp
 
 *.xlsx
 
+testhub-spec-uni

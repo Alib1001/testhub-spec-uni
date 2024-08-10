@@ -50,6 +50,8 @@ func init() {
 			beego.NSRouter("/addpointstat/:universityId/:specialityId", &controllers.SpecialityController{}, "post:AddPointStat"),
 			beego.NSRouter("/pointstatsbyparams/:universityId/:specialityId", &controllers.SpecialityController{}, "get:GetPointStatsByUniversityAndSpeciality"),
 			beego.NSRouter("/updatepointstat/:id", &controllers.SpecialityController{}, "put:UpdatePointStat"),
+			beego.NSRouter("/getstat/:pointStatId/", &controllers.SpecialityController{}, "get:GetPointStatById"),
+			beego.NSRouter("/deletepointstat/:pointStatId/", &controllers.SpecialityController{}, "delete:DeletePointStat"),
 
 			//beego.NSRouter("/subject_combinations/:id", &controllers.SpecialityController{}, "get:GetSubjectsCombinationForSpeciality"),
 			//beego.NSRouter("/:specialityId/subjects/:subjectId", &controllers.SpecialityController{}, "post:AddSubject"),

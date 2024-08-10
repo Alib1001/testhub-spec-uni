@@ -403,6 +403,46 @@ func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 	c.ServeJSON()
 }
 
+// GetPointStatById возвращает статистику по баллам по ID.
+// @Title GetPointStatById
+// @Description Получение статистики по баллам по ID.
+// @Param	pointStatId		path	int	true	"ID статистики по баллам"
+// @Success 200 {object} models.PointStat	"Статистика по баллам"
+// @Failure 400 некорректный ID или другая ошибка
+// @Failure 404 статистика по баллам не найдена
+// @router /pointstat/:pointStatId [get]
+func (c *SpecialityController) GetPointStatById() {
+	pointStatId, err := c.GetInt(":pointStatId")
+	if err != nil {
+		c.CustomAbort(400, "Invalid PointStat ID")
+		return
+	}
+
+	pointStat, err := models.GetPointStatById(pointStatId)
+	if err != nil {
+		c.CustomAbort(500, err.Error())
+		return
+	}
+
+	if pointStat == nil {
+		c.CustomAbort(404, "PointStat not found")
+		return
+	}
+
+	response := map[string]interface{}{
+		"Id":              pointStat.Id,
+		"grant_count":     pointStat.GrantCount,
+		"min_score":       pointStat.MinScore,
+		"min_grant_score": pointStat.MinGrantScore,
+		"year":            pointStat.Year,
+		"avg_salary":      pointStat.AvgSalary,
+		"price":           pointStat.Price,
+	}
+
+	c.Data["json"] = response
+	c.ServeJSON()
+}
+
 // DeletePointStat удаляет статистику по баллам для специальности и университета.
 // @Title DeletePointStat
 // @Description Удаление статистики по баллам для специальности и университета.
@@ -411,7 +451,7 @@ func (c *SpecialityController) GetPointStatsByUniversityAndSpeciality() {
 // @Failure 400 некорректный ID или другая ошибка
 // @router /deletePointStat/:id [delete]
 func (c *SpecialityController) DeletePointStat() {
-	id, err := c.GetInt(":id")
+	id, err := c.GetInt(":pointStatId")
 	if err != nil {
 		c.CustomAbort(400, "Invalid PointStat ID")
 		return
