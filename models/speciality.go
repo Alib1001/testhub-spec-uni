@@ -477,6 +477,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 
 		results[i].SubjectNames = subjectNames
 
+		// Инициализация пустых слайсов для annualPoints и annualGrants
 		annualPoints := []AnnualPoints{}
 		annualGrants := []AnnualGrant{}
 		var latestGrantCount int
@@ -485,6 +486,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 		_, err := o.QueryTable("point_stat").
 			Filter("speciality_id", results[i].SpecialityID).
 			Filter("university_id", universityId).
+			OrderBy("-year"). // Убедитесь, что сначала получаем последние данные
 			All(&pointStats)
 		if err != nil {
 			return nil, err
@@ -500,7 +502,9 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 				Year:       ps.Year,
 				GrantCount: ps.GrantCount,
 			})
-			if latestGrantCount == 0 || ps.Year > annualGrants[len(annualGrants)-1].Year {
+
+			// Отслеживаем последнее количество грантов
+			if latestGrantCount == 0 {
 				latestGrantCount = ps.GrantCount
 			}
 		}
@@ -543,12 +547,12 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
             uni_spec.speciality s
             JOIN uni_spec.speciality_university su ON su.speciality_id = s.id
             JOIN uni_spec.university u ON su.university_id = u.id
-            LEFT JOIN uni_spec.point_stat ls ON s.id = ls.speciality_id
+            LEFT JOIN uni_spec.point_stat ls ON su.speciality_id = ls.speciality_id
         WHERE su.university_id = ?
         GROUP BY s.id, s.name_ru, s.name_kz, s.code, s.degree, u.study_format_ru, u.study_format_kz, su.term, su.edu_lang
     `
 
-	// Execute the query
+	// Выполнение SQL-запроса
 	o := orm.NewOrm()
 	rawSeter := o.Raw(query, universityID)
 	var maps []orm.Params
@@ -558,15 +562,24 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
 	}
 
 	for _, m := range maps {
-		specialityID, _ := strconv.Atoi(m["speciality_id"].(string))
+		// Парсинг и преобразование значений
+		specialityID, err := strconv.Atoi(m["speciality_id"].(string))
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse speciality_id: %v", err)
+		}
+
+		// Декодирование JSON статистики
 		var statistics []IUniverStatistic
-		json.Unmarshal([]byte(m["statistics"].(string)), &statistics)
+		if err := json.Unmarshal([]byte(m["statistics"].(string)), &statistics); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal statistics: %v", err)
+		}
 
 		term, err := strconv.Atoi(m["term"].(string))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse term: %v", err)
 		}
 
+		// Создание объекта speciality
 		speciality := IUniverSpecialtyShortcut{
 			SpecialityID:      specialityID,
 			SpecialityNameRu:  m["speciality_name_ru"].(string),
@@ -577,7 +590,7 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
 			EducationFormatKz: m["education_format_kz"].(string),
 			Term:              term,
 			EduLang:           m["edu_lang"].(string),
-			Statistics:        statistics,
+			Statistics:        statistics, // Присваиваем декодированную статистику (если пустая, это []),
 		}
 
 		specialities = append(specialities, speciality)

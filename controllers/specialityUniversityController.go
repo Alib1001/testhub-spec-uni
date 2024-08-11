@@ -77,7 +77,6 @@ func (c *SpecialityUniversityController) UpdateUniversitySpecialityDetail() {
 
 	detail.UpdatedAt = time.Now()
 
-	// Выполняем обновление записи
 	if err := detail.Update(); err != nil {
 		c.Ctx.Output.SetStatus(400)
 		c.Data["json"] = map[string]string{"error": err.Error()}
