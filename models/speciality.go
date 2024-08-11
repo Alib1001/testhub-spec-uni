@@ -10,25 +10,24 @@ import (
 )
 
 type Speciality struct {
-	Id              int                           `orm:"auto" json:"id"`
-	Name            string                        `orm:"size(128)" json:"name"`
-	NameRu          string                        `orm:"size(128)" json:"NameRu"`
-	NameKz          string                        `orm:"size(128)" json:"NameKz"`
-	AbbreviationRu  string                        `json:"AbbreviationRu" validate:"required"`
-	AbbreviationKz  string                        `json:"AbbreviationKz" validate:"required"`
-	Code            string                        `orm:"size(64)" json:"code"`
-	VideoLink       string                        `orm:"size(256)" json:"video_link"`
-	Description     string                        `orm:"type(text)" json:"description"`
-	DescriptionRu   string                        `orm:"type(text)" json:"DescriptionRu"`
-	DescriptionKz   string                        `orm:"type(text)" json:"DescriptionKz"`
-	Degree          string                        `orm:"size(128)" json:"degree"`
-	UniversityTerms []*UniversitySpecialityDetail `orm:"reverse(many)" json:"university_terms,omitempty"`
+	Id              int    `orm:"auto" json:"id"`
+	Name            string `orm:"size(128)" json:"name"`
+	NameRu          string `orm:"size(128)" json:"NameRu"`
+	NameKz          string `orm:"size(128)" json:"NameKz"`
+	AbbreviationRu  string `json:"AbbreviationRu" validate:"required"`
+	AbbreviationKz  string `json:"AbbreviationKz" validate:"required"`
+	Code            string `orm:"size(64)" json:"code"`
+	VideoLink       string `orm:"size(256)" json:"video_link"`
+	Description     string `orm:"type(text)" json:"description"`
+	DescriptionRu   string `orm:"type(text)" json:"DescriptionRu"`
+	DescriptionKz   string `orm:"type(text)" json:"DescriptionKz"`
+	Degree          string `orm:"size(128)" json:"degree"`
 	Scholarship     bool
-	Universities    []*University `orm:"reverse(many)" json:"universities,omitempty"`
-	SubjectPair     *SubjectPair  `orm:"rel(fk);on_delete(set_null);null" json:"subject_pair,omitempty"`
-	CreatedAt       time.Time     `orm:"auto_now_add;type(datetime)" json:"created_at"`
-	UpdatedAt       time.Time     `orm:"auto_now;type(datetime)" json:"updated_at"`
-	PointStats      []*PointStat  `orm:"reverse(many)" json:"point_stats,omitempty"`
+	SubjectPair     *SubjectPair            `orm:"rel(fk);on_delete(set_null);null" json:"subject_pair,omitempty"`
+	UniversityTerms []*SpecialityUniversity `orm:"reverse(many)" json:"university_terms,omitempty"` // Множественная связь через SpecialityUniversity
+	CreatedAt       time.Time               `orm:"auto_now_add;type(datetime)" json:"created_at"`
+	UpdatedAt       time.Time               `orm:"auto_now;type(datetime)" json:"updated_at"`
+	PointStats      []*PointStat            `orm:"reverse(many)" json:"point_stats,omitempty"`
 }
 
 type GetSpecialityResponse struct {
@@ -165,6 +164,8 @@ type IUniverSpecialtyShortcut struct {
 	Degree            string             `json:"degree"`
 	EducationFormatRu string             `json:"education_format_ru"`
 	EducationFormatKz string             `json:"education_format_kz"`
+	Term              int                `json:"term"`
+	EduLang           string             `json:"edu_lang"`
 	Statistics        []IUniverStatistic `json:"statistics"`
 }
 
@@ -393,7 +394,6 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 	o := orm.NewOrm()
 	var results []GetByUniResponseForUser
 
-	// SQL query using the language parameter to select the correct fields
 	query := `
         WITH speciality_data AS (
             SELECT DISTINCT 
@@ -412,14 +412,13 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
                 ps.min_score,
                 ps.min_grant_score,
                 ps.grant_count,
-                us.term
+                su.term
             FROM 
                 speciality s
                 INNER JOIN speciality_university su ON s.id = su.speciality_id
                 INNER JOIN university u ON su.university_id = u.id
                 LEFT JOIN point_stat ps ON s.id = ps.speciality_id AND u.id = ps.university_id
                 LEFT JOIN subject_pair sp ON s.subject_pair_id = sp.id
-                LEFT JOIN university_speciality_detail us ON su.speciality_id = us.speciality_id AND su.university_id = us.university_id
             WHERE 
                 u.id = ?
         )
@@ -452,7 +451,6 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 	for i := range results {
 		var subjectNames []string
 
-		// Fetch subject names according to the language
 		if results[i].Subject1ID != 0 {
 			var subject1 Subject
 			err := o.QueryTable("subject").Filter("id", results[i].Subject1ID).One(&subject1)
@@ -479,12 +477,10 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 
 		results[i].SubjectNames = subjectNames
 
-		// Initialize slices as empty instead of nil
 		annualPoints := []AnnualPoints{}
 		annualGrants := []AnnualGrant{}
 		var latestGrantCount int
 
-		// Fetching annual points and annual grants
 		var pointStats []PointStat
 		_, err := o.QueryTable("point_stat").
 			Filter("speciality_id", results[i].SpecialityID).
@@ -514,7 +510,6 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 		results[i].GrantCount = latestGrantCount
 	}
 
-	// Ensure empty slice is returned if no results are found
 	if len(results) == 0 {
 		return []GetByUniResponseForUser{}, nil
 	}
@@ -523,10 +518,8 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 }
 
 func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtyShortcut, error) {
-	// Initialize the return slice
 	var specialities []IUniverSpecialtyShortcut
 
-	// Write the SQL query
 	query := `
         SELECT
             s.id as speciality_id,
@@ -536,6 +529,8 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
             s.degree,
             u.study_format_ru as education_format_ru,
             u.study_format_kz as education_format_kz,
+            su.term,
+            su.edu_lang,
             COALESCE(json_agg(json_build_object(
                 'id', ls.id,
                 'grant_count', ls.grant_count,
@@ -550,7 +545,7 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
             JOIN uni_spec.university u ON su.university_id = u.id
             LEFT JOIN uni_spec.point_stat ls ON s.id = ls.speciality_id
         WHERE su.university_id = ?
-        GROUP BY s.id, s.name_ru, s.name_kz, s.code, s.degree, u.study_format_ru, u.study_format_kz
+        GROUP BY s.id, s.name_ru, s.name_kz, s.code, s.degree, u.study_format_ru, u.study_format_kz, su.term, su.edu_lang
     `
 
 	// Execute the query
@@ -562,11 +557,15 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
 		return nil, err
 	}
 
-	// Map the result to IUniverSpecialtyShortcut slice
 	for _, m := range maps {
 		specialityID, _ := strconv.Atoi(m["speciality_id"].(string))
 		var statistics []IUniverStatistic
 		json.Unmarshal([]byte(m["statistics"].(string)), &statistics)
+
+		term, err := strconv.Atoi(m["term"].(string))
+		if err != nil {
+			return nil, err
+		}
 
 		speciality := IUniverSpecialtyShortcut{
 			SpecialityID:      specialityID,
@@ -576,6 +575,8 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
 			Degree:            m["degree"].(string),
 			EducationFormatRu: m["education_format_ru"].(string),
 			EducationFormatKz: m["education_format_kz"].(string),
+			Term:              term,
+			EduLang:           m["edu_lang"].(string),
 			Statistics:        statistics,
 		}
 

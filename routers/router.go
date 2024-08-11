@@ -107,11 +107,11 @@ func init() {
 		),
 
 		beego.NSNamespace("/unispecdetails",
-			beego.NSInclude(&controllers.UniversitySpecialityDetailController{}),
-			beego.NSRouter("/add/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "post:CreateUniversitySpecialityDetail"),
-			beego.NSRouter("/get/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "get:GetUniversitySpecialityDetail"),
-			beego.NSRouter("/update/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "put:UpdateUniversitySpecialityDetail"),
-			beego.NSRouter("/delete/:uid/:sid", &controllers.UniversitySpecialityDetailController{}, "delete:DeleteUniversitySpecialityDetail"),
+			beego.NSInclude(&controllers.SpecialityUniversityController{}),
+			beego.NSRouter("/add/:uid/:sid", &controllers.SpecialityUniversityController{}, "post:CreateUniversitySpecialityDetail"),
+			beego.NSRouter("/get/:uid/:sid", &controllers.SpecialityUniversityController{}, "get:GetUniversitySpecialityDetail"),
+			beego.NSRouter("/update/:uid/:sid", &controllers.SpecialityUniversityController{}, "put:UpdateUniversitySpecialityDetail"),
+			beego.NSRouter("/delete/:uid/:sid", &controllers.SpecialityUniversityController{}, "delete:DeleteUniversitySpecialityDetail"),
 		),
 
 		/**

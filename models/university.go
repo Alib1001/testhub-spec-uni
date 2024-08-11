@@ -37,25 +37,25 @@ type University struct {
 	AverageFee         int
 	MainImageUrl       string `orm:"size(256)"`
 	MinEntryScore      int
-	PhotosUrlList      []string      `orm:"-"`
-	Description        string        `orm:"type(text)"`
-	DescriptionRu      string        `orm:"type(text)" json:"-"`
-	DescriptionKz      string        `orm:"type(text)" json:"-"`
-	Specialities       []*Speciality `orm:"rel(m2m);rel_table(speciality_university);on_delete(cascade)"`
-	Services           []*Service    `orm:"rel(m2m);rel_table(university_service);on_delete(cascade)"`
-	PointStats         []*PointStat  `orm:"reverse(many);on_delete(cascade)"`
-	City               *City         `orm:"rel(fk)"`
-	CreatedAt          time.Time     `orm:"auto_now_add;type(datetime)"`
-	UpdatedAt          time.Time     `orm:"auto_now;type(datetime)"`
-	CallCenterNumber   string        `orm:"size(64)"`
-	WhatsAppNumber     string        `orm:"size(64)"`
-	StudyFormat        string        `orm:"size(64)"`
-	StudyFormatRu      string        `orm:"size(64)"`
-	StudyFormatKz      string        `orm:"size(64)"`
-	AddressLink        string        `orm:"size(256)"`
-	Email              string        `orm:"size(64)"`
-	Rating             string        `orm:"size(64)"`
-	Gallery            []*Gallery    `orm:"reverse(many);on_delete(cascade)"`
+	PhotosUrlList      []string                `orm:"-"`
+	Description        string                  `orm:"type(text)"`
+	DescriptionRu      string                  `orm:"type(text)" json:"-"`
+	DescriptionKz      string                  `orm:"type(text)" json:"-"`
+	Specialities       []*SpecialityUniversity `orm:"reverse(many);on_delete(cascade)"`
+	Services           []*Service              `orm:"rel(m2m);rel_table(university_service);on_delete(cascade)"`
+	PointStats         []*PointStat            `orm:"reverse(many);on_delete(cascade)"`
+	City               *City                   `orm:"rel(fk)"`
+	CreatedAt          time.Time               `orm:"auto_now_add;type(datetime)"`
+	UpdatedAt          time.Time               `orm:"auto_now;type(datetime)"`
+	CallCenterNumber   string                  `orm:"size(64)"`
+	WhatsAppNumber     string                  `orm:"size(64)"`
+	StudyFormat        string                  `orm:"size(64)"`
+	StudyFormatRu      string                  `orm:"size(64)"`
+	StudyFormatKz      string                  `orm:"size(64)"`
+	AddressLink        string                  `orm:"size(256)"`
+	Email              string                  `orm:"size(64)"`
+	Rating             string                  `orm:"size(64)"`
+	Gallery            []*Gallery              `orm:"reverse(many);on_delete(cascade)"`
 }
 
 type UniversitySearchResult struct {
@@ -193,29 +193,29 @@ type UpdateUniversityResponse struct {
 }
 
 type UpdateUniversityPartial struct {
-	Id                 int                           `form:"Id"`
-	NameRu             string                        `form:"NameRu"`
-	NameKz             string                        `form:"NameKz"`
-	UniversityStatusRu string                        `form:"UniversityStatusRu"`
-	UniversityStatusKz string                        `form:"UniversityStatusKz"`
-	Website            string                        `form:"Website"`
-	CallCenterNumber   string                        `form:"CallCenterNumber"`
-	WhatsAppNumber     string                        `form:"WhatsAppNumber"`
-	Address            string                        `form:"Address"`
-	UniversityCode     string                        `form:"UniversityCode"`
-	StudyFormatRu      string                        `form:"StudyFormatRu"`
-	StudyFormatKz      string                        `form:"StudyFormatKz"`
-	AbbreviationRu     string                        `form:"AbbreviationRu"`
-	AbbreviationKz     string                        `form:"AbbreviationKz"`
-	MainImageUrl       string                        `form:"MainImageUrl"`
-	AddressLink        string                        `form:"AddressLink"`
-	DescriptionRu      string                        `form:"DescriptionRu"`
-	DescriptionKz      string                        `form:"DescriptionKz"`
-	Rating             string                        `form:"Rating"`
-	MinScore           int                           `form:"MinScore"`
-	Gallery            []string                      `form:"Gallery"`
-	SpecialityTerms    []*UniversitySpecialityDetail `orm:"reverse(many)" json:"speciality_terms,omitempty"`
-	CityId             int                           `form:"CityId"`
+	Id                 int                     `form:"Id"`
+	NameRu             string                  `form:"NameRu"`
+	NameKz             string                  `form:"NameKz"`
+	UniversityStatusRu string                  `form:"UniversityStatusRu"`
+	UniversityStatusKz string                  `form:"UniversityStatusKz"`
+	Website            string                  `form:"Website"`
+	CallCenterNumber   string                  `form:"CallCenterNumber"`
+	WhatsAppNumber     string                  `form:"WhatsAppNumber"`
+	Address            string                  `form:"Address"`
+	UniversityCode     string                  `form:"UniversityCode"`
+	StudyFormatRu      string                  `form:"StudyFormatRu"`
+	StudyFormatKz      string                  `form:"StudyFormatKz"`
+	AbbreviationRu     string                  `form:"AbbreviationRu"`
+	AbbreviationKz     string                  `form:"AbbreviationKz"`
+	MainImageUrl       string                  `form:"MainImageUrl"`
+	AddressLink        string                  `form:"AddressLink"`
+	DescriptionRu      string                  `form:"DescriptionRu"`
+	DescriptionKz      string                  `form:"DescriptionKz"`
+	Rating             string                  `form:"Rating"`
+	MinScore           int                     `form:"MinScore"`
+	Gallery            []string                `form:"Gallery"`
+	SpecialityTerms    []*SpecialityUniversity `orm:"reverse(many)" json:"speciality_terms,omitempty"`
+	CityId             int                     `form:"CityId"`
 }
 
 func init() {
@@ -291,7 +291,7 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 func UpdateUniversityImageURL(id int64, imageURL string) error {
 	o := orm.NewOrm()
 
-	university := University{Id: int(id)} // Преобразуем id к типу int
+	university := University{Id: int(id)}
 	if err := o.Read(&university); err != nil {
 		if err == orm.ErrNoRows {
 			return errors.New("university not found")
@@ -687,21 +687,26 @@ func AddSpecialitiesToUniversity(specialityIds []int, universityId int) error {
 	}
 
 	for _, specialityId := range specialityIds {
-		speciality := &Speciality{Id: specialityId}
-		if err := o.Read(speciality); err != nil {
-			return err
+		specialityUniversity := &SpecialityUniversity{
+			Speciality: &Speciality{Id: specialityId},
+			University: university,
+			Term:       4,
+			EduLang:    "kz",
 		}
 
-		exist := o.QueryM2M(university, "Specialities").Exist(speciality)
+		// Check if the relation already exists
+		exist := o.QueryTable("speciality_university").Filter("speciality_id", specialityId).Filter("university_id", universityId).Exist()
 		if exist {
-			continue // Skip already assigned specialities
+			continue
 		}
 
-		if _, err := o.QueryM2M(university, "Specialities").Add(speciality); err != nil {
+		// Insert the new SpecialityUniversity entry
+		if _, err := o.Insert(specialityUniversity); err != nil {
 			return err
 		}
 	}
 
+	// Load the related Specialities
 	o.LoadRelated(university, "Specialities")
 	fmt.Printf("Specialities for university %d: %v\n", universityId, university.Specialities)
 
