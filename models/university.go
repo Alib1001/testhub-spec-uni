@@ -140,7 +140,7 @@ type AddUUniversityResponse struct {
 	Website            string   `form:"Website" validate:"required,url"`
 	CallCenterNumber   string   `form:"CallCenterNumber" validate:"required"`
 	WhatsAppNumber     string   `form:"WhatsAppNumber" validate:"required"`
-	Email              string   `form:"Email" validate:"required"`
+	Email              string   `form:"Email"`
 	Address            string   `form:"Address" validate:"required"`
 	UniversityCode     string   `form:"UniversityCode" validate:"required"`
 	StudyFormatRu      string   `form:"StudyFormatRu" validate:"required"`
@@ -164,7 +164,7 @@ type AddUniversityPartial struct {
 	UniversityStatusRu string   `form:"UniversityStatusRu" validate:"required"`
 	UniversityStatusKz string   `form:"UniversityStatusKz" validate:"required"`
 	Website            string   `form:"Website" validate:"required,url"`
-	Email              string   `form:"Email" validate:"required"`
+	Email              string   `form:"Email"`
 	CallCenterNumber   string   `form:"CallCenterNumber" validate:"required"`
 	WhatsAppNumber     string   `form:"WhatsAppNumber" validate:"required"`
 	Address            string   `form:"Address" validate:"required"`
