@@ -10,6 +10,7 @@ Thumbs.db
 *.so
 *.dylib
 *.test
+testhub-spec-uni
 
 /vendor/
 /bin/
@@ -20,7 +21,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
-/conf/app.conf
+*.conf
 
 go.sum
 go.sum.tmp

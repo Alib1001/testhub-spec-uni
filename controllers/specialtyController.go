@@ -165,18 +165,23 @@ func (c *SpecialityController) Delete() {
 	}
 	c.ServeJSON()
 }
-
-// GetSpecialitiesInUni retrieves all specialities associated with a university by its ID.
-// @Title GetSpecialitiesInUni
-// @Description Получение списка специальностей, связанных с университетом.
-// @Param	universityId		path	int	true	"ID университета"
-// @Success 200 {array} models.Speciality	"Список специальностей университета"
-// @Failure 400 некорректный ID или другая ошибка
-// @router /byuni/:universityId [get]
 func (c *SpecialityController) GetByUniversity() {
 	universityId, err := c.GetInt(":universityId")
 	if err != nil {
 		c.CustomAbort(400, "Invalid university ID")
+		return
+	}
+
+	// Извлечение page и per_page из query params
+	page, err := c.GetInt("page", 1) // По умолчанию 1-я страница
+	if err != nil || page <= 0 {
+		c.CustomAbort(400, "Invalid page number")
+		return
+	}
+
+	perPage, err := c.GetInt("per_page", 10) // По умолчанию 10 записей на странице
+	if err != nil || perPage <= 0 {
+		c.CustomAbort(400, "Invalid per_page value")
 		return
 	}
 
@@ -185,17 +190,23 @@ func (c *SpecialityController) GetByUniversity() {
 		lang = "ru"
 	}
 
-	specialities, err := models.GetSpecialitiesInUniversityForUser(universityId, lang)
+	specialities, totalCount, err := models.GetSpecialitiesInUniversityForUser(universityId, lang, page, perPage)
 	if err != nil {
 		c.CustomAbort(500, err.Error())
 		return
 	}
 
-	if len(specialities) == 0 {
-		c.Data["json"] = []models.GetSpecialityForAdmResponse{}
-	} else {
-		c.Data["json"] = specialities
+	totalPages := (totalCount + perPage - 1) / perPage
+
+	// Формируем ответ с учетом пагинации
+	response := map[string]interface{}{
+		"page":         page,
+		"total_pages":  totalPages,
+		"total_count":  totalCount,
+		"specialities": specialities,
 	}
+
+	c.Data["json"] = response
 	c.ServeJSON()
 }
 
@@ -545,5 +556,26 @@ func (c *SpecialityController) SearchSpecialities() {
 	}
 
 	c.Data["json"] = result
+	c.ServeJSON()
+}
+
+// GetSpecialityNames
+// @Title GetSpecialityNames
+// @Description Get a list of specialities based on language provided in the header
+// @Param lang header string true "Language Code (e.g., ru, kz)"
+// @Success 200 {array} models.GetSpecialityNameResponse "List of specialities"
+// @Failure 500 "Failed to retrieve specialities"
+// @router /specialitynames[get]
+func (c *SpecialityController) GetSpecialityNames() {
+	lang := c.Ctx.Input.Header("lang")
+
+	specialities, err := models.GetSpecialityNames(lang)
+	if err != nil {
+		c.CustomAbort(http.StatusInternalServerError, "Failed to retrieve specialities")
+		return
+	}
+
+	// Установка результата в качестве ответа
+	c.Data["json"] = specialities
 	c.ServeJSON()
 }

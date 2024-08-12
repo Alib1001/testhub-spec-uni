@@ -87,6 +87,7 @@ func (c *UniversityController) Create() {
 	universityResponse.UniversityStatusRu = partialResponse.UniversityStatusRu
 	universityResponse.UniversityStatusKz = partialResponse.UniversityStatusKz
 	universityResponse.Website = partialResponse.Website
+	universityResponse.Email = partialResponse.Email
 	universityResponse.CallCenterNumber = partialResponse.CallCenterNumber
 	universityResponse.WhatsAppNumber = partialResponse.WhatsAppNumber
 	universityResponse.Address = partialResponse.Address
@@ -204,10 +205,39 @@ func (c *UniversityController) GetForAdmin() {
 	c.ServeJSON()
 }
 
+// GetForUser возвращает информацию о университете по его ID.
+// @Title GetForUser
+// @Description Получение информации о университете по ID.
+// @Param	id		path	int	true	"ID университета для получения информации"
+// @Param   language    query   string  false   "Язык для получения информации (ru/kz)"
+// @Success 200 {object} models.University	"Информация о университете"
+// @Failure 400 некорректный ID или другая ошибка
+// @router /:id [get]
+func (c *UniversityController) GetForUser() {
+	id, err := c.GetInt(":id")
+	if err != nil {
+		c.Data["json"] = "Некорректный ID университета"
+		c.ServeJSON()
+		return
+	}
+
+	language := c.Ctx.Input.Header("lang")
+
+	university, err := models.GetUniversityByIdForUser(id, language)
+	if err == nil {
+		c.Data["json"] = university
+	} else {
+		c.Data["json"] = err.Error()
+	}
+	c.ServeJSON()
+}
+
 // GetAll возвращает список всех университетов.
 // @Title GetAll
 // @Description Получение списка всех университетов.
-// @Success 200 {array} models.University	"Список университетов"
+// @Param page query int true "Page number"
+// @Param per_page query int true "Items per page"
+// @Success 200 {object} map[string]interface{}	"Список университетов с пагинацией"
 // @Failure 400 ошибка получения списка или другая ошибка
 // @router / [get]
 func (c *UniversityController) GetAll() {
@@ -216,9 +246,27 @@ func (c *UniversityController) GetAll() {
 		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
 		return
 	}
-	universities, err := models.GetAllUniversities(language)
+
+	page, err := c.GetInt("page", 1)
+	if err != nil || page < 1 {
+		c.CustomAbort(http.StatusBadRequest, "Invalid page number")
+		return
+	}
+
+	perPage, err := c.GetInt("per_page", 10)
+	if err != nil || perPage < 1 {
+		c.CustomAbort(http.StatusBadRequest, "Invalid per_page value")
+		return
+	}
+
+	universities, totalCount, totalPage, currentPage, err := models.GetAllUniversities(language, page, perPage)
 	if err == nil {
-		c.Data["json"] = universities
+		c.Data["json"] = map[string]interface{}{
+			"universities": universities,
+			"total_count":  totalCount,
+			"total_page":   totalPage,
+			"current_page": currentPage,
+		}
 	} else {
 		c.Data["json"] = err.Error()
 	}

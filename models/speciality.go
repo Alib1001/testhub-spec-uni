@@ -115,7 +115,10 @@ type GetByUniResponseForUser struct {
 	Subject1ID      int            `orm:"column(subject1_id)" json:"-"`
 	Subject2ID      int            `orm:"column(subject2_id)" json:"-"`
 }
-
+type GetSpecialityNameResponse struct {
+	SpecialityID   int    `orm:"column(speciality_id)" json:"speciality_id"`
+	SpecialityName string `orm:"column(speciality_name)" json:"speciality_name"`
+}
 type GetByUniResponseForAdm struct {
 	SpecialityID      int            `json:"speciality_id" orm:"column(speciality_id)"`
 	SpecialityNameRu  string         `json:"speciality_name_ru" orm:"column(speciality_name_ru)"`
@@ -381,7 +384,6 @@ func SearchSpecialities(params map[string]interface{}, language string) (*Specia
 		return nil, err
 	}
 
-	// Пагинация
 	result, err := paginateSpecialities(specialities, params, language)
 	if err != nil {
 		return nil, err
@@ -390,9 +392,11 @@ func SearchSpecialities(params map[string]interface{}, language string) (*Specia
 	fmt.Printf("SearchSpecialities: total specialities after filtering: %d\n", len(result.Specialities))
 	return result, nil
 }
-func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]GetByUniResponseForUser, error) {
+func GetSpecialitiesInUniversityForUser(universityId int, language string, page int, perPage int) ([]GetByUniResponseForUser, int, error) {
 	o := orm.NewOrm()
 	var results []GetByUniResponseForUser
+
+	offset := (page - 1) * perPage
 
 	query := `
         WITH speciality_data AS (
@@ -441,11 +445,28 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
             speciality_data
         GROUP BY
             speciality_id, speciality_name, university_name, education_format, code, price, degree, scholarship, avg_salary, subject1_id, subject2_id, term
+        ORDER BY speciality_name
+        LIMIT ? OFFSET ?
     `
 
-	_, err := o.Raw(query, language, language, language, universityId).QueryRows(&results)
+	_, err := o.Raw(query, language, language, language, universityId, perPage, offset).QueryRows(&results)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Подсчет общего количества записей без пагинации
+	var totalCount int
+	countQuery := `
+        SELECT COUNT(*) FROM (
+            SELECT DISTINCT s.id
+            FROM speciality s
+            INNER JOIN speciality_university su ON s.id = su.speciality_id
+            WHERE su.university_id = ?
+        ) AS count_query
+    `
+	err = o.Raw(countQuery, universityId).QueryRow(&totalCount)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	for i := range results {
@@ -489,7 +510,7 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 			OrderBy("-year"). // Убедитесь, что сначала получаем последние данные
 			All(&pointStats)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		for _, ps := range pointStats {
@@ -515,10 +536,10 @@ func GetSpecialitiesInUniversityForUser(universityId int, language string) ([]Ge
 	}
 
 	if len(results) == 0 {
-		return []GetByUniResponseForUser{}, nil
+		return []GetByUniResponseForUser{}, totalCount, nil
 	}
 
-	return results, nil
+	return results, totalCount, nil
 }
 
 func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtyShortcut, error) {
@@ -688,17 +709,28 @@ func filterSpecialitiesBySubjectPair(params map[string]interface{}, specialities
 func filterSpecialitiesInUniversity(params map[string]interface{}, specialities []*Speciality) ([]*Speciality, error) {
 	universityId, ok := params["university_id"].(int)
 	if !ok {
-		return specialities, nil
+		return specialities, nil // Если university_id не задан, возвращаем исходный список специальностей
 	}
 
 	// Получаем язык из параметров, если он существует, иначе используем язык по умолчанию
 	language, ok := params["language"].(string)
 	if !ok {
-		language = "ru" // язык по умолчанию
+		language = "ru" // Язык по умолчанию
 	}
 
-	// Получаем специальности из университета
-	specialityResponses, err := GetSpecialitiesInUniversityForUser(universityId, language)
+	// Получаем параметры для пагинации
+	page, ok := params["page"].(int)
+	if !ok || page < 1 {
+		page = 1 // Значение по умолчанию
+	}
+
+	perPage, ok := params["per_page"].(int)
+	if !ok || perPage < 1 {
+		perPage = 10 // Значение по умолчанию
+	}
+
+	// Получаем специальности из университета с учетом пагинации
+	specialityResponses, _, err := GetSpecialitiesInUniversityForUser(universityId, language, page, perPage)
 	if err != nil {
 		return nil, err
 	}
@@ -814,4 +846,46 @@ func paginateSpecialities(specialities []*Speciality, params map[string]interfac
 	}
 
 	return result, nil
+}
+
+func GetSpecialityNames(lang string) ([]GetSpecialityNameResponse, error) {
+	o := orm.NewOrm()
+	var specialities []Speciality
+	var responses []GetSpecialityNameResponse
+
+	qs := o.QueryTable(new(Speciality))
+
+	switch lang {
+	case "ru":
+		qs = qs.Filter("NameRu__isnull", false)
+	case "kz":
+		qs = qs.Filter("NameKz__isnull", false)
+	default:
+		qs = qs.Filter("Name__isnull", false)
+	}
+
+	_, err := qs.All(&specialities)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, speciality := range specialities {
+		var specialityName string
+		switch lang {
+		case "ru":
+			specialityName = speciality.NameRu
+		case "kz":
+			specialityName = speciality.NameKz
+		default:
+			specialityName = speciality.Name
+		}
+
+		response := GetSpecialityNameResponse{
+			SpecialityID:   speciality.Id,
+			SpecialityName: specialityName,
+		}
+		responses = append(responses, response)
+	}
+
+	return responses, nil
 }

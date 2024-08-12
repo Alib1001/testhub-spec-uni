@@ -59,10 +59,10 @@ type University struct {
 }
 
 type UniversitySearchResult struct {
-	Universities []*University `json:"universities"`
-	Page         int           `json:"page"`
-	TotalPages   int           `json:"total_pages"`
-	TotalCount   int           `json:"total_count"`
+	Universities []*GetAllUniversityResponse `json:"universities"`
+	Page         int                         `json:"page"`
+	TotalPages   int                         `json:"total_pages"`
+	TotalCount   int                         `json:"total_count"`
 }
 
 type GetAllUniversityResponse struct {
@@ -116,6 +116,21 @@ type GetByIdUniversityResponseForAdmin struct {
 	City               *City              `json:"City" validate:"required"`
 }
 
+type GetByIdUniversityResponseForUser struct {
+	Id               int                       `json:"Id"`
+	Name             string                    `json:"Name"`
+	Abbreviation     string                    `json:"Abbreviation"`
+	MainImageUrl     string                    `json:"MainImageUrl"`
+	Website          string                    `json:"Website"`
+	Email            string                    `json:"Email"`
+	CallCenterNumber string                    `json:"CallCenterNumber"`
+	WhatsAppNumber   string                    `json:"WhatsAppNumber"`
+	Address          string                    `json:"Address"`
+	AddressLink      string                    `json:"AddressLink"`
+	Description      string                    `json:"Description"`
+	Services         []*ServiceResponseForUser `json:"Services"`
+	Gallery          []*GalleryResponse        `json:"Gallery"`
+}
 type AddUUniversityResponse struct {
 	Id                 int      `form:"Id"`
 	NameRu             string   `form:"NameRu" validate:"required"`
@@ -125,6 +140,7 @@ type AddUUniversityResponse struct {
 	Website            string   `form:"Website" validate:"required,url"`
 	CallCenterNumber   string   `form:"CallCenterNumber" validate:"required"`
 	WhatsAppNumber     string   `form:"WhatsAppNumber" validate:"required"`
+	Email              string   `form:"Email" validate:"required"`
 	Address            string   `form:"Address" validate:"required"`
 	UniversityCode     string   `form:"UniversityCode" validate:"required"`
 	StudyFormatRu      string   `form:"StudyFormatRu" validate:"required"`
@@ -148,6 +164,7 @@ type AddUniversityPartial struct {
 	UniversityStatusRu string   `form:"UniversityStatusRu" validate:"required"`
 	UniversityStatusKz string   `form:"UniversityStatusKz" validate:"required"`
 	Website            string   `form:"Website" validate:"required,url"`
+	Email              string   `form:"Email" validate:"required"`
 	CallCenterNumber   string   `form:"CallCenterNumber" validate:"required"`
 	WhatsAppNumber     string   `form:"WhatsAppNumber" validate:"required"`
 	Address            string   `form:"Address" validate:"required"`
@@ -218,6 +235,11 @@ type UpdateUniversityPartial struct {
 	CityId             int                     `form:"CityId"`
 }
 
+type LocalizedFields struct {
+	Name   string
+	Status string
+}
+
 func init() {
 	orm.RegisterModel(new(University))
 }
@@ -242,6 +264,7 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 		UniversityStatusRu: universityResponse.UniversityStatusRu,
 		UniversityStatusKz: universityResponse.UniversityStatusKz,
 		Website:            universityResponse.Website,
+		Email:              universityResponse.Email,
 		CallCenterNumber:   universityResponse.CallCenterNumber,
 		WhatsAppNumber:     universityResponse.WhatsAppNumber,
 		Address:            universityResponse.Address,
@@ -386,12 +409,89 @@ func GetUniversityByIdForAdmin(id int) (*GetByIdUniversityResponseForAdmin, erro
 	return response, nil
 }
 
-func GetAllUniversities(language string) ([]*GetAllUniversityResponse, error) {
+func GetUniversityByIdForUser(id int, language string) (*GetByIdUniversityResponseForUser, error) {
 	o := orm.NewOrm()
-	var universities []*University
-	_, err := o.QueryTable("university").All(&universities)
+	university := &University{Id: id}
+	err := o.Read(university)
 	if err != nil {
 		return nil, err
+	}
+
+	if _, err := o.LoadRelated(university, "Services"); err != nil {
+		return nil, err
+	}
+	if _, err := o.LoadRelated(university, "Gallery"); err != nil {
+		return nil, err
+	}
+
+	var galleryResponses []*GalleryResponse
+	for _, gallery := range university.Gallery {
+		galleryResponses = append(galleryResponses, &GalleryResponse{
+			Id:       gallery.Id,
+			PhotoUrl: gallery.PhotoUrl,
+		})
+	}
+
+	var name, abbreviation, description string
+	switch language {
+	case "ru":
+		name = university.NameRu
+		description = university.DescriptionRu
+		abbreviation = university.AbbreviationRu
+	case "kz":
+		name = university.NameKz
+		description = university.DescriptionKz
+		abbreviation = university.AbbreviationKz
+	default:
+		name = university.NameKz
+		description = university.DescriptionKz
+		abbreviation = university.AbbreviationKz
+	}
+
+	var serviceResponses []*ServiceResponseForUser
+	for _, service := range university.Services {
+		serviceResponse, err := GetServiceById(service.Id, language)
+		if err != nil {
+			return nil, err
+		}
+		serviceResponses = append(serviceResponses, serviceResponse)
+	}
+
+	response := &GetByIdUniversityResponseForUser{
+		Id:               university.Id,
+		Name:             name,
+		Website:          university.Website,
+		Email:            university.Email,
+		CallCenterNumber: university.CallCenterNumber,
+		WhatsAppNumber:   university.WhatsAppNumber,
+		Address:          university.Address,
+		Abbreviation:     abbreviation,
+		MainImageUrl:     university.MainImageUrl,
+		AddressLink:      university.AddressLink,
+		Description:      description,
+		Gallery:          galleryResponses,
+		Services:         serviceResponses,
+	}
+
+	return response, nil
+}
+
+func GetAllUniversities(language string, page int, perPage int) ([]*GetAllUniversityResponse, int64, int, int, error) {
+	o := orm.NewOrm()
+	var universities []*University
+
+	offset := (page - 1) * perPage
+
+	totalCount, err := o.QueryTable("university").Count()
+	if err != nil {
+		return nil, 0, 0, 0, err
+	}
+
+	totalPage := int((totalCount + int64(perPage) - 1) / int64(perPage))
+
+	_, err = o.QueryTable("university").Limit(perPage).Offset(offset).All(&universities)
+	if err != nil {
+		return nil, 0, 0, 0, err
 	}
 
 	var responses []*GetAllUniversityResponse
@@ -411,7 +511,7 @@ func GetAllUniversities(language string) ([]*GetAllUniversityResponse, error) {
 		}
 
 		if _, err := o.LoadRelated(university, "Specialities"); err != nil {
-			return nil, err
+			return nil, 0, 0, 0, err
 		}
 
 		response := &GetAllUniversityResponse{
@@ -429,7 +529,7 @@ func GetAllUniversities(language string) ([]*GetAllUniversityResponse, error) {
 		responses = append(responses, response)
 	}
 
-	return responses, nil
+	return responses, totalCount, totalPage, page, nil
 }
 
 func GetAllUniversitiesForAdmin() ([]*GetAllUniversityForAdminResponse, error) {
@@ -811,27 +911,50 @@ func SearchUniversities(params map[string]interface{}, language string) (*Univer
 		return nil, err
 	}
 
-	result, err := paginateUniversities(universities, params)
+	var universityResponses []*GetAllUniversityResponse
+	for _, uni := range universities {
+		localized := selectLanguage(uni, language)
+		uniResponse := &GetAllUniversityResponse{
+			Id:               uni.Id,
+			Name:             localized.Name,
+			UniversityStatus: localized.Status,
+			ImageUrl:         uni.MainImageUrl,
+			Address:          uni.Address,
+			UniversityCode:   uni.UniversityCode,
+			SpecialityCount:  len(uni.Specialities),
+			MinScore:         uni.MinEntryScore,
+			Rating:           uni.Rating,
+		}
+		universityResponses = append(universityResponses, uniResponse)
+	}
+
+	result, err := paginateUniversities(universityResponses, params)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, university := range universities {
-		switch language {
-		case "ru":
-			university.Name = university.NameRu
-			university.Description = university.DescriptionRu
-		case "kz":
-			university.Name = university.NameKz
-			university.Description = university.DescriptionKz
-		default:
-			university.Name = university.NameRu               // Or university.NameKz depending on your default language
-			university.Description = university.DescriptionRu // Or university.DescriptionKz depending on your default language
-		}
-	}
-
 	fmt.Printf("SearchUniversities: total universities after filtering: %d\n", len(result.Universities))
 	return result, nil
+}
+
+func selectLanguage(uni *University, language string) LocalizedFields {
+	switch language {
+	case "ru":
+		return LocalizedFields{
+			Name:   uni.NameRu,
+			Status: uni.UniversityStatusRu,
+		}
+	case "kz":
+		return LocalizedFields{
+			Name:   uni.NameKz,
+			Status: uni.UniversityStatusKz,
+		}
+	default:
+		return LocalizedFields{
+			Name:   uni.UniversityStatusKz,
+			Status: uni.UniversityStatusKz,
+		}
+	}
 }
 
 func filterUniversitiesByName(params map[string]interface{}, universities []*University) ([]*University, error) {
@@ -1081,32 +1204,38 @@ func filterBySubjects(params map[string]interface{}, universities []*University)
 	return filtered, nil
 }
 
-func paginateUniversities(universities []*University, params map[string]interface{}) (*UniversitySearchResult, error) {
+func paginateUniversities(universities []*GetAllUniversityResponse, params map[string]interface{}) (*UniversitySearchResult, error) {
 	totalCount := len(universities)
 
+	// Determine the page number
 	page := 1
 	if p, ok := params["page"].(int); ok && p > 0 {
 		page = p
 	}
 
+	// Determine the number of items per page
 	perPage := 10
 	if pp, ok := params["per_page"].(int); ok && pp > 0 {
 		perPage = pp
 	}
 
+	// Calculate the total number of pages
 	totalPages := (totalCount + perPage - 1) / perPage
 
+	// Determine the slice range
 	start := (page - 1) * perPage
 	end := start + perPage
 
+	// Handle out-of-range indices
 	if start >= totalCount {
-		universities = []*University{}
-	} else if end >= totalCount {
+		universities = []*GetAllUniversityResponse{}
+	} else if end > totalCount {
 		universities = universities[start:totalCount]
 	} else {
 		universities = universities[start:end]
 	}
 
+	// Create the result struct
 	result := &UniversitySearchResult{
 		Universities: universities,
 		Page:         page,
@@ -1116,6 +1245,7 @@ func paginateUniversities(universities []*University, params map[string]interfac
 
 	return result, nil
 }
+
 func UpdateUniversityServices(universityID int, services []*Service) error {
 	o := orm.NewOrm()
 
