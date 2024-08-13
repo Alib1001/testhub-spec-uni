@@ -655,12 +655,6 @@ func (c *UniversityController) SearchUniversities() {
 	if avgFee, err := c.GetInt("avg_fee"); err == nil {
 		params["avg_fee"] = avgFee
 	}
-	if hasMilitaryDept, err := c.GetBool("has_military_dept"); err == nil {
-		params["has_military_dept"] = hasMilitaryDept
-	}
-	if hasDormitory, err := c.GetBool("has_dormitory"); err == nil {
-		params["has_dormitory"] = hasDormitory
-	}
 	if cityID, err := c.GetInt("city_id"); err == nil {
 		params["city_id"] = cityID
 	}
@@ -686,11 +680,14 @@ func (c *UniversityController) SearchUniversities() {
 	if secondSubjectID, err := c.GetInt("second_subject_id"); err == nil {
 		params["second_subject_id"] = secondSubjectID
 	}
-	if sort := c.GetString("sort"); sort == "avg_fee_asc" || sort == "avg_fee_desc" {
+	if sort := c.GetString("sort"); sort == "name_asc" || sort == "name_desc" {
 		params["sort"] = sort
 	}
 	if name := c.GetString("name"); name != "" {
 		params["name"] = name
+	}
+	if status := c.GetString("status"); status != "" {
+		params["status"] = status
 	}
 	if studyFormat := c.GetString("study_format"); studyFormat != "" {
 		params["study_format"] = studyFormat
@@ -700,6 +697,10 @@ func (c *UniversityController) SearchUniversities() {
 	}
 	if perPage, err := c.GetInt("per_page"); err == nil {
 		params["per_page"] = perPage
+	}
+
+	if term, err := c.GetInt("term"); err == nil {
+		params["term"] = term
 	}
 
 	log.Printf("Received parameters map: %+v", params)
@@ -800,5 +801,30 @@ func (c *UniversityController) DeleteGalleryPhoto() {
 	}
 
 	c.Data["json"] = map[string]string{"message": "Photo deleted successfully"}
+	c.ServeJSON()
+}
+
+// GetUniNames
+// @Title Get University Names by Language
+// @Description Returns a list of university IDs and names in the specified language.
+// @Param	lang	query	string	false	"Language code (e.g., 'ru' for Russian, 'kz' for Kazakh). Defaults to 'kz' if not provided."
+// @Success 200 {array} models.GetUniNamesResponse "Successful response with a list of university IDs and names."
+// @Failure 500 {object} map[string]string "Internal Server Error with an error message."
+// @Router /universities/names [get]
+func (c *UniversityController) GetUniNames() {
+	lang := c.Ctx.Input.Header("lang")
+	if lang == "" {
+		lang = "kz"
+	}
+
+	unis, err := models.GetUniversityNames(lang)
+	if err != nil {
+		c.Ctx.Output.SetStatus(http.StatusInternalServerError)
+		c.Data["json"] = map[string]string{"error": err.Error()}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = unis
 	c.ServeJSON()
 }

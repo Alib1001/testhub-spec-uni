@@ -15,6 +15,7 @@ import (
 	"mime/multipart"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -75,6 +76,10 @@ type GetAllUniversityResponse struct {
 	UniversityStatus string `json:"UniversityStatus"`
 	MinScore         int    `json:"MinScore"`
 	Rating           string `json:"Rating"`
+}
+type GetUniNamesResponse struct {
+	Id   int    `json:"Id"`
+	Name string `json:"Name"`
 }
 
 type GetAllUniversityForAdminResponse struct {
@@ -448,7 +453,7 @@ func GetUniversityByIdForUser(id int, language string) (*GetByIdUniversityRespon
 		abbreviation = university.AbbreviationKz
 	}
 
-	var serviceResponses []*ServiceResponseForUser
+	serviceResponses := []*ServiceResponseForUser{}
 	for _, service := range university.Services {
 		serviceResponse, err := GetServiceById(service.Id, language)
 		if err != nil {
@@ -871,7 +876,7 @@ func SearchUniversities(params map[string]interface{}, language string) (*Univer
 		return nil, err
 	}
 
-	universities, err = filterUniversitiesByName(params, universities)
+	universities, err = filterUniversitiesByName(params, universities, language)
 	if err != nil {
 		return nil, err
 	}
@@ -896,12 +901,22 @@ func SearchUniversities(params map[string]interface{}, language string) (*Univer
 		return nil, err
 	}
 
+	universities, err = filterByTerm(params, universities)
+	if err != nil {
+		return nil, err
+	}
+
 	universities, err = filterBySpecialityID(params, universities)
 	if err != nil {
 		return nil, err
 	}
 
-	universities, err = filterBySortOrder(params, universities)
+	universities, err = filterByStatus(params, universities, language)
+	if err != nil {
+		return nil, err
+	}
+
+	universities, err = filterBySortOrder(params, universities, language)
 	if err != nil {
 		return nil, err
 	}
@@ -956,35 +971,47 @@ func selectLanguage(uni *University, language string) LocalizedFields {
 		}
 	}
 }
-
-func filterUniversitiesByName(params map[string]interface{}, universities []*University) ([]*University, error) {
+func filterUniversitiesByName(params map[string]interface{}, universities []*University, lang string) ([]*University, error) {
 	prefix, ok := params["name"].(string)
 	if !ok || prefix == "" {
 		return universities, nil
 	}
 
+	if lang != "ru" && lang != "kz" {
+		return universities, fmt.Errorf("invalid or missing lang parameter")
+	}
+
 	o := orm.NewOrm()
 	searchPattern := fmt.Sprintf("%%%s%%", prefix)
 
+	var nameField, abbreviationField string
+	if lang == "ru" {
+		nameField = "name_ru"
+		abbreviationField = "abbreviation_ru"
+	} else if lang == "kz" {
+		nameField = "name_kz"
+		abbreviationField = "abbreviation_kz"
+	}
+
 	var matchingUniversities []*University
-	_, err := o.Raw(`
+	query := fmt.Sprintf(`
 		SELECT * 
 		FROM university 
-		WHERE name LIKE ? 
-		OR abbreviation LIKE ? 
-		OR university_code LIKE ?
-	`, searchPattern, searchPattern, searchPattern).QueryRows(&matchingUniversities)
+		WHERE %s ILIKE ? 
+		OR %s ILIKE ? 
+		OR university_code ILIKE ?
+	`, nameField, abbreviationField)
+
+	_, err := o.Raw(query, searchPattern, searchPattern, searchPattern).QueryRows(&matchingUniversities)
 	if err != nil {
 		return universities, err
 	}
 
-	// Create a map for quick lookup
 	matchingUniversityMap := make(map[int]*University)
 	for _, uni := range matchingUniversities {
 		matchingUniversityMap[uni.Id] = uni
 	}
 
-	// Filter the original list of universities
 	var filteredUniversities []*University
 	for _, uni := range universities {
 		if _, exists := matchingUniversityMap[uni.Id]; exists {
@@ -995,17 +1022,33 @@ func filterUniversitiesByName(params map[string]interface{}, universities []*Uni
 	return filteredUniversities, nil
 }
 
-func filterBySortOrder(params map[string]interface{}, universities []*University) ([]*University, error) {
+func filterBySortOrder(params map[string]interface{}, universities []*University, lang string) ([]*University, error) {
 	if sortOrder, ok := params["sort"].(string); ok {
 		switch sortOrder {
-		case "avg_fee_asc":
-			sort.Slice(universities, func(i, j int) bool {
-				return universities[i].AverageFee < universities[j].AverageFee
-			})
-		case "avg_fee_desc":
-			sort.Slice(universities, func(i, j int) bool {
-				return universities[i].AverageFee > universities[j].AverageFee
-			})
+		case "name_asc":
+			if lang == "ru" {
+				sort.Slice(universities, func(i, j int) bool {
+					return universities[i].NameRu < universities[j].NameRu
+				})
+			} else if lang == "kz" {
+				sort.Slice(universities, func(i, j int) bool {
+					return universities[i].NameKz < universities[j].NameKz
+				})
+			} else {
+				return universities, fmt.Errorf("unsupported language: %s", lang)
+			}
+		case "name_desc":
+			if lang == "ru" {
+				sort.Slice(universities, func(i, j int) bool {
+					return universities[i].NameRu > universities[j].NameRu
+				})
+			} else if lang == "kz" {
+				sort.Slice(universities, func(i, j int) bool {
+					return universities[i].NameKz > universities[j].NameKz
+				})
+			} else {
+				return universities, fmt.Errorf("unsupported language: %s", lang)
+			}
 		default:
 			return universities, fmt.Errorf("invalid sort order: %s", sortOrder)
 		}
@@ -1040,36 +1083,61 @@ func filterByAvgFee(params map[string]interface{}, universities []*University) (
 	return universities, nil
 }
 
-/*
-func filterByHasMilitaryDept(params map[string]interface{}, universities []*University) ([]*University, error) {
-	if hasMilitaryDept, ok := params["has_military_dept"].(bool); ok {
-		var filtered []*University
+func filterByTerm(params map[string]interface{}, universities []*University) ([]*University, error) {
+	if term, ok := params["term"].(int); ok {
+		var filteredUniversities []*University
+
+		fmt.Printf("Filtering by Term: %d\n", term)
+
 		for _, uni := range universities {
-			if uni.HasMilitaryDept == hasMilitaryDept {
-				filtered = append(filtered, uni)
+			fmt.Printf("Checking university: %s (ID: %d)\n", uni.Name, uni.Id)
+
+			matchingTermFound := false
+			for _, specUni := range uni.Specialities {
+				if specUni.Term == term {
+					fmt.Printf(" -> Match found for Term: %d in university: %s (ID: %d)\n", term, uni.Name, uni.Id)
+					matchingTermFound = true
+					break
+				}
+			}
+
+			if matchingTermFound {
+				filteredUniversities = append(filteredUniversities, uni)
 			}
 		}
-		fmt.Printf("filterByHasMilitaryDept: filtered %d universities\n", len(universities)-len(filtered))
-		return filtered, nil
+
+		fmt.Printf("Total universities after term filter: %d\n", len(filteredUniversities))
+		return filteredUniversities, nil
 	}
+
+	// If no term is provided, return the original list of universities
 	return universities, nil
 }
 
-func filterByHasDormitory(params map[string]interface{}, universities []*University) ([]*University, error) {
-	if hasDormitory, ok := params["has_dormitory"].(bool); ok {
-		var filtered []*University
-		for _, uni := range universities {
-			if uni.HasDormitory == hasDormitory {
-				filtered = append(filtered, uni)
-			}
-		}
-		fmt.Printf("filterByHasDormitory: filtered %d universities\n", len(universities)-len(filtered))
-		return filtered, nil
+func filterByStatus(params map[string]interface{}, universities []*University, language string) ([]*University, error) {
+	statusFilter, ok := params["status"].(string)
+	if !ok || statusFilter == "" {
+		return universities, nil
 	}
-	return universities, nil
-}
+	var filteredUniversities []*University
+	statusFilterLower := strings.ToLower(statusFilter)
+	for _, uni := range universities {
+		var universityStatus string
+		switch language {
+		case "ru":
+			universityStatus = uni.UniversityStatusRu
+		case "kz":
+			universityStatus = uni.UniversityStatusKz
+		default:
+			universityStatus = uni.UniversityStatusKz
+		}
+		if strings.ToLower(universityStatus) == statusFilterLower {
+			filteredUniversities = append(filteredUniversities, uni)
+		}
+	}
 
-*/
+	return filteredUniversities, nil
+}
 
 func filterByCityID(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if cityID, ok := params["city_id"].(int); ok {
@@ -1086,27 +1154,48 @@ func filterByCityID(params map[string]interface{}, universities []*University) (
 }
 
 func filterBySpecialityIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
-	if specialityIDs, ok := params["speciality_ids"].([]int); ok {
-		var filtered []*University
+	if specialityIDs, ok := params["speciality_ids"].([]int); ok && len(specialityIDs) > 0 {
+		var filteredUniversities []*University
+
+		fmt.Printf("Filtering by Speciality IDs: %v\n", specialityIDs)
+
 		for _, uni := range universities {
-			matches := 0
-			for _, spec := range uni.Specialities {
-				for _, id := range specialityIDs {
-					if spec.Id == id {
-						matches++
-						break
-					}
+			fmt.Printf("Checking university: %s (ID: %d)\n", uni.Name, uni.Id)
+
+			specialityMap := make(map[int]bool)
+			for _, specUni := range uni.Specialities {
+				if containsInt(specialityIDs, specUni.Speciality.Id) {
+					specialityMap[specUni.Speciality.Id] = true
 				}
 			}
-			if matches == len(specialityIDs) {
-				filtered = append(filtered, uni)
+
+			allSpecialitiesMatched := true
+			for _, id := range specialityIDs {
+				if !specialityMap[id] {
+					allSpecialitiesMatched = false
+					break
+				}
+			}
+
+			if allSpecialitiesMatched {
+				filteredUniversities = append(filteredUniversities, uni)
 			}
 		}
-		fmt.Printf("filterBySpecialityIDs: filtered %d universities\n", len(universities)-len(filtered))
-		return filtered, nil
+
+		return filteredUniversities, nil
 	}
+
 	return universities, nil
 }
+func containsInt(slice []int, item int) bool {
+	for _, v := range slice {
+		if v == item {
+			return true
+		}
+	}
+	return false
+}
+
 func filterByServiceIDs(params map[string]interface{}, universities []*University) ([]*University, error) {
 	if serviceIDs, ok := params["service_ids"].([]int); ok {
 		var filtered []*University
@@ -1135,7 +1224,10 @@ func filterByStudyFormat(params map[string]interface{}, universities []*Universi
 	if studyFormat, ok := params["study_format"].(string); ok {
 		var filtered []*University
 		for _, uni := range universities {
-			if uni.StudyFormat == studyFormat {
+			fmt.Println("studyFormat", studyFormat)
+			fmt.Println("studyFormatRu", uni.StudyFormatRu)
+			fmt.Println("studyFormatKz", uni.StudyFormatKz)
+			if uni.StudyFormat == studyFormat || uni.StudyFormatRu == studyFormat || uni.StudyFormatKz == studyFormat {
 				filtered = append(filtered, uni)
 			}
 		}
@@ -1341,4 +1433,34 @@ func UploadFileToCloud(filePath string, file multipart.File) (string, error) {
 
 	fileURL := fmt.Sprintf("https://chi-sextans.object.pscloud.io/%s/%s", bucket, filePath)
 	return fileURL, nil
+}
+
+func GetUniversityNames(lang string) ([]GetUniNamesResponse, error) {
+	o := orm.NewOrm()
+	var universities []University
+	var response []GetUniNamesResponse
+
+	_, err := o.QueryTable(new(University)).All(&universities)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, uni := range universities {
+		var name string
+		switch lang {
+		case "ru":
+			name = uni.NameRu
+		case "kz":
+			name = uni.NameKz
+		default:
+			name = uni.Name
+		}
+
+		response = append(response, GetUniNamesResponse{
+			Id:   uni.Id,
+			Name: name,
+		})
+	}
+
+	return response, nil
 }
