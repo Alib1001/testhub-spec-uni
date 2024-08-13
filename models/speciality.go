@@ -546,32 +546,34 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
 	var specialities []IUniverSpecialtyShortcut
 
 	query := `
-        SELECT
-            s.id as speciality_id,
-            s.name_ru as speciality_name_ru,
-            s.name_kz as speciality_name_kz,
-            s.code as speciality_code,
-            s.degree,
-            u.study_format_ru as education_format_ru,
-            u.study_format_kz as education_format_kz,
-            su.term,
-            su.edu_lang,
-            COALESCE(json_agg(json_build_object(
-                'id', ls.id,
-                'grant_count', ls.grant_count,
-                'min_score', ls.min_score,
-                'year', ls.year,
-                'avg_salary', ls.avg_salary,
-                'price', ls.price
-            )) FILTER (WHERE ls.id IS NOT NULL), '[]') AS statistics
-        FROM
-            uni_spec.speciality s
-            JOIN uni_spec.speciality_university su ON su.speciality_id = s.id
-            JOIN uni_spec.university u ON su.university_id = u.id
-            LEFT JOIN uni_spec.point_stat ls ON su.speciality_id = ls.speciality_id
-        WHERE su.university_id = ?
-        GROUP BY s.id, s.name_ru, s.name_kz, s.code, s.degree, u.study_format_ru, u.study_format_kz, su.term, su.edu_lang
-    `
+    
+	SELECT
+    s.id as speciality_id,
+    s.name_ru as speciality_name_ru,
+    s.name_kz as speciality_name_kz,
+    s.code as speciality_code,
+    s.degree,
+    u.study_format_ru as education_format_ru,
+    u.study_format_kz as education_format_kz,
+    su.term,
+    su.edu_lang,
+    COALESCE(json_agg(json_build_object(
+        'id', ls.id,
+        'grant_count', ls.grant_count,
+        'min_score', ls.min_score,
+        'year', ls.year,
+        'avg_salary', ls.avg_salary,
+        'price', ls.price
+    )) FILTER (WHERE ls.id IS NOT NULL AND ls.university_id = su.university_id), '[]') AS statistics
+FROM
+    uni_spec.speciality s
+    JOIN uni_spec.speciality_university su ON su.speciality_id = s.id
+    JOIN uni_spec.university u ON su.university_id = u.id
+    LEFT JOIN uni_spec.point_stat ls ON su.speciality_id = ls.speciality_id AND su.university_id = ls.university_id
+WHERE su.university_id = ?
+GROUP BY s.id, s.name_ru, s.name_kz, s.code, s.degree, u.study_format_ru, u.study_format_kz, su.term, su.edu_lang
+
+`
 
 	// Выполнение SQL-запроса
 	o := orm.NewOrm()
