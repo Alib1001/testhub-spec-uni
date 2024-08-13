@@ -156,6 +156,7 @@ func init() {
 			beego.NSInclude(&controllers.UniversityController{}),
 			beego.NSRouter("/:id", &controllers.UniversityController{}, "get:GetForUser"),
 			beego.NSRouter("/", &controllers.UniversityController{}, "get:GetAll"),
+			beego.NSRouter("/uninames", &controllers.UniversityController{}, "get:GetUniNames"),
 			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
 		),
 
