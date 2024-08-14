@@ -12,6 +12,7 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
 	"mime/multipart"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -319,17 +320,18 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 func UpdateUniversityImageURL(id int64, imageURL string) error {
 	o := orm.NewOrm()
 
+	// Поиск университета по ID
 	university := University{Id: int(id)}
 	if err := o.Read(&university); err != nil {
 		if err == orm.ErrNoRows {
 			return errors.New("university not found")
 		}
-		return err
+		return fmt.Errorf("error reading university: %v", err)
 	}
 
 	university.MainImageUrl = imageURL
 	if _, err := o.Update(&university, "MainImageUrl"); err != nil {
-		return err
+		return fmt.Errorf("error updating university image URL: %v", err)
 	}
 
 	return nil
@@ -1421,11 +1423,24 @@ func UploadFileToCloud(filePath string, file multipart.File) (string, error) {
 		return "", fmt.Errorf("failed to read file: %v", err)
 	}
 
+	var contentType string
+	switch {
+	case strings.HasSuffix(filePath, ".svg"):
+		contentType = "image/svg+xml"
+	case strings.HasSuffix(filePath, ".png"):
+		contentType = "image/png"
+	case strings.HasSuffix(filePath, ".jpg"), strings.HasSuffix(filePath, ".jpeg"):
+		contentType = "image/jpeg"
+	default:
+		contentType = http.DetectContentType(buf.Bytes()) // Автоматическое определение MIME-типа для других форматов
+	}
+
 	_, err = uploader.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(filePath),
-		Body:   bytes.NewReader(buf.Bytes()),
-		ACL:    aws.String("public-read"),
+		Bucket:      aws.String(bucket),
+		Key:         aws.String(filePath),
+		Body:        bytes.NewReader(buf.Bytes()),
+		ACL:         aws.String("public-read"),
+		ContentType: aws.String(contentType), // Устанавливаем MIME-тип
 	})
 	if err != nil {
 		return "", fmt.Errorf("failed to upload file: %v", err)

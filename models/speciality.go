@@ -546,7 +546,6 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
 	var specialities []IUniverSpecialtyShortcut
 
 	query := `
-    
 	SELECT
     s.id as speciality_id,
     s.name_ru as speciality_name_ru,
