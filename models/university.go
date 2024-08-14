@@ -11,7 +11,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/go-playground/validator/v10"
-	_ "github.com/go-playground/validator/v10"
 	"mime/multipart"
 	"sort"
 	"strconv"
@@ -57,6 +56,7 @@ type University struct {
 	Email              string                  `orm:"size(64)"`
 	Rating             string                  `orm:"size(64)"`
 	Gallery            []*Gallery              `orm:"reverse(many);on_delete(cascade)"`
+	Popular            bool
 }
 
 type UniversitySearchResult struct {
@@ -78,8 +78,8 @@ type GetAllUniversityResponse struct {
 	Rating           string `json:"Rating"`
 }
 type GetUniNamesResponse struct {
-	Id   int    `json:"Id"`
-	Name string `json:"Name"`
+	Id           int    `json:"Id"`
+	Abbreviation string `json:"Abbreviation"`
 }
 
 type GetAllUniversityForAdminResponse struct {
@@ -1440,7 +1440,7 @@ func GetUniversityNames(lang string) ([]GetUniNamesResponse, error) {
 	var universities []University
 	var response []GetUniNamesResponse
 
-	_, err := o.QueryTable(new(University)).All(&universities)
+	_, err := o.QueryTable(new(University)).Filter("popular", true).All(&universities)
 	if err != nil {
 		return nil, err
 	}
@@ -1449,16 +1449,16 @@ func GetUniversityNames(lang string) ([]GetUniNamesResponse, error) {
 		var name string
 		switch lang {
 		case "ru":
-			name = uni.NameRu
+			name = uni.AbbreviationRu
 		case "kz":
-			name = uni.NameKz
+			name = uni.AbbreviationKz
 		default:
 			name = uni.Name
 		}
 
 		response = append(response, GetUniNamesResponse{
-			Id:   uni.Id,
-			Name: name,
+			Id:           uni.Id,
+			Abbreviation: name,
 		})
 	}
 

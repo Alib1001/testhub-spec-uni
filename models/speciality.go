@@ -559,7 +559,7 @@ func GetSpecialitiesInUniversityForAdmin(universityID int) ([]IUniverSpecialtySh
     su.edu_lang,
     COALESCE(json_agg(json_build_object(
         'id', ls.id,
-        'grant_count', ls.grant_count,
+        'grant_co', ls.grant_count,
         'min_score', ls.min_score,
         'year', ls.year,
         'avg_salary', ls.avg_salary,
