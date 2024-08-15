@@ -206,6 +206,7 @@ type UpdateUniversityResponse struct {
 	AbbreviationRu     string   `form:"AbbreviationRu"`
 	AbbreviationKz     string   `form:"AbbreviationKz"`
 	MainImageUrl       string   `form:"MainImageUrl"`
+	Email              string   `form:"Email"`
 	AddressLink        string   `form:"AddressLink"`
 	DescriptionRu      string   `form:"DescriptionRu"`
 	DescriptionKz      string   `form:"DescriptionKz"`
@@ -232,6 +233,7 @@ type UpdateUniversityPartial struct {
 	AbbreviationRu     string                  `form:"AbbreviationRu"`
 	AbbreviationKz     string                  `form:"AbbreviationKz"`
 	MainImageUrl       string                  `form:"MainImageUrl"`
+	Email              string                  `form:"Email"`
 	AddressLink        string                  `form:"AddressLink"`
 	DescriptionRu      string                  `form:"DescriptionRu"`
 	DescriptionKz      string                  `form:"DescriptionKz"`

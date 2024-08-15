@@ -374,7 +374,6 @@ func (c *UniversityController) Update() {
 		return
 	}
 
-	// Update fields if they are provided
 	if partialResponse.NameRu != "" {
 		university.NameRu = partialResponse.NameRu
 	}
@@ -431,6 +430,9 @@ func (c *UniversityController) Update() {
 	}
 	if partialResponse.CityId != 0 {
 		university.City.Id = partialResponse.CityId
+	}
+	if partialResponse.Email != "" {
+		university.Email = partialResponse.Email
 	}
 
 	file, header, err := c.GetFile("MainImageUrl")
