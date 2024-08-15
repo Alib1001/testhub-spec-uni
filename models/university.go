@@ -103,6 +103,7 @@ type GetByIdUniversityResponseForAdmin struct {
 	UniversityStatusRu string             `json:"UniversityStatusRu" validate:"required"`
 	UniversityStatusKz string             `json:"UniversityStatusKz" validate:"required"`
 	Website            string             `json:"Website" validate:"required,url"`
+	Email              string             `json:"Email"`
 	CallCenterNumber   string             `json:"CallCenterNumber" validate:"required"`
 	WhatsAppNumber     string             `json:"WhatsAppNumber" validate:"required"`
 	Address            string             `json:"Address" validate:"required"`
@@ -391,6 +392,7 @@ func GetUniversityByIdForAdmin(id int) (*GetByIdUniversityResponseForAdmin, erro
 		Id:                 university.Id,
 		NameRu:             university.NameRu,
 		NameKz:             university.NameKz,
+		Email:              university.Email,
 		Address:            university.Address,
 		UniversityStatusRu: university.UniversityStatusRu,
 		UniversityStatusKz: university.UniversityStatusKz,
