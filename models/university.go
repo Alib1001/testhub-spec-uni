@@ -1435,8 +1435,10 @@ func UploadFileToCloud(filePath string, file multipart.File) (string, error) {
 		contentType = "image/png"
 	case strings.HasSuffix(filePath, ".jpg"), strings.HasSuffix(filePath, ".jpeg"):
 		contentType = "image/jpeg"
+	case strings.HasSuffix(filePath, ".webp"):
+		contentType = "image/webp"
 	default:
-		contentType = http.DetectContentType(buf.Bytes()) // Автоматическое определение MIME-типа для других форматов
+		contentType = http.DetectContentType(buf.Bytes())
 	}
 
 	_, err = uploader.PutObject(&s3.PutObjectInput{
