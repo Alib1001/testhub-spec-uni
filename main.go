@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/beego/beego/v2/server/web/filter/cors"
 	"log"
 	"testhub-spec-uni/controllers"
+	"testhub-spec-uni/middleware"
 	_ "testhub-spec-uni/routers"
 
 	"github.com/astaxie/beego/orm"
 	"github.com/beego/beego/v2/server/web"
 	beego "github.com/beego/beego/v2/server/web"
+	"github.com/beego/beego/v2/server/web/filter/cors"
 	_ "github.com/lib/pq"
 )
 
@@ -44,23 +45,23 @@ func init() {
 		log.Fatalf("Failed to get 'db_name': %v", err)
 	}
 
-	schema := "uni_spec"
+	schema := "uni_spec,accounts"
 	dataSource := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s sslmode=disable search_path=%s",
 		user, password, host, port, dbName, schema)
 
 	orm.RegisterDataBase("default", driverName, dataSource)
-	//orm.RunSyncdb("default", false, true)
+
 	fmt.Println(driverName)
 }
 
 func main() {
-	//run with swagger: bee run -gendoc=true -downdoc=true
-	// Configure directory where Swagger UI files are located
 	web.BConfig.WebConfig.DirectoryIndex = true
 	web.BConfig.WebConfig.StaticDir["/swagger"] = "swagger"
 
 	beego.BConfig.RouterCaseSensitive = false
 	beego.SetStaticPath("/swagger", "swagger")
+
+	beego.InsertFilter("/api/*", beego.BeforeRouter, middleware.AuthMiddleware)
 
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
 		AllowOrigins: []string{"http://localhost:3000", "https://admin-course.testhub.kz",
@@ -76,9 +77,7 @@ func main() {
 	beego.Include(&controllers.UniversityController{})
 	beego.Include(&controllers.CityController{})
 	beego.Include(&controllers.QuotaController{})
+
 	beego.Run()
 
-	//TODO:Point_stat DELETE AND EDIT
-	//TODO:DELETE GALLERY by uni and photo id
-	//TODO:Галерея при обновлении фотографий старые удалятся не должны
 }
