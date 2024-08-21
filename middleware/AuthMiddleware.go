@@ -4,14 +4,19 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/beego/beego/v2/server/web/context"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 )
 
 func AuthMiddleware(ctx *context.Context) {
-	// Извлечение заголовка Authorization
+	if ctx.Input.Method() == "OPTIONS" {
+		// Разрешаем OPTIONS запросы без проверки токена
+		ctx.Output.SetStatus(http.StatusOK)
+		return
+	}
+
+	// Ваш существующий код для обработки авторизации...
 	token := ctx.Input.Header("Authorization")
 	if token == "" {
 		ctx.Output.SetStatus(http.StatusUnauthorized)
@@ -19,7 +24,7 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
-	// Если используется Bearer Token, проверяем наличие префикса "Bearer "
+	// Add "Bearer " prefix if it's not present
 	if !strings.HasPrefix(token, "Bearer ") {
 		token = "Bearer " + token
 	}
@@ -32,7 +37,6 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
-	// Добавляем заголовок Authorization в запрос
 	req.Header.Set("Authorization", token)
 
 	transport := &http.Transport{
@@ -40,35 +44,20 @@ func AuthMiddleware(ctx *context.Context) {
 	}
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   time.Second * 10, // Устанавливаем тайм-аут 10 секунд
+		Timeout:   time.Second * 10, // Set a 10-second timeout
 	}
-
-	fmt.Println("Making request to:", authURL)
-	fmt.Println("Authorization Header:", token)
 
 	resp, err := client.Do(req)
 	if err != nil {
 		ctx.Output.SetStatus(http.StatusInternalServerError)
 		ctx.Output.JSON(map[string]string{"error": fmt.Sprintf("Failed to perform request: %v", err)}, true, true)
-		fmt.Println("Request Error:", err)
 		return
 	}
 	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		ctx.Output.SetStatus(http.StatusInternalServerError)
-		ctx.Output.JSON(map[string]string{"error": "Failed to read response body"}, true, true)
-		return
-	}
 
 	if resp.StatusCode != http.StatusOK {
 		ctx.Output.SetStatus(http.StatusUnauthorized)
 		ctx.Output.JSON(map[string]string{"error": "Unauthorized"}, true, true)
 		return
 	}
-
-	fmt.Println("Response Status:", resp.Status)
-	fmt.Println("Response Body:", string(body))
-	fmt.Println("Authenticated user:", string(body))
 }
