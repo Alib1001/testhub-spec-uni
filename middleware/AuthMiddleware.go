@@ -2,12 +2,25 @@ package middleware
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
+	"github.com/astaxie/beego/orm"
 	"github.com/beego/beego/v2/server/web/context"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 )
+
+type UserInfo struct {
+	ID        int    `json:"id"`
+	UserID    int    `json:"user_id"`
+	UUID      string `json:"uuid"`
+	Role      string `json:"role"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Balance   int    `json:"balance"`
+}
 
 func AuthMiddleware(ctx *context.Context) {
 	if ctx.Input.Method() == "OPTIONS" {
@@ -16,7 +29,6 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
-	// Ваш существующий код для обработки авторизации...
 	token := ctx.Input.Header("Authorization")
 	if token == "" {
 		ctx.Output.SetStatus(http.StatusUnauthorized)
@@ -24,7 +36,6 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
-	// Add "Bearer " prefix if it's not present
 	if !strings.HasPrefix(token, "Bearer ") {
 		token = "Bearer " + token
 	}
@@ -60,4 +71,36 @@ func AuthMiddleware(ctx *context.Context) {
 		ctx.Output.JSON(map[string]string{"error": "Unauthorized"}, true, true)
 		return
 	}
+
+	var userInfo UserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
+		ctx.Output.SetStatus(http.StatusInternalServerError)
+		ctx.Output.JSON(map[string]string{"error": "Failed to decode response"}, true, true)
+		return
+	}
+
+	// Проверка, является ли пользователь суперпользователем
+	isSuperUser, err := IsSuperUser(userInfo.ID)
+	if err != nil {
+		ctx.Output.SetStatus(http.StatusInternalServerError)
+		ctx.Output.JSON(map[string]string{"error": "Failed to check superuser status"}, true, true)
+		return
+	}
+
+	if !isSuperUser {
+		ctx.Output.SetStatus(http.StatusForbidden)
+		ctx.Output.JSON(map[string]string{"error": "Access forbidden: only superusers allowed"}, true, true)
+		return
+	}
+}
+
+func IsSuperUser(userId int) (bool, error) {
+	o := orm.NewOrm()
+	var isSuperUser bool
+	err := o.Raw("SELECT is_superuser FROM accounts.user WHERE id = ?", userId).QueryRow(&isSuperUser)
+	if err != nil {
+		log.Printf("Error querying user superuser status: %v", err)
+		return false, err
+	}
+	return isSuperUser, nil
 }
