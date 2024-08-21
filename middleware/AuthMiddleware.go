@@ -6,6 +6,7 @@ import (
 	"github.com/beego/beego/v2/server/web/context"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -15,6 +16,11 @@ func AuthMiddleware(ctx *context.Context) {
 		ctx.Output.SetStatus(http.StatusUnauthorized)
 		ctx.Output.JSON(map[string]string{"error": "Authorization header is missing"}, true, true)
 		return
+	}
+
+	// Add "Bearer " prefix if it's not present
+	if !strings.HasPrefix(token, "Bearer ") {
+		token = "Bearer " + token
 	}
 
 	authURL := "https://api-dev.testhub.kz/accounts/api/v1/me"
@@ -32,7 +38,7 @@ func AuthMiddleware(ctx *context.Context) {
 	}
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   time.Second * 10,
+		Timeout:   time.Second * 10, // Set a 10-second timeout
 	}
 
 	fmt.Println("Making request to:", authURL)
