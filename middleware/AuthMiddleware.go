@@ -11,6 +11,7 @@ import (
 )
 
 func AuthMiddleware(ctx *context.Context) {
+	// Извлечение заголовка Authorization
 	token := ctx.Input.Header("Authorization")
 	if token == "" {
 		ctx.Output.SetStatus(http.StatusUnauthorized)
@@ -18,7 +19,7 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
-	// Add "Bearer " prefix if it's not present
+	// Если используется Bearer Token, проверяем наличие префикса "Bearer "
 	if !strings.HasPrefix(token, "Bearer ") {
 		token = "Bearer " + token
 	}
@@ -31,6 +32,7 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
+	// Добавляем заголовок Authorization в запрос
 	req.Header.Set("Authorization", token)
 
 	transport := &http.Transport{
@@ -38,7 +40,7 @@ func AuthMiddleware(ctx *context.Context) {
 	}
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   time.Second * 10, // Set a 10-second timeout
+		Timeout:   time.Second * 10, // Устанавливаем тайм-аут 10 секунд
 	}
 
 	fmt.Println("Making request to:", authURL)
