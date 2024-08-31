@@ -23,6 +23,13 @@ type UserInfo struct {
 }
 
 func AuthMiddleware(ctx *context.Context) {
+
+	path := ctx.Input.URL()
+
+	if path == "/api/cities" || path == "/api/subjects" {
+		return
+	}
+
 	if ctx.Input.Method() == "OPTIONS" {
 		// Разрешаем OPTIONS запросы без проверки токена
 		ctx.Output.SetStatus(http.StatusOK)
