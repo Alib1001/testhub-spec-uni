@@ -599,35 +599,18 @@ func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 		return err
 	}
 
-	existingURLs := make(map[string]*Gallery)
+	existingURLs := make(map[string]bool)
 	for _, gallery := range existingGalleries {
-		existingURLs[gallery.PhotoUrl] = gallery
+		existingURLs[gallery.PhotoUrl] = true
 	}
 
-	// Insert new galleries
 	for _, url := range newGalleryURLs {
-		if _, exists := existingURLs[url]; !exists {
+		if !existingURLs[url] {
 			gallery := &Gallery{
 				University: &University{Id: universityID},
 				PhotoUrl:   url,
 			}
 			if _, err := o.Insert(gallery); err != nil {
-				return err
-			}
-		}
-	}
-
-	// Optionally remove galleries not in the new list
-	for url, gallery := range existingURLs {
-		found := false
-		for _, newURL := range newGalleryURLs {
-			if url == newURL {
-				found = true
-				break
-			}
-		}
-		if !found {
-			if _, err := o.Delete(gallery); err != nil {
 				return err
 			}
 		}
