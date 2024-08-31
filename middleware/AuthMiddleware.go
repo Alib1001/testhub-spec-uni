@@ -26,7 +26,7 @@ func AuthMiddleware(ctx *context.Context) {
 
 	path := ctx.Input.URL()
 
-	if path == "/api/cities" || path == "/api/subjects" {
+	if path == "/api/cities" || path == "/api/subjects/" {
 		return
 	}
 
