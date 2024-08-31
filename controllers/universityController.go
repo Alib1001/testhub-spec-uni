@@ -349,23 +349,6 @@ func (c *UniversityController) Update() {
 		return
 	}
 
-	serviceIdsStr := c.GetString("ServiceIds")
-	var serviceIds []int
-	if serviceIdsStr != "" {
-		serviceIdsStr = strings.Trim(serviceIdsStr, "[]")
-		serviceIdsStrs := strings.Split(serviceIdsStr, ",")
-		for _, serviceIDStr := range serviceIdsStrs {
-			id, err := strconv.Atoi(strings.TrimSpace(serviceIDStr))
-			if err != nil {
-				c.Data["json"] = map[string]string{"error": "Invalid service ID: " + serviceIDStr}
-				c.Ctx.Output.SetStatus(400)
-				c.ServeJSON()
-				return
-			}
-			serviceIds = append(serviceIds, id)
-		}
-	}
-
 	university, err := models.GetUniversityByID(universityId)
 	if err != nil {
 		c.Data["json"] = map[string]string{"error": "University not found: " + err.Error()}
@@ -451,7 +434,6 @@ func (c *UniversityController) Update() {
 
 	galleryFiles := c.Ctx.Request.MultipartForm.File["Gallery"]
 	var galleryURLs []string
-
 	for _, galleryFileHeader := range galleryFiles {
 		galleryFile, err := galleryFileHeader.Open()
 		if err != nil {
@@ -482,11 +464,22 @@ func (c *UniversityController) Update() {
 		return
 	}
 
-	if err := models.UpdateUniversity(university); err != nil {
-		c.Data["json"] = map[string]string{"error": "Failed to update university: " + err.Error()}
-		c.Ctx.Output.SetStatus(500)
-		c.ServeJSON()
-		return
+	// Handle services - Get service IDs from form data
+	serviceIdsStr := c.GetString("ServiceIds")
+	var serviceIds []int
+	if serviceIdsStr != "" {
+		serviceIdsStr = strings.Trim(serviceIdsStr, "[]")
+		serviceIdsStrs := strings.Split(serviceIdsStr, ",")
+		for _, serviceIDStr := range serviceIdsStrs {
+			id, err := strconv.Atoi(strings.TrimSpace(serviceIDStr))
+			if err != nil {
+				c.Data["json"] = map[string]string{"error": "Invalid service ID: " + serviceIDStr}
+				c.Ctx.Output.SetStatus(400)
+				c.ServeJSON()
+				return
+			}
+			serviceIds = append(serviceIds, id)
+		}
 	}
 
 	var services []*models.Service
