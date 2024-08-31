@@ -323,17 +323,23 @@ func AddUniversity(universityResponse *AddUUniversityResponse) (int64, error) {
 func UpdateUniversityImageURL(id int64, imageURL string) error {
 	o := orm.NewOrm()
 
-	// Поиск университета по ID
+	// Create an instance of University with the provided ID
 	university := University{Id: int(id)}
+
+	// Read the university record from the database
 	if err := o.Read(&university); err != nil {
 		if err == orm.ErrNoRows {
 			return errors.New("university not found")
 		}
+		fmt.Printf("Error reading university: %v\n", err)
 		return fmt.Errorf("error reading university: %v", err)
 	}
 
+	// Update the MainImageUrl field
 	university.MainImageUrl = imageURL
 	if _, err := o.Update(&university, "MainImageUrl"); err != nil {
+		// Log the error for debugging purposes
+		fmt.Printf("Error updating university image URL: %v\n", err)
 		return fmt.Errorf("error updating university image URL: %v", err)
 	}
 
@@ -604,6 +610,11 @@ func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 		existingURLs[gallery.PhotoUrl] = true
 	}
 
+	err = o.Begin()
+	if err != nil {
+		return err
+	}
+
 	for _, url := range newGalleryURLs {
 		if !existingURLs[url] {
 			gallery := &Gallery{
@@ -611,12 +622,36 @@ func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 				PhotoUrl:   url,
 			}
 			if _, err := o.Insert(gallery); err != nil {
+				o.Rollback()
 				return err
 			}
 		}
 	}
 
+	for _, gallery := range existingGalleries {
+		if !contains(newGalleryURLs, gallery.PhotoUrl) {
+			if _, err := o.Delete(gallery); err != nil {
+				o.Rollback() // Rollback transaction on error
+				return err
+			}
+		}
+	}
+
+	if err := o.Commit(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// Helper function to check if a slice contains a specific element
+func contains(slice []string, item string) bool {
+	for _, elem := range slice {
+		if elem == item {
+			return true
+		}
+	}
+	return false
 }
 
 func DeleteUniversity(id int) error {
@@ -1484,4 +1519,21 @@ func GetUniversityNames(lang string) ([]GetUniNamesResponse, error) {
 	}
 
 	return response, nil
+}
+
+// GetUniversityServices retrieves the services associated with a given university ID.
+func GetUniversityServices(universityId int64) ([]*Service, error) {
+	o := orm.NewOrm()
+	var services []*Service
+
+	// Assuming there's a many-to-many relationship set up between University and Service
+	_, err := o.QueryTable("service").
+		Filter("universities__university__id", universityId).
+		All(&services)
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching services for university ID %d: %v", universityId, err)
+	}
+
+	return services, nil
 }
