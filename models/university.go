@@ -599,22 +599,26 @@ func UpdateUniversity(university *University) error {
 func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 	o := orm.NewOrm()
 
+	// Fetch existing gallery images for the university
 	var existingGalleries []*Gallery
 	_, err := o.QueryTable("gallery").Filter("university_id", universityID).All(&existingGalleries)
 	if err != nil {
 		return err
 	}
 
+	// Create a map of existing URLs for quick lookup
 	existingURLs := make(map[string]bool)
 	for _, gallery := range existingGalleries {
 		existingURLs[gallery.PhotoUrl] = true
 	}
 
+	// Start a transaction to ensure atomicity
 	err = o.Begin()
 	if err != nil {
 		return err
 	}
 
+	// Insert new gallery images that do not already exist
 	for _, url := range newGalleryURLs {
 		if !existingURLs[url] {
 			gallery := &Gallery{
@@ -622,12 +626,13 @@ func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 				PhotoUrl:   url,
 			}
 			if _, err := o.Insert(gallery); err != nil {
-				o.Rollback()
+				o.Rollback() // Rollback transaction on error
 				return err
 			}
 		}
 	}
 
+	// Remove images that are no longer in the new gallery URLs
 	for _, gallery := range existingGalleries {
 		if !contains(newGalleryURLs, gallery.PhotoUrl) {
 			if _, err := o.Delete(gallery); err != nil {
@@ -637,6 +642,7 @@ func UpdateUniversityGallery(universityID int, newGalleryURLs []string) error {
 		}
 	}
 
+	// Commit the transaction if everything is successful
 	if err := o.Commit(); err != nil {
 		return err
 	}
