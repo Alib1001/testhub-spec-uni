@@ -158,6 +158,9 @@ func init() {
 			beego.NSRouter("/", &controllers.UniversityController{}, "get:GetAll"),
 			beego.NSRouter("/uninames", &controllers.UniversityController{}, "get:GetUniNames"),
 			beego.NSRouter("/search", &controllers.UniversityController{}, "get:SearchUniversities"),
+			beego.NSRouter("/favorites/add/:universityId", &controllers.UniversityController{}, "post:AddFavoriteUniversity"),
+			beego.NSRouter("/favorites/remove/:universityId", &controllers.UniversityController{}, "post:RemoveFavoriteUniversity"),
+			beego.NSRouter("/favorites/list", &controllers.UniversityController{}, "get:ListFavoriteUniversities"),
 		),
 
 		beego.NSNamespace("/cities",

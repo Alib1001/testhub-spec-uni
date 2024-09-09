@@ -259,7 +259,8 @@ func (c *UniversityController) GetAll() {
 		return
 	}
 
-	universities, totalCount, totalPage, currentPage, err := models.GetAllUniversities(language, page, perPage)
+	// Передаем контекст в метод модели
+	universities, totalCount, totalPage, currentPage, err := models.GetAllUniversities(c.Ctx, language, page, perPage)
 	if err == nil {
 		c.Data["json"] = map[string]interface{}{
 			"universities": universities,
@@ -832,4 +833,122 @@ func (c *UniversityController) GetUniNames() {
 
 	c.Data["json"] = unis
 	c.ServeJSON()
+}
+
+func (c *UniversityController) AddFavoriteUniversity() {
+	userId, ok := c.Ctx.Input.GetData("user_id").(int)
+	if !ok {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Ctx.Output.JSON(map[string]string{"error": "Invalid user_id"}, true, true)
+		return
+	}
+
+	universityIdStr := c.Ctx.Input.Param(":universityId")
+	if universityIdStr == "" {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Ctx.Output.JSON(map[string]string{"error": "Missing universityId parameter"}, true, true)
+		return
+	}
+
+	universityId, err := strconv.Atoi(universityIdStr)
+	if err != nil {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Ctx.Output.JSON(map[string]string{"error": "Invalid universityId"}, true, true)
+		return
+	}
+
+	err = models.AddFavoriteUniversity(userId, universityId)
+	if err != nil {
+		c.Ctx.Output.SetStatus(http.StatusInternalServerError)
+		c.Ctx.Output.JSON(map[string]string{"error": "Failed to add favorite university"}, true, true)
+		fmt.Println(err)
+		return
+	}
+
+	c.Ctx.Output.SetStatus(http.StatusOK)
+	c.Ctx.Output.JSON(map[string]string{"message": "University added to favorites"}, true, true)
+}
+
+func (c *UniversityController) RemoveFavoriteUniversity() {
+	userId, ok := c.Ctx.Input.GetData("user_id").(int)
+	if !ok {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Ctx.Output.JSON(map[string]string{"error": "Invalid user_id"}, true, true)
+		return
+	}
+
+	universityIdStr := c.Ctx.Input.Query("universityId")
+	if universityIdStr == "" {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Ctx.Output.JSON(map[string]string{"error": "Missing universityId parameter"}, true, true)
+		return
+	}
+
+	universityId, err := strconv.Atoi(universityIdStr)
+	if err != nil {
+		c.Ctx.Output.SetStatus(http.StatusBadRequest)
+		c.Ctx.Output.JSON(map[string]string{"error": "Invalid universityId"}, true, true)
+		return
+	}
+
+	err = models.RemoveFavoriteUniversity(userId, universityId)
+	if err != nil {
+		c.Ctx.Output.SetStatus(http.StatusInternalServerError)
+		c.Ctx.Output.JSON(map[string]string{"error": "Failed to remove favorite university"}, true, true)
+		return
+	}
+
+	c.Ctx.Output.SetStatus(http.StatusOK)
+	c.Ctx.Output.JSON(map[string]string{"message": "University removed from favorites"}, true, true)
+}
+
+func (c *UniversityController) ListFavoriteUniversities() {
+	language := c.Ctx.Input.Header("lang")
+	if language != "ru" && language != "kz" {
+		c.CustomAbort(http.StatusBadRequest, "Invalid or unsupported language")
+		return
+	}
+
+	userId := c.Ctx.Input.GetData("user_id").(int)
+
+	universities, err := models.ListFavoriteUniversities(userId)
+	if err != nil {
+		c.Ctx.Output.SetStatus(http.StatusInternalServerError)
+		c.Ctx.Output.JSON(map[string]string{"error": "Failed to retrieve favorite universities"}, true, true)
+		fmt.Println(err)
+		return
+	}
+
+	var responses []*models.GetAllUniversityResponse
+	for _, university := range universities {
+		switch language {
+		case "ru":
+			university.Name = university.NameRu
+			university.UniversityStatus = university.UniversityStatusRu
+		case "kz":
+			university.Name = university.NameKz
+			university.UniversityStatus = university.UniversityStatusKz
+		default:
+			university.Name = university.NameKz
+			university.UniversityStatus = university.UniversityStatusKz
+		}
+
+		response := &models.GetAllUniversityResponse{
+			Id:               university.Id,
+			Name:             university.Name,
+			ImageUrl:         university.MainImageUrl,
+			Address:          university.Address,
+			UniversityCode:   university.UniversityCode,
+			SpecialityCount:  len(university.Specialities),
+			UniversityStatus: university.UniversityStatus,
+			MinScore:         university.MinEntryScore,
+			Rating:           university.Rating,
+			Favorite:         true,
+		}
+
+		responses = append(responses, response)
+	}
+
+	c.Ctx.Output.SetStatus(http.StatusOK)
+	c.Ctx.Output.JSON(responses, true, true)
 }

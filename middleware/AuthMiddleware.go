@@ -9,29 +9,14 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"testhub-spec-uni/models"
 	"time"
 )
 
-type UserInfo struct {
-	ID        int    `json:"id"`
-	UserID    int    `json:"user_id"`
-	UUID      string `json:"uuid"`
-	Role      string `json:"role"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Balance   int    `json:"balance"`
-}
-
 func AuthMiddleware(ctx *context.Context) {
-
 	path := ctx.Input.URL()
 
-	if path == "/api/cities" || path == "/api/subjects/" {
-		return
-	}
-
 	if ctx.Input.Method() == "OPTIONS" {
-		// Разрешаем OPTIONS запросы без проверки токена
 		ctx.Output.SetStatus(http.StatusOK)
 		return
 	}
@@ -62,7 +47,7 @@ func AuthMiddleware(ctx *context.Context) {
 	}
 	client := &http.Client{
 		Transport: transport,
-		Timeout:   time.Second * 10, // Set a 10-second timeout
+		Timeout:   time.Second * 10,
 	}
 
 	resp, err := client.Do(req)
@@ -79,25 +64,30 @@ func AuthMiddleware(ctx *context.Context) {
 		return
 	}
 
-	var userInfo UserInfo
+	var userInfo models.UserInfo
 	if err := json.NewDecoder(resp.Body).Decode(&userInfo); err != nil {
 		ctx.Output.SetStatus(http.StatusInternalServerError)
 		ctx.Output.JSON(map[string]string{"error": "Failed to decode response"}, true, true)
 		return
 	}
 
-	// Проверка, является ли пользователь суперпользователем
-	isSuperUser, err := IsSuperUser(userInfo.ID)
-	if err != nil {
-		ctx.Output.SetStatus(http.StatusInternalServerError)
-		ctx.Output.JSON(map[string]string{"error": "Failed to check superuser status"}, true, true)
-		return
-	}
+	// Сохранение user ID в контексте
+	ctx.Input.SetData("user_id", userInfo.ID)
 
-	if !isSuperUser {
-		ctx.Output.SetStatus(http.StatusForbidden)
-		ctx.Output.JSON(map[string]string{"error": "Access forbidden: only superusers allowed"}, true, true)
-		return
+	// Проверка, нужно ли проверять права администратора для текущего маршрута
+	if strings.HasPrefix(path, "/api") && path != "/api/cities" && path != "/api/subjects/" {
+		isSuperUser, err := IsSuperUser(userInfo.ID)
+		if err != nil {
+			ctx.Output.SetStatus(http.StatusInternalServerError)
+			ctx.Output.JSON(map[string]string{"error": "Failed to check superuser status"}, true, true)
+			return
+		}
+
+		if !isSuperUser {
+			ctx.Output.SetStatus(http.StatusForbidden)
+			ctx.Output.JSON(map[string]string{"error": "Access forbidden: only superusers allowed"}, true, true)
+			return
+		}
 	}
 }
 

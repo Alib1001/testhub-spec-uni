@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	beego "github.com/beego/beego/v2/server/web"
+	"github.com/beego/beego/v2/server/web/context"
 	"github.com/go-playground/validator/v10"
 	"mime/multipart"
 	"net/http"
@@ -77,6 +78,7 @@ type GetAllUniversityResponse struct {
 	UniversityStatus string `json:"UniversityStatus"`
 	MinScore         int    `json:"MinScore"`
 	Rating           string `json:"Rating"`
+	Favorite         bool   `json:"Favorite"`
 }
 type GetUniNamesResponse struct {
 	Id           int    `json:"Id"`
@@ -487,9 +489,15 @@ func GetUniversityByIdForUser(id int, language string) (*GetByIdUniversityRespon
 	return response, nil
 }
 
-func GetAllUniversities(language string, page int, perPage int) ([]*GetAllUniversityResponse, int64, int, int, error) {
+func GetAllUniversities(ctx *context.Context, language string, page int, perPage int) ([]*GetAllUniversityResponse, int64, int, int, error) {
 	o := orm.NewOrm()
 	var universities []*University
+
+	// Retrieve user_id from the context
+	userId, ok := ctx.Input.GetData("user_id").(int)
+	if !ok {
+		return nil, 0, 0, 0, errors.New("failed to retrieve user_id from context")
+	}
 
 	offset := (page - 1) * perPage
 
@@ -525,6 +533,17 @@ func GetAllUniversities(language string, page int, perPage int) ([]*GetAllUniver
 			return nil, 0, 0, 0, err
 		}
 
+		var favoriteUniversityCount int64
+
+		favoriteUniversityCount, err = o.QueryTable("favorite_university").
+			Filter("user_id", userId).
+			Filter("university_id", university.Id).
+			Count()
+
+		if err != nil {
+			return nil, 0, 0, 0, err
+		}
+
 		response := &GetAllUniversityResponse{
 			Id:               university.Id,
 			Name:             university.Name,
@@ -535,6 +554,7 @@ func GetAllUniversities(language string, page int, perPage int) ([]*GetAllUniver
 			UniversityStatus: university.UniversityStatus,
 			MinScore:         university.MinEntryScore,
 			Rating:           university.Rating,
+			Favorite:         favoriteUniversityCount > 0, // Set favorite field
 		}
 
 		responses = append(responses, response)

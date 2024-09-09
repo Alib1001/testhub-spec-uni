@@ -62,10 +62,12 @@ func main() {
 	beego.SetStaticPath("/swagger", "swagger")
 
 	beego.InsertFilter("/api/*", beego.BeforeRouter, middleware.AuthMiddleware)
+	beego.InsertFilter("/user/universities/*", beego.BeforeRouter, middleware.AuthMiddleware)
 
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
 		AllowOrigins: []string{"http://localhost:3000", "https://admin-course.testhub.kz",
-			"https://ent.testhub.kz", "https://console.ps.kz", "https://api-dev.testhub.kz"},
+			"https://ent.testhub.kz", "https://console.ps.kz", "https://api-dev.testhub.kz",
+			"https://dev-front.testhub.kz"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "lang"},
 		ExposeHeaders:    []string{"Content-Length"},
