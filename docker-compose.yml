@@ -5,10 +5,10 @@ services:
     build: .
     environment:
       DB_DRIVER: postgres
-      DB_USER: course_dev
-      DB_PASSWORD: course_dev
-      DB_HOST: 185.125.90.25
-      DB_PORT: 5433
-      DB_NAME: course_dev
+      DB_USER: #user
+      DB_PASSWORD: #dbpwd
+      DB_HOST: #host
+      DB_PORT: #port
+      DB_NAME: #corsedev
     ports:
       - "8085:8085"
